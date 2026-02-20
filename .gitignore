@@ -23,3 +23,12 @@ env/
 # Logs and data
 logs/
 data/*.db
+
+# Source/backup text files
+backup.txt
+commander.txt
+media.txt
+webhook.txt
+whatsapp.txt
+response A.txt
+Response B.txt
