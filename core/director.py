@@ -65,6 +65,9 @@ from config.safety import SafetyGuard
 from core.logger import log
 from core.approval import ApprovalSystem
 from core.sentinel import Sentinel
+from core.whatsapp import WhatsAppNotifier
+from core.commander import FalconCommander
+from core.webhook import FalconWebhook
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -237,6 +240,11 @@ class Director:
         self._approval: Optional[ApprovalSystem] = self._safe_init("ApprovalSystem", ApprovalSystem)
         self._sentinel: Optional[Sentinel]       = self._init_sentinel()
 
+        # ── WhatsApp + Commander + Webhook ──
+        self._whatsapp: Optional[WhatsAppNotifier] = self._safe_init("WhatsAppNotifier", WhatsAppNotifier)
+        self._commander: Optional[FalconCommander] = self._init_commander()
+        self._webhook: Optional[FalconWebhook]     = self._init_webhook()
+
         # ── Ensure JSON state files ──
         self._ensure_goals_file()
         self._ensure_schedule_file()
@@ -286,6 +294,32 @@ class Director:
             return sentinel
         except Exception as exc:
             log.critical("  ✖ Sentinel failed to init: %s", exc, exc_info=True)
+            return None
+
+    def _init_commander(self) -> Optional[FalconCommander]:
+        """Initialise FalconCommander with Director + WhatsApp."""
+        try:
+            if self._whatsapp is not None:
+                commander = FalconCommander(self, self._whatsapp)
+                log.info("  ✔ FalconCommander ready")
+                return commander
+            log.warning("  ⚠ FalconCommander skipped — WhatsApp unavailable")
+            return None
+        except Exception as exc:
+            log.critical("  ✖ FalconCommander failed: %s", exc, exc_info=True)
+            return None
+
+    def _init_webhook(self) -> Optional[FalconWebhook]:
+        """Initialise FalconWebhook."""
+        try:
+            if self._whatsapp is not None and self._commander is not None:
+                webhook = FalconWebhook(self._whatsapp, self._commander)
+                log.info("  ✔ FalconWebhook ready")
+                return webhook
+            log.warning("  ⚠ FalconWebhook skipped — dependencies unavailable")
+            return None
+        except Exception as exc:
+            log.critical("  ✖ FalconWebhook failed: %s", exc, exc_info=True)
             return None
 
     # ══════════════════════════════════════════════════════════════════════
@@ -1378,6 +1412,11 @@ class Director:
         self._running = True
         self._last_activity = time.monotonic()
 
+        # ── Start webhook server (WhatsApp incoming messages) ──
+        if self._webhook is not None:
+            self._webhook.start(host="0.0.0.0", port=8000)
+            log.info("WhatsApp webhook listening on port 8000")
+
         # Announce startup
         self._send_alert(
             "🦅 FALCON AGENCY — Director Started\n\n"
@@ -1494,7 +1533,11 @@ class Director:
         except Exception:
             pass
 
-        # ── Telegram notification ──
+        # ── Stop webhook ──
+        if hasattr(self, "_webhook") and self._webhook is not None:
+            self._webhook.stop()
+
+        # ── WhatsApp shutdown notification ──
         try:
             self._send_alert(
                 "🛑 FALCON AGENCY — Director Stopped\n\n"
@@ -1526,10 +1569,10 @@ class Director:
 
     def _send_alert(self, message: str) -> None:
         """
-        Best-effort alert via Telegram.
+        Best-effort alert via WhatsApp.
 
         Failures are logged but never raised — the Director must not
-        crash because Telegram is unreachable.
+        crash because WhatsApp is unreachable.
         """
         if self._approval is None:
             log.warning("ApprovalSystem unavailable — cannot send alert")

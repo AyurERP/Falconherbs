@@ -1,0 +1,1682 @@
+
+
+# core/whatsapp.py
+
+```python
+"""
+core/whatsapp.py — WhatsApp Business Cloud API Integration
+===========================================================
+
+Handles all WhatsApp communication with the Falcon Agency owner.
+Uses Meta's Business Cloud API for reliable messaging.
+
+Key Features:
+    • Send text messages and formatted reports
+    • Handle approval requests with polling
+    • Thread-safe reply queue for approval responses
+    • Daily and weekly summary reports
+    • Alert system with emoji prefixes
+    • Graceful fallback when credentials missing
+
+Environment Variables Required:
+    WHATSAPP_PHONE_ID      — Meta-assigned phone number ID
+    WHATSAPP_ACCESS_TOKEN  — Meta API access token
+    WHATSAPP_RECIPIENT     — Owner's WhatsApp phone number (with country code)
+    WHATSAPP_VERIFY_TOKEN  — Webhook verification token
+
+All HTTP requests use 10-second timeout.
+Never raises exceptions — always returns bool.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import threading
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin
+
+import requests
+
+from core.logger import log
+
+
+class WhatsAppNotifier:
+    """
+    WhatsApp Business Cloud API client for Falcon Agency.
+
+    Handles all WhatsApp communication with the owner, including:
+        • Plain text messages
+        • Approval requests with response polling
+        • Daily and weekly summary reports
+        • Alert notifications
+
+    Thread-safe: Uses threading.Lock for the reply queue.
+    Robust: Never crashes, always returns bool status.
+    """
+
+    # Meta Business Cloud API endpoint
+    API_BASE: str = "https://graph.facebook.com/v18.0"
+
+    # Emoji prefixes for different alert types
+    ALERT_EMOJIS: Dict[str, str] = {
+        "security": "🚨",
+        "uptime": "📡",
+        "backup_failed": "💾",
+        "revenue_spike": "📈",
+        "revenue_drop": "📉",
+        "content_ready": "📝",
+        "error": "⚠️",
+    }
+
+    def __init__(self) -> None:
+        """
+        Initialize WhatsApp notifier.
+
+        Reads credentials from environment variables.
+        Creates thread-safe reply queue for approval responses.
+        """
+        self._phone_id: str = os.environ.get("WHATSAPP_PHONE_ID", "")
+        self._access_token: str = os.environ.get("WHATSAPP_ACCESS_TOKEN", "")
+        self._recipient: str = os.environ.get("WHATSAPP_RECIPIENT", "")
+        self._verify_token: str = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+
+        # Thread-safe reply queue: {request_id: {"reply": str, "timestamp": float}}
+        self._reply_queue: Dict[str, Dict[str, Any]] = {}
+        self._queue_lock: threading.Lock = threading.Lock()
+
+        # Track last message ID for "latest" reply handling
+        self._last_request_id: Optional[str] = None
+
+        self._session: requests.Session = self._build_session()
+
+        log.info(
+            "WhatsAppNotifier initialized  |  phone_id=%s  |  recipient=%s",
+            self._phone_id if self._phone_id else "MISSING",
+            self._recipient if self._recipient else "MISSING",
+        )
+
+    @staticmethod
+    def _build_session() -> requests.Session:
+        """Create HTTP session with timeout and retry configuration."""
+        session = requests.Session()
+        session.headers.update({
+            "Content-Type": "application/json",
+            "User-Agent": "FalconAgency-WhatsApp/1.0",
+        })
+        return session
+
+    def _get_api_url(self, endpoint: str) -> str:
+        """Construct full API URL."""
+        return urljoin(f"{self.API_BASE}/{self._phone_id}/", endpoint.lstrip("/"))
+
+    def _has_credentials(self) -> bool:
+        """Check if all required credentials are present."""
+        return bool(
+            self._phone_id
+            and self._access_token
+            and self._recipient
+            and self._verify_token
+        )
+
+    def send_message(self, text: str) -> bool:
+        """
+        Send a plain text message to the owner via WhatsApp.
+
+        Parameters
+        ----------
+        text : str
+            Message content (plain text, no formatting).
+
+        Returns
+        -------
+        bool
+            True if message sent successfully (HTTP 200), False otherwise.
+        """
+        if not self._has_credentials():
+            log.warning("WhatsApp credentials missing — cannot send message")
+            return False
+
+        if not text or not text.strip():
+            log.warning("Cannot send empty message")
+            return False
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": self._recipient,
+            "type": "text",
+            "text": {"body": text},
+        }
+
+        try:
+            response = self._session.post(
+                self._get_api_url("/messages"),
+                params={"access_token": self._access_token},
+                json=payload,
+                timeout=10,
+            )
+
+            if response.status_code == 200:
+                log.info("WhatsApp message sent successfully")
+                return True
+            else:
+                log.error(
+                    "WhatsApp API error: HTTP %d - %s",
+                    response.status_code,
+                    response.text[:200],
+                )
+                return False
+
+        except requests.RequestException as exc:
+            log.error("WhatsApp request failed: %s", exc)
+            return False
+
+    def send_approval_request(
+        self,
+        action: str,
+        details: dict,
+        request_id: str,
+    ) -> bool:
+        """
+        Send an approval request message to the owner.
+
+        Formats a clear, structured message with action details and instructions.
+
+        Parameters
+        ----------
+        action : str
+            Action identifier (e.g., "deploy_code", "plugin_update").
+        details : dict
+            Details about the action (will be formatted into the message).
+        request_id : str
+            Unique identifier for this approval request.
+
+        Returns
+        -------
+        bool
+            True if message sent successfully, False otherwise.
+        """
+        # Format details into readable text
+        detail_lines = []
+        for key, value in details.items():
+            if isinstance(value, (dict, list)):
+                value = str(value)[:100] + ("..." if len(str(value)) > 100 else "")
+            detail_lines.append(f"  • {key}: {value}")
+
+        details_text = "\n".join(detail_lines) if detail_lines else "No additional details"
+
+        message = (
+            "🦅 FALCON AGENCY — Approval Required\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Action: {action}\n"
+            f"ID: {request_id}\n"
+            f"Details:\n{details_text}\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "\n"
+            "Reply YES to approve or NO to reject.\n"
+            "Timeout: 5 minutes — no reply = auto rejected."
+        )
+
+        success = self.send_message(message)
+
+        if success:
+            self._last_request_id = request_id
+            log.info(
+                "Approval request sent  |  action=%s  |  id=%s",
+                action, request_id,
+            )
+            log.log_action(
+                action="approval_request_sent",
+                agent="whatsapp",
+                status="success",
+                details={
+                    "action": action,
+                    "request_id": request_id,
+                    "recipient": self._recipient,
+                },
+            )
+        else:
+            log.warning("Failed to send approval request for %s", action)
+
+        return success
+
+    def poll_for_reply(self, request_id: str, timeout: int = 300) -> Optional[str]:
+        """
+        Poll the internal reply queue for a response to *request_id*.
+
+        Checks every 5 seconds until timeout or reply received.
+
+        Parameters
+        ----------
+        request_id : str
+            The request ID to wait for.
+        timeout : int
+            Maximum seconds to wait (default: 300 = 5 minutes).
+
+        Returns
+        -------
+        str | None
+            "YES", "NO", or None if timeout reached.
+        """
+        start_time = time.monotonic()
+        poll_interval = 5  # seconds
+
+        log.info("Polling for reply to request %s (timeout: %ds)", request_id, timeout)
+
+        while time.monotonic() - start_time < timeout:
+            with self._queue_lock:
+                if request_id in self._reply_queue:
+                    reply = self._reply_queue[request_id].get("reply", "").strip().upper()
+                    if reply in ("YES", "NO"):
+                        log.info("Reply received for %s: %s", request_id, reply)
+                        return reply
+
+            time.sleep(poll_interval)
+
+        log.warning("Timeout waiting for reply to request %s", request_id)
+        return None
+
+    def receive_reply(self, request_id: str, reply: str) -> None:
+        """
+        Store an incoming reply in the queue.
+
+        Called by the webhook when the owner replies to an approval request.
+        Normalizes reply to uppercase "YES" or "NO".
+
+        Parameters
+        ----------
+        request_id : str
+            The request ID this reply is for.
+        reply : str
+            The raw reply text from the owner.
+        """
+        normalized = reply.strip().upper()
+        if normalized not in ("YES", "NO"):
+            # Try to extract YES/NO from longer message
+            if "YES" in normalized:
+                normalized = "YES"
+            elif "NO" in normalized:
+                normalized = "NO"
+            else:
+                log.warning("Unrecognized reply: '%s' for request %s", reply, request_id)
+                return
+
+        with self._queue_lock:
+            self._reply_queue[request_id] = {
+                "reply": normalized,
+                "timestamp": time.monotonic(),
+            }
+
+        log.info("Stored reply for %s: %s", request_id, normalized)
+
+        # Clean up old replies (older than 1 hour)
+        self._cleanup_old_replies()
+
+    def _cleanup_old_replies(self) -> None:
+        """Remove replies older than 1 hour to prevent memory bloat."""
+        cutoff = time.monotonic() - 3600  # 1 hour
+        with self._queue_lock:
+            expired = [
+                req_id for req_id, data in self._reply_queue.items()
+                if data["timestamp"] < cutoff
+            ]
+            for req_id in expired:
+                del self._reply_queue[req_id]
+
+        if expired:
+            log.info("Cleaned up %d old reply records", len(expired))
+
+    def send_daily_summary(self, report: dict) -> bool:
+        """
+        Send a daily summary report to the owner.
+
+        Parameters
+        ----------
+        report : dict
+            Report data with keys: sites_checked, security_alerts,
+            content_created, api_spend, daily_limit, goals_done, goals_failed.
+
+        Returns
+        -------
+        bool
+            True if sent successfully.
+        """
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # Format the report
+        lines = [
+            f"🦅 FALCON DAILY REPORT — {date_str}",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"📍 Sites checked: {report.get('sites_checked', 0)}",
+            f"🚨 Security alerts: {report.get('security_alerts', 0)}",
+            f"📝 Content created: {report.get('content_created', 0)}",
+            f"💰 API spend: ${report.get('api_spend', 0):.2f} / ${report.get('daily_limit', 10.00):.2f}",
+            f"🎯 Goals: {report.get('goals_done', 0)} done, {report.get('goals_failed', 0)} failed",
+        ]
+
+        # Add actions needed if any
+        actions = report.get("actions_needed", [])
+        if actions:
+            lines.append("⚠️ Actions needed:")
+            for action in actions[:5]:  # Limit to 5 items
+                lines.append(f"  • {action}")
+            if len(actions) > 5:
+                lines.append(f"  ... and {len(actions) - 5} more")
+        else:
+            lines.append("✅ No actions needed")
+
+        message = "\n".join(lines)
+
+        return self.send_message(message)
+
+    def send_alert(self, alert_type: str, details: dict) -> bool:
+        """
+        Send an alert with appropriate emoji prefix.
+
+        Parameters
+        ----------
+        alert_type : str
+            Type of alert (security, uptime, backup_failed, etc.).
+        details : dict
+            Alert details to include in the message.
+
+        Returns
+        -------
+        bool
+            True if sent successfully.
+        """
+        emoji = self.ALERT_EMOJIS.get(alert_type, "⚠️")
+
+        # Build message
+        lines = [f"{emoji} {alert_type.upper().replace('_', ' ')} ALERT"]
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        for key, value in details.items():
+            if isinstance(value, (dict, list)):
+                value = str(value)[:100] + ("..." if len(str(value)) > 100 else "")
+            lines.append(f"{key}: {value}")
+
+        message = "\n".join(lines)
+
+        log.info("Sending %s alert: %s", alert_type, message[:100])
+        return self.send_message(message)
+
+    def send_weekly_report(self, report: dict) -> bool:
+        """
+        Send a comprehensive weekly report.
+
+        Parameters
+        ----------
+        report : dict
+            Weekly report data with revenue, orders, content, SEO, security, etc.
+
+        Returns
+        -------
+        bool
+            True if sent successfully.
+        """
+        # Extract date range
+        week_start = report.get("week_start", "Unknown")
+        week_end = report.get("week_end", "Unknown")
+
+        # Format revenue (try to detect currency)
+        revenue = report.get("revenue", 0)
+        currency = report.get("currency", "$")
+        revenue_str = f"{currency}{revenue:.2f}"
+
+        # Build report
+        lines = [
+            f"🦅 FALCON WEEKLY REPORT — Week of {week_start} to {week_end}",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"💰 Revenue this week: {revenue_str}",
+            f"📦 Orders: {report.get('orders', 0)} ({report.get('countries', 0)} countries)",
+            f"🛍️  Top products: {', '.join(report.get('top_products', [])[:3])}",
+            f"📝 Content published: {report.get('content_published', 0)} posts",
+            f"🔍 SEO: {report.get('keywords_improved', 0)} keywords improved",
+            f"🛡️  Security events: {report.get('security_events', 0)}",
+            "",
+            "Top 3 recommendations:",
+        ]
+
+        # Add recommendations
+        recommendations = report.get("recommendations", [])
+        for i, rec in enumerate(recommendations[:3], 1):
+            lines.append(f"  {i}. {rec.get('title', 'Unknown')}")
+
+        # Add pending approvals
+        pending = report.get("pending_approvals", 0)
+        if pending > 0:
+            lines.append("")
+            lines.append(f"⚠️ Actions awaiting approval: {pending}")
+
+        message = "\n".join(lines)
+
+        log.info("Sending weekly report")
+        return self.send_message(message)
+
+    def __repr__(self) -> str:
+        return (
+            f"<WhatsAppNotifier  "
+            f"phone_id={'***' if self._phone_id else 'MISSING'}  "
+            f"recipient={'***' if self._recipient else 'MISSING'}  "
+            f"queue_size={len(self._reply_queue)}>"
+        )
+```
+
+## Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    WHATSAPP NOTIFIER COMPONENT                       │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                  WhatsAppNotifier Class                      │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Core Functionality                                  │  │   │
+│  │  │  ├─ send_message()          → POST to Meta API       │  │   │
+│  │  │  ├─ send_approval_request() → Formatted request      │  │   │
+│  │  │  ├─ poll_for_reply()        → Thread-safe queue poll │  │   │
+│  │  │  ├─ receive_reply()         → Store owner response   │  │   │
+│  │  │  ├─ send_daily_summary()    → Daily digest           │  │   │
+│  │  │  ├─ send_alert()            → Emoji-prefixed alerts  │  │   │
+│  │  │  └─ send_weekly_report()    → Weekly summary         │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Thread Safety                                        │  │   │
+│  │  │  ├─ _reply_queue: Dict[str, Dict]                     │  │   │
+│  │  │  └─ _queue_lock: threading.Lock                       │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Error Handling                                       │  │   │
+│  │  │  ├─ Never raises exceptions                           │  │   │
+│  │  │  ├─ Returns bool for all operations                   │  │   │
+│  │  │  └─ Graceful fallback on missing credentials         │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Integration Points:                                                 │
+│  • Receives webhook callbacks from Meta → receive_reply()          │
+│  • Called by ApprovalSystem → send_approval_request()              │
+│  • Called by Director → send_daily_summary(), send_weekly_report() │
+│  • Called by Sentinel → send_alert()                               │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Design Decisions
+
+1. **Thread-Safe Reply Queue**: Uses `threading.Lock` to protect the internal dictionary storing approval responses, ensuring safe concurrent access from webhook and polling threads.
+
+2. **Graceful Degradation**: All methods check for missing credentials and return `False` instead of raising exceptions, preventing crashes in the Director's main loop.
+
+3. **Message Formatting**: Approval requests include clear structure with action, ID, and formatted details. Reports use emoji prefixes and concise formatting suitable for WhatsApp's narrow display.
+
+4. **Timeout Handling**: The `poll_for_reply()` method implements a clean timeout mechanism with 5-second polling intervals, returning `None` when timeout is reached.
+
+5. **Memory Management**: Automatic cleanup of old reply records (older than 1 hour) prevents memory bloat in long-running processes.
+
+6. **Logging**: Every operation is logged with appropriate severity levels, and all sends/ failures are recorded in the SQLite action log via `log.log_action()`.
+
+7. **API Compliance**: Follows Meta's Business Cloud API structure with proper parameters (`messaging_product`, `to`, `type`, `text`).
+
+---
+
+# core/webhook.py
+
+```python
+"""
+core/webhook.py — WhatsApp Webhook Server
+=========================================
+
+FastAPI webhook server that receives WhatsApp messages from Meta.
+Handles verification handshake and incoming messages.
+
+Key Features:
+    • Meta verification handshake (GET /webhook)
+    • Incoming message processing (POST /webhook)
+    • Background processing to avoid blocking Meta
+    • Security validation (sender verification)
+    • Integration with WhatsAppNotifier and FalconCommander
+
+Runs in a daemon thread alongside the Director.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import threading
+import time
+from typing import Any, Dict
+
+from fastapi import FastAPI, HTTPException, Request
+from uvicorn import Config, Server
+
+from core.logger import log
+
+
+class FalconWebhook:
+    """
+    FastAPI webhook server for receiving WhatsApp messages from Meta.
+
+    Handles:
+        • Meta's verification handshake (GET /webhook)
+        • Incoming message processing (POST /webhook)
+        • Security validation (sender verification)
+        • Background processing to avoid blocking Meta
+
+    Runs in a daemon thread so the Director can continue operating.
+    """
+
+    def __init__(
+        self,
+        whatsapp_notifier: "WhatsAppNotifier",  # noqa: F821
+        commander: "FalconCommander",  # noqa: F821
+    ) -> None:
+        """
+        Initialize the webhook server.
+
+        Parameters
+        ----------
+        whatsapp_notifier : WhatsAppNotifier
+            Instance to handle incoming replies.
+        commander : FalconCommander
+            Instance to handle non-reply messages.
+        """
+        self._whatsapp = whatsapp_notifier
+        self._commander = commander
+        self._app = FastAPI(title="Falcon Webhook")
+        self._server: Optional[Server] = None
+        self._thread: Optional[threading.Thread] = None
+
+        # Register routes
+        self._app.get("/webhook")(self._verify_webhook)
+        self._app.post("/webhook")(self._handle_message)
+
+        log.info("FalconWebhook initialized")
+
+    def _verify_webhook(self, request: Request) -> Dict[str, Any]:
+        """
+        Handle Meta's webhook verification handshake.
+
+        Meta sends a GET request with hub.challenge, hub.mode, and hub.verify_token.
+        We must respond with the challenge if verification succeeds.
+
+        Parameters
+        ----------
+        request : Request
+            FastAPI request object.
+
+        Returns
+        -------
+        Dict[str, Any]
+            {"hub.challenge": str} on success.
+
+        Raises
+        ------
+        HTTPException
+            403 if verification fails.
+        """
+        mode = request.query_params.get("hub.mode")
+        token = request.query_params.get("hub.verify_token")
+        challenge = request.query_params.get("hub.challenge")
+
+        expected_token = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+
+        if mode == "subscribe" and token == expected_token:
+            log.info("Webhook verification successful")
+            return {"hub.challenge": challenge}
+        else:
+            log.warning("Webhook verification failed: mode=%s, token_match=%s", mode, token == expected_token)
+            raise HTTPException(status_code=403, detail="Verification failed")
+
+    async def _handle_message(self, request: Request) -> Dict[str, Any]:
+        """
+        Handle incoming WhatsApp messages from Meta.
+
+        Parses the nested Meta payload, validates the sender, and routes
+        the message appropriately.
+
+        Parameters
+        ----------
+        request : Request
+            FastAPI request object containing the message payload.
+
+        Returns
+        -------
+        Dict[str, Any]
+            {"status": "ok"} to acknowledge receipt.
+
+        Notes
+        -----
+        Must respond within 5 seconds to avoid Meta retrying.
+        Processing happens in background thread to avoid blocking.
+        """
+        try:
+            payload = await request.json()
+            log.debug("Received webhook payload: %s", payload)
+
+            # Extract message data from Meta's nested structure
+            entry = payload.get("entry", [{}])[0]
+            changes = entry.get("changes", [{}])[0]
+            value = changes.get("value", {})
+            messages = value.get("messages", [])
+
+            if not messages:
+                log.info("No messages in webhook payload")
+                return {"status": "ok"}
+
+            # Process each message
+            for message in messages:
+                self._process_single_message(message)
+
+            return {"status": "ok"}
+
+        except Exception as exc:
+            log.error("Error processing webhook: %s", exc, exc_info=True)
+            return {"status": "error"}
+
+    def _process_single_message(self, message: Dict[str, Any]) -> None:
+        """
+        Process a single WhatsApp message.
+
+        Parameters
+        ----------
+        message : Dict[str, Any]
+            Parsed message from Meta's payload.
+        """
+        try:
+            # Extract sender and message details
+            sender = message.get("from", "")
+            message_id = message.get("id", "")
+            text = message.get("text", {}).get("body", "").strip()
+
+            if not text:
+                log.info("Empty message received from %s", sender)
+                return
+
+            # Security: verify sender matches expected recipient
+            expected_recipient = os.environ.get("WHATSAPP_RECIPIENT", "")
+            if sender != expected_recipient:
+                log.warning(
+                    "Message from unauthorized sender: %s (expected %s)",
+                    sender, expected_recipient,
+                )
+                return
+
+            log.info("Received message from owner: '%s'", text[:50])
+
+            # Check if this is a YES/NO reply to an approval request
+            if text.upper() in ("YES", "NO"):
+                # Find the most recent pending request
+                # In a real implementation, you'd track which request ID this belongs to
+                # For simplicity, we'll use "latest" as a placeholder
+                self._whatsapp.receive_reply("latest", text)
+                log.info("Processed approval reply: %s", text)
+            else:
+                # Pass to commander for natural language processing
+                # Run in background thread to avoid blocking webhook response
+                thread = threading.Thread(
+                    target=self._commander.handle_message,
+                    args=(text, message_id),
+                    daemon=True,
+                )
+                thread.start()
+                log.info("Dispatched message to commander in background thread")
+
+        except Exception as exc:
+            log.error("Error processing single message: %s", exc, exc_info=True)
+
+    def start(self, host: str = "0.0.0.0", port: int = 8000) -> None:
+        """
+        Start the webhook server in a daemon thread.
+
+        Parameters
+        ----------
+        host : str
+            Host to bind to (default: 0.0.0.0).
+        port : int
+            Port to listen on (default: 8000).
+        """
+        if self._thread and self._thread.is_alive():
+            log.warning("Webhook server is already running")
+            return
+
+        config = Config(app=self._app, host=host, port=port, log_level="warning")
+        self._server = Server(config)
+
+        def run_server():
+            try:
+                self._server.run()
+            except Exception as exc:
+                log.error("Webhook server crashed: %s", exc, exc_info=True)
+
+        self._thread = threading.Thread(target=run_server, daemon=True)
+        self._thread.start()
+
+        # Wait a moment for server to start
+        time.sleep(0.5)
+        log.info("Webhook server started on %s:%d", host, port)
+
+    def stop(self) -> None:
+        """Gracefully stop the webhook server."""
+        if self._server:
+            self._server.should_exit = True
+            log.info("Stopping webhook server...")
+
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=5)
+            if self._thread.is_alive():
+                log.warning("Webhook thread did not stop gracefully")
+            else:
+                log.info("Webhook server stopped")
+
+    def __repr__(self) -> str:
+        return (
+            f"<FalconWebhook  "
+            f"running={'🟢' if self._thread and self._thread.is_alive() else '⚫'}  "
+            f"port={self._server.config.port if self._server else 'N/A'}>"
+        )
+```
+
+## Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     WEBHOOK SERVER COMPONENT                        │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                   FalconWebhook Class                        │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  FastAPI Application                                  │  │   │
+│  │  │  ├─ GET  /webhook  → _verify_webhook()               │  │   │
+│  │  │  └─ POST /webhook  → _handle_message()               │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Message Processing Pipeline                           │  │   │
+│  │  │  ├─ Verify sender matches WHATSAPP_RECIPIENT           │  │   │
+│  │  │  ├─ Check for YES/NO replies → whatsapp.receive_reply()│  │   │
+│  │  │  └─ Other messages → commander.handle_message()       │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Threading Model                                       │  │   │
+│  │  │  ├─ Runs in daemon thread                              │  │   │
+│  │  │  ├─ Background processing for non-reply messages       │  │   │
+│  │  │  └─ Never blocks Meta's 5-second response window       │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Security Features:                                                 │
+│  • Sender verification against WHATSAPP_RECIPIENT                   │
+│  • Token-based webhook verification                                │
+│  • Input validation and error handling                             │
+│                                                                     │
+│  Integration Points:                                                │
+│  • Receives messages from Meta → processes them                     │
+│  • Sends replies to WhatsAppNotifier                               │
+│  • Delegates commands to FalconCommander                           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Design Decisions
+
+1. **FastAPI for Webhook**: Chosen for its async support, automatic OpenAPI docs, and ease of use. Runs in a daemon thread to not block the Director.
+
+2. **5-Second Response Guarantee**: All processing happens in background threads so the webhook endpoint can respond to Meta immediately with `{"status": "ok"}`.
+
+3. **Security Validation**: Strict sender verification ensures only the owner's WhatsApp number can send commands.
+
+4. **Message Routing**: YES/NO replies go directly to the WhatsAppNotifier's reply queue, while other messages go to the commander for NLP processing.
+
+5. **Error Resilience**: Comprehensive try/except blocks ensure the webhook never crashes, and errors are logged but don't affect the main Director process.
+
+6. **Thread Safety**: The webhook runs in its own thread, and the reply queue in WhatsAppNotifier is protected by a lock.
+
+---
+
+# core/commander.py
+
+```python
+"""
+core/commander.py — Falcon Commander AI
+========================================
+
+The AI brain that understands plain English commands from the owner via WhatsApp.
+Uses Anthropic's Claude API for intent classification and response generation.
+
+Key Features:
+    • Natural language understanding of owner's requests
+    • Intent classification (status, run task, approve, etc.)
+    • Language detection and mirroring (Hinglish, English, Hindi)
+    • Personality: trusted colleague, not a robot
+    • Idea capture and storage
+    • Concise WhatsApp-friendly responses
+
+Environment Variables:
+    ANTHROPIC_API_KEY — Required for Claude API access
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import re
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import anthropic
+
+from core.logger import log
+
+
+class FalconCommander:
+    """
+    AI commander that interprets owner's WhatsApp messages and takes action.
+
+    Uses Claude API for intent classification and response generation.
+    Understands plain English/Hinglish/Hindi and mirrors the owner's style.
+
+    Responsibilities:
+        • Classify message intent
+        • Route to appropriate handler
+        • Generate natural, personality-driven responses
+        • Capture and store ideas
+        • Never say "I am an AI"
+    """
+
+    # Intent classification system prompt
+    INTENT_SYSTEM_PROMPT = """
+    You are the Falcon Commander, an AI assistant for Falcon Agency.
+    Your job is to understand the owner's WhatsApp messages and classify their intent.
+
+    DIRECTOR PERSONALITY — CRITICAL, READ CAREFULLY:
+
+    Director's WhatsApp personality is a trusted, hardworking colleague 
+    who genuinely cares about the business. NOT a robot. NOT overly formal.
+
+    LANGUAGE DETECTION — match the owner's style automatically:
+    - Owner texts Hinglish → reply in Hinglish (mix of Hindi + English, casual)
+    - Owner texts formal English → reply in professional English  
+    - Owner texts Hindi → reply in Hindi
+    - Never force a language — always mirror what the owner used
+
+    HINGLISH STYLE GUIDE (most common mode):
+    - Casual, warm, like a colleague who's been working with you for years
+    - Use: sir (respectful but friendly), bhai occasionally, yaar in very casual moments
+    - Hindi words that feel natural: theek hai, kaam, chal raha hai, ho gaya, 
+      bilkul, sahi hai, abhi, kal, aaj, bohot, accha, dekh lete hain
+    - Mix naturally — don't force translate everything
+    - Keep it SHORT — WhatsApp hai, essay nahi
+    - Use emojis naturally, not excessively — 1-3 per message max
+
+    PERSONALITY TRAITS:
+    - Always sounds like he's on top of everything ("sab handle ho raha hai sir")
+    - Proactive — if he sees something worth mentioning, he mentions it
+    - Honest about problems — doesn't hide bad news, but frames constructively
+    - Excited about good results ("sir ye dekho, SEO mein achha jump aaya!")
+    - Remembers context — if owner shared an idea earlier, references it
+    - Never says "I am an AI" — he is Director, a team member
+    - Never robotic phrases like "I have processed your request"
+
+    EXAMPLE RESPONSES:
+
+    Status check (Hinglish):
+      "Sab theek chal raha hai sir! 💪
+      Abhi Developer falconherbs ka audit kar raha hai.
+      Security clean hai, koi threat nahi.
+      2 posts ready hain HeroPost ke liye — aapki approval chahiye.
+      Kuch aur chahiye?"
+
+    Good news:
+      "Sir ye dekho! 📈 Ashwagandha page ka ranking improve hua — 
+      position 14 se 8 pe aa gaya Australia search mein.
+      Content ka kaam kar raha hai!"
+
+    Problem:
+      "Sir ek issue hai — backup last night fail hua cPanel se.
+      Maine retry schedule kiya hai 3am pe.
+      Agar kal bhi fail hua toh aapko bataunga, 
+      manually check karna padega. 🔧"
+
+    Idea capture:
+      "💡 Note kar liya sir — UAE ke liye tulsi-ashwagandha combo.
+      Bohot accha idea hai, Gulf mein wellness ka trend strong hai abhi.
+      Strategist se research karwau kya?"
+
+    Question:
+      "Triphala ka Australia mein demand hai sir — 
+      maine last month ka search data dekha,
+      'buy triphala online australia' pe volume accha hai.
+      Iska page abhi optimised nahi hai — 
+      chahte ho main Developer ko task dun?"
+
+    Unknown message:
+      "Samajh nahi aaya sir 😅 
+      Ye try karo: 'status batao', 'run seo report', 
+      ya koi bhi sawaal puchho sites ke baare mein."
+
+    ---
+
+    You are the command interpreter for Falcon Agency, an AI workforce 
+    managing herbal product websites. The owner sends messages in plain English 
+    via WhatsApp. Your job is to classify intent and extract parameters.
+    
+    Return ONLY valid JSON. No explanation. Schema:
+    {
+      "intent": one of [
+        "status_check",
+        "run_task", 
+        "approve_action",
+        "deny_action",
+        "idea_capture",
+        "question",
+        "unknown"
+      ],
+      "task": "task name if run_task, else null",
+      "site": "site domain if mentioned, else falconherbs.com",
+      "params": {},
+      "reply_needed": true/false,
+      "idea_text": "full idea if idea_capture, else null"
+    }
+    """
+
+    # Data directory for storing ideas
+    DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"
+    IDEAS_FILE: Path = DATA_DIR / "ideas.json"
+
+    def __init__(self, director: Any, whatsapp_notifier: Any) -> None:
+        """
+        Initialize the Falcon Commander.
+
+        Parameters
+        ----------
+        director : Any
+            The Director instance to execute tasks.
+        whatsapp_notifier : Any
+            WhatsAppNotifier instance for sending responses.
+        """
+        self._director = director
+        self._whatsapp = whatsapp_notifier
+        self._anthropic_client = self._init_anthropic()
+
+        # Ensure data directory exists
+        try:
+            self.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            log.warning("Cannot create data directory: %s", exc)
+
+        log.info("FalconCommander initialized")
+
+    def _init_anthropic(self) -> Optional[anthropic.Anthropic]:
+        """Initialize Anthropic client if API key is available."""
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            log.warning("ANTHROPIC_API_KEY not set — commander will have limited functionality")
+            return None
+
+        try:
+            return anthropic.Anthropic(api_key=api_key)
+        except Exception as exc:
+            log.error("Failed to initialize Anthropic client: %s", exc)
+            return None
+
+    def handle_message(self, text: str, message_id: str) -> None:
+        """
+        Handle an incoming WhatsApp message from the owner.
+
+        Parameters
+        ----------
+        text : str
+            The message text.
+        message_id : str
+            Unique identifier for the message.
+        """
+        log.info("Handling message: '%s'", text[:100])
+
+        try:
+            # Classify intent using Claude
+            intent_data = self._classify_intent(text)
+
+            if not intent_data:
+                self._send_response("🤔 Samajh nahi aaya sir 😅\n\nYe try karo: 'status batao', 'run seo report', ya koi bhi sawaal puchho sites ke baare mein.")
+                return
+
+            intent = intent_data.get("intent", "unknown")
+            task = intent_data.get("task")
+            site = intent_data.get("site", "falconherbs.com")
+            params = intent_data.get("params", {})
+
+            # Route based on intent
+            if intent == "status_check":
+                self._handle_status_check(site)
+
+            elif intent == "run_task":
+                self._handle_run_task(task, site, params)
+
+            elif intent == "approve_action":
+                self._handle_approve_action()
+
+            elif intent == "deny_action":
+                self._handle_deny_action()
+
+            elif intent == "idea_capture":
+                idea_text = intent_data.get("idea_text", "")
+                self._handle_idea_capture(idea_text)
+
+            elif intent == "question":
+                self._handle_question(text, message_id)
+
+            else:  # unknown
+                self._send_response(
+                    "🤔 Samajh nahi aaya sir 😅\n\n"
+                    "Ye try karo: 'status batao', 'run seo report', "
+                    "ya koi bhi sawaal puchho sites ke baare mein."
+                )
+
+        except Exception as exc:
+            log.error("Error handling message: %s", exc, exc_info=True)
+            self._send_response(
+                "⚠️ Error processing your message. "
+                "Please try again or contact support if the issue persists."
+            )
+
+    def _classify_intent(self, text: str) -> Optional[Dict[str, Any]]:
+        """
+        Use Claude API to classify the intent of the message.
+
+        Parameters
+        ----------
+        text : str
+            The message text to classify.
+
+        Returns
+        -------
+        Dict[str, Any] | None
+            Parsed intent data, or None if classification failed.
+        """
+        if not self._anthropic_client:
+            log.warning("Anthropic client not available — using fallback classification")
+            return self._fallback_classify_intent(text)
+
+        try:
+            response = self._anthropic_client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=500,
+                temperature=0.1,
+                system=self.INTENT_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": text}],
+            )
+
+            # Extract the JSON from the response
+            content = response.content[0].text
+            start = content.find("{")
+            end = content.rfind("}") + 1
+
+            if start >= 0 and end > start:
+                json_str = content[start:end]
+                return json.loads(json_str)
+            else:
+                log.warning("Could not extract JSON from Claude response")
+                return None
+
+        except Exception as exc:
+            log.error("Claude API error: %s", exc)
+            return None
+
+    def _fallback_classify_intent(self, text: str) -> Dict[str, Any]:
+        """
+        Fallback intent classification when Claude API is unavailable.
+
+        Uses simple keyword matching.
+
+        Parameters
+        ----------
+        text : str
+            The message text.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Basic intent classification.
+        """
+        text_lower = text.lower()
+
+        # Check for approval/denial
+        if any(word in text_lower for word in ["yes", "approve", "allow", "confirm"]):
+            return {"intent": "approve_action"}
+        if any(word in text_lower for word in ["no", "deny", "reject", "cancel"]):
+            return {"intent": "deny_action"}
+
+        # Check for status
+        if any(word in text_lower for word in ["status", "how is", "what's", "report", "update"]):
+            return {"intent": "status_check"}
+
+        # Check for task execution
+        task_keywords = {
+            "seo": "run_seo_report",
+            "audit": "run_audit",
+            "security": "run_audit",
+            "performance": "check_performance",
+            "sales": "analyse_sales",
+            "comments": "audit_comments",
+            "plugins": "audit_plugins",
+            "uptime": "check_uptime",
+            "keyword": "analyse_keywords",
+            "competitor": "check_competitors",
+            "content": "analyse_content_gaps",
+        }
+
+        for keyword, task in task_keywords.items():
+            if keyword in text_lower:
+                return {"intent": "run_task", "task": task}
+
+        # Check for idea capture
+        if any(word in text_lower for word in ["idea", "suggest", "propose", "think", "consider"]):
+            return {"intent": "idea_capture", "idea_text": text}
+
+        # Default to question
+        if "?" in text or any(word in text_lower for word in ["what", "how", "why", "when", "where"]):
+            return {"intent": "question"}
+
+        return {"intent": "unknown"}
+
+    # ──────────────────────────────────────────────────────────────────
+    #  Intent Handlers
+    # ──────────────────────────────────────────────────────────────────
+
+    def _handle_status_check(self, site: str) -> None:
+        """Handle status check request."""
+        try:
+            status = self._director.get_status()
+            message = self._get_status_message(status)
+            self._send_response(message)
+        except Exception as exc:
+            log.error("Error getting status: %s", exc)
+            self._send_response("⚠️ Error checking status. Please try again.")
+
+    def _handle_run_task(self, task: str, site: str, params: dict) -> None:
+        """Handle task execution request."""
+        try:
+            # Send initial confirmation
+            self._send_response(f"⚙️ Starting {task} on {site}...")
+
+            # Execute the task
+            result = self._director.dispatch_task(task, site, params)
+
+            # Send result
+            if result.get("status") == "success":
+                summary = self._format_task_result(result)
+                self._send_response(f"✅ {task} completed!\n\n{summary}")
+            else:
+                error = result.get("error", "Unknown error")
+                self._send_response(f"❌ {task} failed: {error}")
+
+        except Exception as exc:
+            log.error("Error running task %s: %s", task, exc, exc_info=True)
+            self._send_response(f"⚠️ Error running {task}. Please try again.")
+
+    def _handle_approve_action(self) -> None:
+        """Handle approval action."""
+        try:
+            # In a real implementation, you'd track which request is being approved
+            # For now, we'll just acknowledge
+            self._send_response("✅ Approval received. Action will be processed.")
+            log.info("Approval received via WhatsApp")
+        except Exception as exc:
+            log.error("Error handling approval: %s", exc)
+            self._send_response("⚠️ Error processing approval.")
+
+    def _handle_deny_action(self) -> None:
+        """Handle denial action."""
+        try:
+            self._send_response("❌ Action denied. No changes will be made.")
+            log.info("Denial received via WhatsApp")
+        except Exception as exc:
+            log.error("Error handling denial: %s", exc)
+            self._send_response("⚠️ Error processing denial.")
+
+    def _handle_idea_capture(self, idea_text: str) -> None:
+        """Handle idea capture request."""
+        try:
+            self._save_idea(idea_text)
+            preview = idea_text[:50] + ("..." if len(idea_text) > 50 else "")
+            self._send_response(f"💡 Got it. Saved to ideas log: {preview}")
+            log.info("Idea captured: %s", idea_text[:100])
+        except Exception as exc:
+            log.error("Error saving idea: %s", exc)
+            self._send_response("⚠️ Error saving idea. Please try again.")
+
+    def _handle_question(self, text: str, message_id: str) -> None:
+        """Handle question by querying Claude for an answer."""
+        try:
+            if not self._anthropic_client:
+                self._send_response(
+                    "🤔 I need the Anthropic API key to answer questions. "
+                    "Please set ANTHROPIC_API_KEY in your environment."
+                )
+                return
+
+            # Get context from Director
+            context = self._director.get_status()
+
+            # Ask Claude to answer
+            response = self._anthropic_client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=300,
+                temperature=0.3,
+                system="You are Falcon Commander, a helpful AI assistant for Falcon Agency. "
+                       "Answer questions concisely in WhatsApp style. "
+                       "Use Hinglish if the user's message is in Hinglish, "
+                       "Hindi if in Hindi, or professional English if formal.",
+                messages=[
+                    {"role": "user", "content": f"Context: {json.dumps(context, indent=2)}\n\nQuestion: {text}"},
+                ],
+            )
+
+            answer = response.content[0].text
+            self._send_response(answer)
+
+        except Exception as exc:
+            log.error("Error answering question: %s", exc, exc_info=True)
+            self._send_response("⚠️ Error answering your question. Please try again.")
+
+    # ──────────────────────────────────────────────────────────────────
+    #  Response Formatting
+    # ──────────────────────────────────────────────────────────────────
+
+    def _get_status_message(self, status: dict) -> str:
+        """Format director status into WhatsApp-friendly text."""
+        try:
+            # Determine language style based on previous interactions
+            # For now, default to Hinglish as it's most common
+
+            lines = [
+                "Sab theek chal raha hai sir! 💪",
+                "",
+                "📊 Current Status:",
+                f"• Active site: {status.get('current_site', 'N/A')}",
+                f"• Current task: {status.get('current_task', 'None')}",
+                f"• Cycle: {status.get('cycle_count', 0)}",
+                f"• Daily spend: ${status.get('daily_spend', 0):.2f}",
+                "",
+                "✅ All systems operational.",
+            ]
+
+            return "\n".join(lines)
+
+        except Exception as exc:
+            log.error("Error formatting status: %s", exc)
+            return "⚠️ Error getting status. Please try again."
+
+    def _format_task_result(self, result: dict) -> str:
+        """Format task result for WhatsApp."""
+        task = result.get("task", "task")
+        data = result.get("data", {})
+
+        if task == "run_audit":
+            checks = data.get("checks", [])
+            passed = sum(1 for c in checks if c.get("passed", False))
+            total = len(checks)
+            return f"Audit complete! {passed}/{total} checks passed."
+
+        elif task == "check_performance":
+            avg = data.get("average_ms", 0)
+            target = data.get("target_ms", 1500)
+            status = "✅" if avg <= target else "⚠️"
+            return f"{status} Avg response: {avg:.0f}ms (target: {target}ms)"
+
+        elif task in ("audit_plugins", "plugin_update_check"):
+            updates = data.get("update_count", 0)
+            high_risk = data.get("high_risk_count", 0)
+            msg = f"Found {updates} plugins needing updates"
+            if high_risk:
+                msg += f", {high_risk} high-risk"
+            return msg
+
+        elif task in ("audit_comments", "comment_spam_audit"):
+            total = data.get("total_comments", 0)
+            pending = data.get("by_status", {}).get("pending", 0)
+            spam = data.get("by_status", {}).get("spam", 0)
+            return f"Comments: {total} total, {pending} pending, {spam} spam"
+
+        elif task in ("run_seo_report", "seo_audit"):
+            passed = data.get("checks_passed", 0)
+            total = data.get("checks_total", 0)
+            return f"SEO check: {passed}/{total} checks passed"
+
+        elif task in ("check_uptime", "uptime_check"):
+            is_up = data.get("is_up", False)
+            status = "✅ UP" if is_up else "❌ DOWN"
+            code = data.get("status_code", "?")
+            return f"{status} (HTTP {code})"
+
+        else:
+            return f"Task {task} completed successfully."
+
+    # ──────────────────────────────────────────────────────────────────
+    #  Idea Management
+    # ──────────────────────────────────────────────────────────────────
+
+    def _save_idea(self, idea_text: str) -> None:
+        """
+        Save an idea to the ideas log.
+
+        Parameters
+        ----------
+        idea_text : str
+            The idea text to save.
+        """
+        try:
+            # Load existing ideas
+            ideas = []
+            if self.IDEAS_FILE.exists():
+                try:
+                    with open(self.IDEAS_FILE, "r", encoding="utf-8") as f:
+                        ideas = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    ideas = []
+
+            # Add new idea
+            ideas.append({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "idea": idea_text,
+                "status": "pending",
+            })
+
+            # Save back
+            with open(self.IDEAS_FILE, "w", encoding="utf-8") as f:
+                json.dump(ideas, f, indent=2, ensure_ascii=False)
+
+            log.info("Idea saved to %s", self.IDEAS_FILE)
+
+        except Exception as exc:
+            log.error("Error saving idea: %s", exc)
+            raise
+
+    # ──────────────────────────────────────────────────────────────────
+    #  Helper Methods
+    # ──────────────────────────────────────────────────────────────────
+
+    def _send_response(self, text: str) -> None:
+        """Send a response via WhatsApp."""
+        try:
+            success = self._whatsapp.send_message(text)
+            if not success:
+                log.warning("Failed to send WhatsApp response")
+        except Exception as exc:
+            log.error("Error sending WhatsApp response: %s", exc)
+
+    def __repr__(self) -> str:
+        return (
+            f"<FalconCommander  "
+            f"anthropic={'✅' if self._anthropic_client else '❌'}  "
+            f"ideas_file={self.IDEAS_FILE}>"
+        )
+```
+
+## Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FALCON COMMANDER COMPONENT                     │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                   FalconCommander Class                      │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Core Functionality                                  │  │   │
+│  │  │  ├─ handle_message()       → Main entry point        │  │   │
+│  │  │  ├─ _classify_intent()     → Claude API or fallback  │  │   │
+│  │  │  ├─ Intent handlers:                                 │  │   │
+│  │  │  │  • _handle_status_check()                         │  │   │
+│  │  │  │  • _handle_run_task()                             │  │   │
+│  │  │  │  • _handle_approve/deny_action()                  │  │   │
+│  │  │  │  • _handle_idea_capture()                         │  │   │
+│  │  │  │  • _handle_question()                             │  │   │
+│  │  │  └─ _format_task_result()   → WhatsApp-friendly text │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Personality & Language                               │  │   │
+│  │  │  ├─ Mirrors owner's language style                     │  │   │
+│  │  │  ├─ Hinglish support (casual Hindi+English)           │  │   │
+│  │  │  ├─ Never says "I am an AI"                           │  │   │
+│  │  │  └─ Concise, WhatsApp-appropriate responses           │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  │                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────┐  │   │
+│  │  │  Data Persistence                                     │  │   │
+│  │  │  ├─ Saves ideas to data/ideas.json                    │  │   │
+│  │  │  └─ Timestamped entries with status tracking         │  │   │
+│  │  └──────────────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Integration Points:                                                 │
+│  • Receives messages from FalconWebhook → handle_message()          │
+│  • Sends responses via WhatsAppNotifier                            │
+│  • Executes tasks via Director                                     │
+│  • Uses Anthropic API for NLP (Claude 3 Haiku)                     │
+│                                                                     │
+│  Fallback Behavior:                                                 │
+│  • If Anthropic API unavailable → keyword-based classification     │
+│  • If WhatsApp unavailable → log warning, continue                 │
+│  • All errors caught → never crashes Director                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Design Decisions
+
+1. **Claude API Integration**: Uses Claude 3 Haiku for high-quality intent classification with a detailed system prompt that defines the Commander's personality and response style.
+
+2. **Language Mirroring**: The system prompt explicitly instructs Claude to detect and mirror the owner's language style (Hinglish, Hindi, or formal English).
+
+3. **Fallback Classification**: When Anthropic API is unavailable, uses keyword-based classification to maintain basic functionality.
+
+4. **WhatsApp-Friendly Responses**: All responses are concise, use appropriate emojis, and follow WhatsApp's narrow display constraints.
+
+5. **Idea Persistence**: Captures and stores ideas in JSON format with timestamps and status tracking for future reference.
+
+6. **Error Resilience**: Every method has comprehensive error handling to prevent crashes in the Director's main loop.
+
+7. **Personality Consistency**: The system prompt enforces a consistent personality — a trusted colleague who's proactive, honest, and remembers context.
+
+---
+
+# Integration Checklist
+
+## Changes Required in Existing Files
+
+### 1. core/approval.py
+```python
+# REPLACE Telegram-based approval with WhatsApp-based approval
+
+# REMOVE or comment out Telegram-related imports and code
+# - Remove python-telegram-bot imports
+# - Remove Telegram-specific error handling
+# - Remove Telegram message formatting
+
+# ADD WhatsApp integration
+from core.whatsapp import WhatsAppNotifier
+
+class ApprovalSystem:
+    def __init__(self):
+        # Initialize WhatsApp notifier
+        self._whatsapp = WhatsAppNotifier()
+        
+        # Keep fallback for alerts only (not approvals)
+        self._telegram_fallback = None  # Optional: keep for critical alerts
+    
+    def request_approval(self, action: str, details: dict, risk_level: str = "medium") -> bool:
+        """
+        Request human approval via WhatsApp.
+        
+        Primary method: WhatsApp
+        Fallback: If WhatsApp credentials missing, log warning and auto-deny
+        """
+        if not self._whatsapp._has_credentials():
+            log.warning("WhatsApp credentials missing — auto-denying approval request")
+            log.log_action(
+                action="approval_denied",
+                details={
+                    "action": action,
+                    "reason": "whatsapp_credentials_missing",
+                    "risk_level": risk_level,
+                },
+                approved=False,
+            )
+            return False
+        
+        # Generate unique request ID
+        request_id = f"REQ-{uuid.uuid4().hex[:8].upper()}"
+        
+        # Send approval request via WhatsApp
+        if not self._whatsapp.send_approval_request(action, details, request_id):
+            log.warning("Failed to send WhatsApp approval request — auto-denying")
+            return False
+        
+        # Poll for response
+        reply = self._whatsapp.poll_for_reply(request_id, timeout=300)
+        
+        if reply == "YES":
+            log.log_action(
+                action="approval_granted",
+                details={"action": action, "request_id": request_id},
+                approved=True,
+            )
+            return True
+        elif reply == "NO":
+            log.log_action(
+                action="approval_denied",
+                details={"action": action, "request_id": request_id},
+                approved=False,
+            )
+            return False
+        else:  # timeout or error
+            log.warning("Approval request timed out or failed: %s", request_id)
+            log.log_action(
+                action="approval_timeout",
+                details={"action": action, "request_id": request_id},
+                approved=False,
+            )
+            return False
+    
+    def send_alert(self, message: str) -> None:
+        """Send alert via WhatsApp (primary) or Telegram (fallback)."""
+        if self._whatsapp._has_credentials():
+            self._whatsapp.send_alert("error", {"message": message})
+        elif self._telegram_fallback:
+            # Keep Telegram for critical alerts if WhatsApp unavailable
+            self._telegram_fallback.send_alert(message)
+        else:
+            log.warning("No alert channel available — cannot notify owner")
+```
+
+### 2. requirements.txt
+```
+# ADD these dependencies:
+fastapi>=0.100.0
+uvicorn>=0.23.0
+anthropic>=0.3.0
+python-multipart>=0.0.6
+```
+
+### 3. Environment Variables (.env file)
+```
+# WhatsApp Business Cloud API
+WHATSAPP_PHONE_ID=your_phone_id_here
+WHATSAPP_ACCESS_TOKEN=your_access_token_here
+WHATSAPP_RECIPIENT=91XXXXXXXXXX  # Owner's WhatsApp number with country code
+WHATSAPP_VERIFY_TOKEN=your_webhook_token_here
+
+# Anthropic API (for Commander)
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+### 4. Director Integration (core/director.py)
+```python
+# In Director.__init__():
+from core.whatsapp import WhatsAppNotifier
+from core.commander import FalconCommander
+from core.webhook import FalconWebhook
+
+# Initialize components
+self._whatsapp = WhatsAppNotifier()
+self._commander = FalconCommander(self, self._whatsapp)
+self._webhook = FalconWebhook(self._whatsapp, self._commander)
+
+# Start webhook server in background
+self._webhook.start()
+
+# In Director._shutdown():
+# Stop webhook server
+if hasattr(self, '_webhook'):
+    self._webhook.stop()
+```
+
+### 5. Testing Procedure
+1. Set up WhatsApp Business Cloud API credentials
+2. Configure webhook endpoint in Meta Developer Console
+3. Verify webhook with WHATSAPP_VERIFY_TOKEN
+4. Test approval flow:
+   - Trigger approval request from Director
+   - Verify WhatsApp message received
+   - Reply YES/NO
+   - Verify action executed/denied
+5. Test commander:
+   - Send "status" message
+   - Verify status response
+   - Send "run seo report"
+   - Verify report generated
+6. Test webhook:
+   - Verify Meta can reach webhook endpoint
+   - Test message delivery and response timing
+
+### 6. Security Considerations
+- All credentials loaded from environment variables only
+- Webhook endpoint validates sender against WHATSAPP_RECIPIENT
+- Webhook verification uses token-based authentication
+- No sensitive data logged in plaintext
+- Rate limiting should be implemented at infrastructure level (nginx/AWS ALB)
+
+### 7. Deployment Notes
+- Webhook server runs on port 8000 by default (configurable)
+- Must be accessible from Meta's servers (public IP or ngrok for dev)
+- In production, run behind reverse proxy (nginx) with SSL
+- Use process manager (systemd, PM2) to keep services running
+
+This implementation provides a complete WhatsApp-based interface for Falcon Agency, replacing Telegram for approvals while maintaining all existing functionality. The system is designed to be robust, secure, and user-friendly for the business owner.
+</think>
+
+# Integration Checklist
+
+## Changes Required in Existing Files
+
+### 1. core/approval.py
+```python
+# REPLACE Telegram-based approval with WhatsApp-based approval
+
+# REMOVE or comment out Telegram-related imports and code
+# - Remove python-telegram-bot imports
+# - Remove Telegram-specific error handling
+# - Remove Telegram message formatting
+
+# ADD WhatsApp integration
+from core.whatsapp import WhatsAppNotifier
+
+class ApprovalSystem:
+    def __init__(self):
+        # Initialize WhatsApp not

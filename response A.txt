@@ -1,0 +1,2046 @@
+
+
+# File 1: core/whatsapp.py
+
+```python
+"""
+core/whatsapp.py — WhatsApp Business Cloud API Integration for Falcon Agency
+===============================================================================
+
+The owner's primary communication channel. All approvals, alerts, reports,
+and conversations flow through here via the Meta WhatsApp Business API.
+
+Architecture:
+    Owner ←──WhatsApp──→ Meta Cloud API ←──HTTPS──→ WhatsAppNotifier
+                                                         │
+                                              ┌──────────┼──────────┐
+                                              ▼          ▼          ▼
+                                          Approvals   Alerts    Reports
+
+Thread Safety:
+    The reply polling mechanism uses threading.Event for efficient blocking
+    and threading.Lock for state protection. Safe for concurrent access
+    from the webhook thread and the Director's main loop.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import threading
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import requests
+
+from core.logger import log
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  CONSTANTS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+META_API_BASE: str = "https://graph.facebook.com/v18.0"
+HTTP_TIMEOUT: int = 10
+MAX_MSG_LEN: int = 4000         # WhatsApp limit is 4096; leave buffer
+POLL_INTERVAL: float = 5.0      # seconds between reply checks
+
+# Normalisation maps for YES/NO detection
+_YES_TOKENS: frozenset[str] = frozenset({
+    "YES", "Y", "APPROVE", "APPROVED", "OK", "OKAY",
+    "HAA", "HAAN", "HA", "THEEK", "THEEK HAI", "BILKUL",
+    "CHALO", "KAR DO", "KARO", "GO AHEAD",
+    "👍", "✅",
+})
+_NO_TOKENS: frozenset[str] = frozenset({
+    "NO", "N", "DENY", "DENIED", "REJECT", "REJECTED",
+    "NAHI", "NAHI CHAHIYE", "CANCEL", "STOP", "RUKO", "MAT KARO",
+    "👎", "❌",
+})
+
+# Alert type → emoji mapping
+_ALERT_EMOJIS: Dict[str, str] = {
+    "security":       "🚨",
+    "uptime":         "📡",
+    "backup_failed":  "💾",
+    "revenue_spike":  "📈",
+    "revenue_drop":   "📉",
+    "content_ready":  "📝",
+    "error":          "⚠️",
+    "info":           "ℹ️",
+    "approval":       "🔐",
+}
+
+
+def _utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _today_display() -> str:
+    return datetime.now(timezone.utc).strftime("%d %b %Y")
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  WHATSAPP NOTIFIER
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class WhatsAppNotifier:
+    """
+    Production WhatsApp Business Cloud API client for Falcon Agency.
+
+    Handles:
+        • Outbound messages (alerts, reports, approval requests)
+        • Reply polling for the approval gate (thread-safe)
+        • Message chunking for long reports (4000-char limit)
+
+    All credentials come from environment variables — never hardcoded.
+
+    Usage::
+
+        wa = WhatsAppNotifier()
+        wa.send_message("Hello from Falcon Agency!")
+        wa.send_alert("security", {"threat": "brute force", "ip": "1.2.3.4"})
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialise the WhatsApp notifier.
+
+        Reads credentials from environment. If any are missing,
+        all send methods will log a warning and return False
+        instead of crashing.
+        """
+        self._phone_id: str = os.environ.get("WHATSAPP_PHONE_ID", "")
+        self._access_token: str = os.environ.get("WHATSAPP_ACCESS_TOKEN", "")
+        self._recipient: str = os.environ.get("WHATSAPP_RECIPIENT", "")
+
+        # ── Reply polling infrastructure (thread-safe) ──
+        self._lock: threading.Lock = threading.Lock()
+        self._reply_store: Dict[str, str] = {}                 # request_id → normalised reply
+        self._reply_events: Dict[str, threading.Event] = {}    # request_id → wake-up event
+        self._latest_pending_id: Optional[str] = None          # most recent unanswered request
+
+        # ── Validate credentials ──
+        self._configured: bool = all([self._phone_id, self._access_token, self._recipient])
+
+        if self._configured:
+            log.info(
+                "WhatsAppNotifier ready  |  phone_id=%s  |  recipient=%s…%s",
+                self._phone_id[:6] + "…",
+                self._recipient[:4],
+                self._recipient[-4:],
+            )
+        else:
+            missing = []
+            if not self._phone_id:
+                missing.append("WHATSAPP_PHONE_ID")
+            if not self._access_token:
+                missing.append("WHATSAPP_ACCESS_TOKEN")
+            if not self._recipient:
+                missing.append("WHATSAPP_RECIPIENT")
+            log.warning(
+                "WhatsAppNotifier: credentials incomplete — missing: %s. "
+                "All send methods will return False.",
+                ", ".join(missing),
+            )
+
+    # ══════════════════════════════════════════════════════════════════
+    #  CORE: send_message
+    # ══════════════════════════════════════════════════════════════════
+
+    def send_message(self, text: str) -> bool:
+        """
+        Send a text message to the owner via WhatsApp Business API.
+
+        Handles message chunking automatically if *text* exceeds
+        the 4000-character limit.
+
+        Parameters
+        ----------
+        text : str
+            The message body.
+
+        Returns
+        -------
+        bool
+            ``True`` if all chunks were delivered successfully.
+            ``False`` on any error, missing credentials, or API failure.
+        """
+        if not self._configured:
+            log.warning("WhatsApp not configured — message not sent")
+            return False
+
+        if not text or not text.strip():
+            log.warning("WhatsApp: empty message — skipping")
+            return False
+
+        chunks = self._chunk_message(text)
+        all_ok = True
+
+        for i, chunk in enumerate(chunks):
+            ok = self._send_single(chunk)
+            if not ok:
+                all_ok = False
+                log.warning(
+                    "WhatsApp chunk %d/%d failed  |  preview=%s",
+                    i + 1, len(chunks), chunk[:60],
+                )
+            else:
+                log.info(
+                    "WhatsApp sent  |  chunk %d/%d  |  %d chars",
+                    i + 1, len(chunks), len(chunk),
+                )
+
+            # Small delay between chunks to maintain ordering
+            if i < len(chunks) - 1:
+                time.sleep(0.5)
+
+        return all_ok
+
+    def _send_single(self, text: str) -> bool:
+        """Send a single message chunk. Never raises."""
+        try:
+            url = f"{META_API_BASE}/{self._phone_id}/messages"
+            headers = {
+                "Authorization": f"Bearer {self._access_token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": self._recipient,
+                "type": "text",
+                "text": {"body": text},
+            }
+
+            resp = requests.post(
+                url, headers=headers, json=payload, timeout=HTTP_TIMEOUT,
+            )
+
+            if resp.status_code == 200:
+                log.log_action(
+                    action="whatsapp_send",
+                    agent="whatsapp",
+                    status="success",
+                    details={"chars": len(text), "preview": text[:80]},
+                )
+                return True
+
+            log.warning(
+                "WhatsApp API returned %d: %s",
+                resp.status_code,
+                resp.text[:300],
+            )
+            log.log_action(
+                action="whatsapp_send",
+                agent="whatsapp",
+                status="failed",
+                details={
+                    "status_code": resp.status_code,
+                    "response": resp.text[:300],
+                },
+            )
+            return False
+
+        except requests.exceptions.Timeout:
+            log.warning("WhatsApp API timed out after %ds", HTTP_TIMEOUT)
+            return False
+        except requests.RequestException as exc:
+            log.warning("WhatsApp API request error: %s", exc)
+            return False
+        except Exception as exc:
+            log.critical("WhatsApp send crashed: %s", exc, exc_info=True)
+            return False
+
+    # ══════════════════════════════════════════════════════════════════
+    #  APPROVAL SYSTEM
+    # ══════════════════════════════════════════════════════════════════
+
+    def send_approval_request(
+        self,
+        action: str,
+        details: dict,
+        request_id: str,
+    ) -> bool:
+        """
+        Send a structured approval request to the owner.
+
+        Registers the request_id as the latest pending approval so
+        that a simple YES/NO reply gets routed correctly.
+
+        Parameters
+        ----------
+        action : str
+            The action requiring approval (e.g. ``"deploy_code"``).
+        details : dict
+            Human-readable context.
+        request_id : str
+            Unique identifier for this approval request.
+
+        Returns
+        -------
+        bool
+            ``True`` if the message was sent successfully.
+        """
+        # Register as latest pending
+        with self._lock:
+            self._latest_pending_id = request_id
+            # Pre-create the event so poll_for_reply can start waiting
+            if request_id not in self._reply_events:
+                self._reply_events[request_id] = threading.Event()
+
+        # Format details
+        detail_lines = []
+        for key, value in details.items():
+            clean_key = key.replace("_", " ").title()
+            detail_lines.append(f"  {clean_key}: {value}")
+        details_text = "\n".join(detail_lines) if detail_lines else "  (no details)"
+
+        message = (
+            "🦅 FALCON APPROVAL REQUIRED\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Action: {action}\n"
+            f"Details:\n{details_text}\n"
+            f"ID: {request_id}\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "Reply YES to approve or NO to reject.\n"
+            "⏱ Timeout: 5 minutes — no reply = auto rejected."
+        )
+
+        ok = self.send_message(message)
+
+        log.log_action(
+            action="approval_request_sent",
+            agent="whatsapp",
+            status="success" if ok else "failed",
+            details={"request_id": request_id, "action": action},
+        )
+
+        return ok
+
+    def poll_for_reply(
+        self,
+        request_id: str,
+        timeout: int = 300,
+    ) -> str | None:
+        """
+        Block until the owner replies YES/NO or *timeout* expires.
+
+        Uses ``threading.Event`` for efficient blocking — no CPU-burning
+        busy-wait. The event is signalled by ``receive_reply()`` when the
+        webhook delivers the owner's response.
+
+        Parameters
+        ----------
+        request_id : str
+            The approval request to wait for.
+        timeout : int
+            Maximum seconds to wait (default: 300 = 5 minutes).
+
+        Returns
+        -------
+        str or None
+            ``"YES"`` or ``"NO"`` if owner replied.
+            ``None`` on timeout.
+        """
+        log.info(
+            "Polling for reply  |  request_id=%s  |  timeout=%ds",
+            request_id, timeout,
+        )
+
+        # Ensure event exists
+        with self._lock:
+            if request_id not in self._reply_events:
+                self._reply_events[request_id] = threading.Event()
+            event = self._reply_events[request_id]
+
+            # Check if reply already arrived (race condition guard)
+            if request_id in self._reply_store:
+                reply = self._reply_store.pop(request_id)
+                self._reply_events.pop(request_id, None)
+                if self._latest_pending_id == request_id:
+                    self._latest_pending_id = None
+                log.info("Reply already available: %s", reply)
+                return reply
+
+        # Poll loop with Event-based efficient waiting
+        deadline = time.monotonic() + timeout
+
+        while time.monotonic() < deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+
+            # Wait efficiently — blocks until event.set() or timeout
+            event.wait(timeout=min(POLL_INTERVAL, remaining))
+
+            # Check for reply
+            with self._lock:
+                if request_id in self._reply_store:
+                    reply = self._reply_store.pop(request_id)
+                    self._reply_events.pop(request_id, None)
+                    if self._latest_pending_id == request_id:
+                        self._latest_pending_id = None
+                    log.info("Reply received: %s  |  request_id=%s", reply, request_id)
+                    return reply
+
+        # Timeout — clean up
+        with self._lock:
+            self._reply_store.pop(request_id, None)
+            self._reply_events.pop(request_id, None)
+            if self._latest_pending_id == request_id:
+                self._latest_pending_id = None
+
+        log.warning("Reply timeout  |  request_id=%s  |  after %ds", request_id, timeout)
+        return None
+
+    def receive_reply(self, request_id: str, reply: str) -> None:
+        """
+        Store a reply from the owner (called by the webhook or commander).
+
+        Resolves the magic value ``"latest"`` to the most recent pending
+        approval request ID.
+
+        Parameters
+        ----------
+        request_id : str
+            The request to reply to. Use ``"latest"`` for the most
+            recent pending request.
+        reply : str
+            The owner's reply text (will be normalised to YES/NO).
+        """
+        # Resolve "latest"
+        actual_id = request_id
+        if request_id == "latest":
+            with self._lock:
+                if self._latest_pending_id:
+                    actual_id = self._latest_pending_id
+                    log.info(
+                        "Resolved 'latest' to request_id=%s", actual_id,
+                    )
+                else:
+                    log.warning("receive_reply('latest') but no pending request")
+                    return
+
+        # Normalise
+        normalised = self._normalise_reply(reply)
+
+        log.info(
+            "Reply stored  |  request_id=%s  |  raw='%s'  |  normalised=%s",
+            actual_id, reply[:40], normalised,
+        )
+
+        with self._lock:
+            self._reply_store[actual_id] = normalised
+            event = self._reply_events.get(actual_id)
+            if event:
+                event.set()  # Wake up poll_for_reply
+
+        log.log_action(
+            action="approval_reply_received",
+            agent="whatsapp",
+            status="success",
+            details={
+                "request_id": actual_id,
+                "reply": normalised,
+            },
+        )
+
+    @staticmethod
+    def _normalise_reply(text: str) -> str:
+        """Normalise owner reply to YES, NO, or the raw text."""
+        cleaned = text.strip().upper()
+
+        if cleaned in _YES_TOKENS:
+            return "YES"
+        if cleaned in _NO_TOKENS:
+            return "NO"
+
+        # Check for partial matches (e.g., "yes please", "haan bhai")
+        words = cleaned.split()
+        for word in words:
+            if word in _YES_TOKENS:
+                return "YES"
+            if word in _NO_TOKENS:
+                return "NO"
+
+        return cleaned  # Return as-is for the commander to interpret
+
+    # ══════════════════════════════════════════════════════════════════
+    #  DAILY SUMMARY
+    # ══════════════════════════════════════════════════════════════════
+
+    def send_daily_summary(self, report: dict) -> bool:
+        """
+        Send a formatted daily summary report to the owner.
+
+        Parameters
+        ----------
+        report : dict
+            Expected keys: ``sites_checked``, ``security_alerts``,
+            ``content_created``, ``api_spend``, ``spend_limit``,
+            ``goals_done``, ``goals_failed``, ``actions_needed`` (list).
+
+        Returns
+        -------
+        bool
+            ``True`` if sent successfully.
+        """
+        date = _today_display()
+        sites = report.get("sites_checked", 0)
+        sec_alerts = report.get("security_alerts", 0)
+        content = report.get("content_created", 0)
+        spend = report.get("api_spend", 0.0)
+        limit = report.get("spend_limit", 10.0)
+        done = report.get("goals_done", 0)
+        failed = report.get("goals_failed", 0)
+        actions = report.get("actions_needed", [])
+
+        actions_text = "\n".join(f"  • {a}" for a in actions) if actions else "  None — sab theek hai 👍"
+
+        message = (
+            f"🦅 FALCON DAILY REPORT — {date}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🌐 Sites checked: {sites}\n"
+            f"🛡 Security alerts: {sec_alerts}\n"
+            f"📝 Content created: {content}\n"
+            f"💰 API spend: ${spend:.2f} / ${limit:.2f}\n"
+            f"🎯 Goals: {done} done, {failed} failed\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚠️ Actions needed:\n{actions_text}"
+        )
+
+        ok = self.send_message(message)
+
+        log.log_action(
+            action="daily_summary_sent",
+            agent="whatsapp",
+            status="success" if ok else "failed",
+            details={"date": date, "sites": sites, "spend": spend},
+        )
+
+        return ok
+
+    # ══════════════════════════════════════════════════════════════════
+    #  ALERTS
+    # ══════════════════════════════════════════════════════════════════
+
+    def send_alert(self, alert_type: str, details: dict) -> bool:
+        """
+        Send a typed alert to the owner.
+
+        Parameters
+        ----------
+        alert_type : str
+            One of: ``"security"``, ``"uptime"``, ``"backup_failed"``,
+            ``"revenue_spike"``, ``"revenue_drop"``, ``"content_ready"``,
+            ``"error"``.
+        details : dict
+            Alert-specific data to display.
+
+        Returns
+        -------
+        bool
+            ``True`` if sent successfully.
+        """
+        emoji = _ALERT_EMOJIS.get(alert_type, "🔔")
+        type_label = alert_type.replace("_", " ").upper()
+
+        detail_lines = []
+        for key, value in details.items():
+            clean_key = key.replace("_", " ").title()
+            detail_lines.append(f"  {clean_key}: {value}")
+        details_text = "\n".join(detail_lines) if detail_lines else "  (no details)"
+
+        message = (
+            f"{emoji} FALCON ALERT — {type_label}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{details_text}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🕐 {_utcnow_iso()}"
+        )
+
+        ok = self.send_message(message)
+
+        log.log_action(
+            action="alert_sent",
+            agent="whatsapp",
+            status="success" if ok else "failed",
+            details={"alert_type": alert_type, **details},
+        )
+
+        return ok
+
+    # ══════════════════════════════════════════════════════════════════
+    #  WEEKLY REPORT
+    # ══════════════════════════════════════════════════════════════════
+
+    def send_weekly_report(self, report: dict) -> bool:
+        """
+        Send a comprehensive weekly strategy report to the owner.
+
+        Parameters
+        ----------
+        report : dict
+            Expected keys: ``revenue_inr``, ``revenue_usd``,
+            ``orders``, ``countries``, ``top_products`` (list),
+            ``content_published``, ``keywords_improved``,
+            ``security_events``, ``recommendations`` (list),
+            ``approvals_pending``.
+
+        Returns
+        -------
+        bool
+            ``True`` if sent successfully.
+        """
+        date = _today_display()
+        rev_inr = report.get("revenue_inr", 0)
+        rev_usd = report.get("revenue_usd", 0)
+        orders = report.get("orders", 0)
+        countries = report.get("countries", 0)
+        top_products = report.get("top_products", [])
+        content = report.get("content_published", 0)
+        kw_improved = report.get("keywords_improved", 0)
+        sec_events = report.get("security_events", 0)
+        recs = report.get("recommendations", [])
+        approvals = report.get("approvals_pending", 0)
+
+        # Format top products
+        if top_products:
+            products_text = ", ".join(str(p) for p in top_products[:3])
+        else:
+            products_text = "No data"
+
+        # Format recommendations
+        if recs:
+            recs_text = "\n".join(f"  {i}. {r}" for i, r in enumerate(recs[:3], 1))
+        else:
+            recs_text = "  No new recommendations"
+
+        message = (
+            f"🦅 FALCON WEEKLY REPORT — Week of {date}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💰 Revenue this week: ₹{rev_inr:,.0f} / ${rev_usd:,.2f}\n"
+            f"📦 Orders: {orders} ({countries} countries)\n"
+            f"🏆 Top products: {products_text}\n"
+            f"📝 Content published: {content} posts\n"
+            f"📈 SEO: {kw_improved} keywords improved\n"
+            f"🛡 Security events: {sec_events}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎯 Top 3 recommendations:\n{recs_text}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔐 Actions awaiting approval: {approvals}"
+        )
+
+        ok = self.send_message(message)
+
+        log.log_action(
+            action="weekly_report_sent",
+            agent="whatsapp",
+            status="success" if ok else "failed",
+            details={"date": date, "orders": orders, "revenue_usd": rev_usd},
+        )
+
+        return ok
+
+    # ══════════════════════════════════════════════════════════════════
+    #  HELPERS
+    # ══════════════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _chunk_message(text: str, limit: int = MAX_MSG_LEN) -> List[str]:
+        """
+        Split *text* into chunks that fit WhatsApp's character limit.
+
+        Prefers splitting on newline boundaries for readability.
+        """
+        if len(text) <= limit:
+            return [text]
+
+        chunks: List[str] = []
+        remaining = text
+
+        while remaining:
+            if len(remaining) <= limit:
+                chunks.append(remaining)
+                break
+
+            # Find the last newline within the limit
+            split_at = remaining.rfind("\n", 0, limit)
+            if split_at <= 0:
+                # No newline — try space
+                split_at = remaining.rfind(" ", 0, limit)
+            if split_at <= 0:
+                # No space — hard cut
+                split_at = limit
+
+            chunks.append(remaining[:split_at])
+            remaining = remaining[split_at:].lstrip("\n")
+
+        return chunks
+
+    def _resolve_credential(self, value: str) -> str:
+        """Resolve ``{{ENV:VAR}}`` placeholders from environment."""
+        if isinstance(value, str) and value.startswith("{{ENV:"):
+            var_name = value[6:-2]
+            return os.environ.get(var_name, "")
+        return value
+
+    @property
+    def is_configured(self) -> bool:
+        """``True`` if all WhatsApp credentials are present."""
+        return self._configured
+
+    @property
+    def latest_pending_id(self) -> Optional[str]:
+        """The most recent unanswered approval request ID."""
+        with self._lock:
+            return self._latest_pending_id
+
+    def __repr__(self) -> str:
+        return (
+            f"<WhatsAppNotifier  "
+            f"configured={'✅' if self._configured else '❌'}  "
+            f"pending={self._latest_pending_id or 'none'}>"
+        )
+```
+
+**Architecture Summary — core/whatsapp.py:**
+1. **Meta Graph API POST** for all outbound messages, with 10s timeout and graceful error handling
+2. **Thread-safe reply store** using `threading.Lock` + `threading.Event` for efficient poll-then-wake pattern
+3. **"latest" resolution** maps simple YES/NO replies to most recent pending approval request
+4. **Auto-chunking** splits messages >4000 chars at newline/space boundaries
+5. **Zero-crash guarantee** — every public method catches all exceptions, logs, and returns False
+
+---
+
+# File 2: core/webhook.py
+
+```python
+"""
+core/webhook.py — FastAPI Webhook Server for Falcon Agency
+============================================================
+
+Receives incoming WhatsApp messages from the Meta Cloud API,
+validates the sender, and routes messages to the appropriate handler.
+
+Runs in a daemon thread alongside the Director's main loop.
+
+Flow:
+    Meta Cloud API ──POST──▶ /webhook ──▶ parse payload
+                                              │
+                                    ┌─────────┼─────────┐
+                                    ▼                   ▼
+                              YES/NO reply      Free-text message
+                                    │                   │
+                                    ▼                   ▼
+                         whatsapp.receive_reply   commander.handle_message
+                         (blocks approval gate)   (background thread)
+
+Security:
+    • Webhook verification via hub.verify_token
+    • Sender validation — only WHATSAPP_RECIPIENT is processed
+    • All other senders are silently ignored and logged
+"""
+
+from __future__ import annotations
+
+import os
+import threading
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
+import uvicorn
+
+from core.logger import log
+from core.whatsapp import WhatsAppNotifier
+
+if TYPE_CHECKING:
+    from core.commander import FalconCommander
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  QUICK YES/NO DETECTION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+_QUICK_REPLIES: frozenset[str] = frozenset({
+    "YES", "Y", "APPROVE", "APPROVED", "OK", "OKAY",
+    "NO", "N", "DENY", "DENIED", "REJECT", "REJECTED",
+    "HAA", "HAAN", "HA", "THEEK", "BILKUL",
+    "NAHI", "CANCEL", "STOP", "RUKO",
+    "👍", "✅", "👎", "❌",
+})
+
+
+def _is_quick_reply(text: str) -> bool:
+    """Return True if *text* looks like a YES/NO approval reply."""
+    words = text.strip().upper().split()
+    # If the message is 1-3 words and contains a known reply token
+    if len(words) > 4:
+        return False
+    return any(w in _QUICK_REPLIES for w in words)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  FALCON WEBHOOK
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class FalconWebhook:
+    """
+    FastAPI webhook server that receives incoming WhatsApp messages.
+
+    Meta's WhatsApp Cloud API requires:
+        1. A GET endpoint for verification handshake
+        2. A POST endpoint for incoming message delivery
+        3. Response within 5 seconds (we process in background threads)
+
+    Parameters
+    ----------
+    whatsapp : WhatsAppNotifier
+        The outbound notifier instance (for storing replies).
+    commander : FalconCommander
+        The AI brain that interprets free-text messages.
+    """
+
+    def __init__(
+        self,
+        whatsapp: WhatsAppNotifier,
+        commander: "FalconCommander",
+    ) -> None:
+        """
+        Initialise the webhook server.
+
+        Creates the FastAPI app, registers routes, and loads the
+        verification token from the environment.
+        """
+        self._whatsapp: WhatsAppNotifier = whatsapp
+        self._commander: "FalconCommander" = commander
+        self._verify_token: str = os.environ.get("WHATSAPP_VERIFY_TOKEN", "")
+        self._allowed_sender: str = os.environ.get("WHATSAPP_RECIPIENT", "")
+        self._server: Optional[uvicorn.Server] = None
+        self._thread: Optional[threading.Thread] = None
+        self._processed_ids: set = set()  # dedup: track last 1000 message IDs
+        self._id_lock: threading.Lock = threading.Lock()
+
+        # ── Build FastAPI app ──
+        self._app: FastAPI = FastAPI(
+            title="Falcon Agency Webhook",
+            docs_url=None,       # disable Swagger in production
+            redoc_url=None,      # disable ReDoc in production
+        )
+
+        self._register_routes()
+
+        log.info(
+            "FalconWebhook initialised  |  verify_token=%s  |  allowed_sender=%s",
+            "set" if self._verify_token else "NOT SET",
+            self._allowed_sender[:4] + "…" if self._allowed_sender else "NOT SET",
+        )
+
+    # ══════════════════════════════════════════════════════════════════
+    #  ROUTE REGISTRATION
+    # ══════════════════════════════════════════════════════════════════
+
+    def _register_routes(self) -> None:
+        """Register the GET and POST webhook endpoints."""
+
+        @self._app.get("/webhook")
+        async def verify_webhook(request: Request) -> Any:
+            """
+            Meta verification handshake.
+
+            Meta sends a GET request with:
+                hub.mode=subscribe
+                hub.verify_token=<your token>
+                hub.challenge=<random string>
+
+            We verify the token and echo back the challenge.
+            """
+            params = request.query_params
+            mode = params.get("hub.mode", "")
+            token = params.get("hub.verify_token", "")
+            challenge = params.get("hub.challenge", "")
+
+            if mode == "subscribe" and token == self._verify_token and self._verify_token:
+                log.info("Webhook verification successful")
+                return PlainTextResponse(content=challenge, status_code=200)
+
+            log.warning(
+                "Webhook verification FAILED  |  mode=%s  |  token_match=%s",
+                mode, token == self._verify_token,
+            )
+            return PlainTextResponse(content="Forbidden", status_code=403)
+
+        @self._app.post("/webhook")
+        async def receive_webhook(request: Request) -> JSONResponse:
+            """
+            Receive incoming WhatsApp messages from Meta.
+
+            MUST return 200 within 5 seconds or Meta will retry.
+            All processing happens in background threads.
+            """
+            try:
+                body = await request.json()
+            except Exception as exc:
+                log.warning("Webhook: invalid JSON body: %s", exc)
+                return JSONResponse({"status": "ok"}, status_code=200)
+
+            # Process in background — Meta needs a fast response
+            thread = threading.Thread(
+                target=self._process_webhook_payload,
+                args=(body,),
+                daemon=True,
+                name="webhook-processor",
+            )
+            thread.start()
+
+            return JSONResponse({"status": "ok"}, status_code=200)
+
+        @self._app.get("/health")
+        async def health_check() -> JSONResponse:
+            """Simple health check endpoint."""
+            return JSONResponse({
+                "status": "healthy",
+                "service": "falcon-agency-webhook",
+            })
+
+    # ══════════════════════════════════════════════════════════════════
+    #  PAYLOAD PROCESSING
+    # ══════════════════════════════════════════════════════════════════
+
+    def _process_webhook_payload(self, body: dict) -> None:
+        """
+        Parse the Meta webhook payload and route the message.
+
+        Meta payload structure (deeply nested):
+        ```
+        {
+          "object": "whatsapp_business_account",
+          "entry": [{
+            "changes": [{
+              "value": {
+                "messages": [{
+                  "from": "91XXXXXXXXXX",
+                  "id": "wamid.xxx",
+                  "text": {"body": "Hello"},
+                  "type": "text"
+                }]
+              }
+            }]
+          }]
+        }
+        ```
+        """
+        try:
+            if body.get("object") != "whatsapp_business_account":
+                log.info("Webhook: not a WhatsApp event — ignoring")
+                return
+
+            entries = body.get("entry", [])
+            if not entries:
+                return
+
+            for entry in entries:
+                changes = entry.get("changes", [])
+                for change in changes:
+                    value = change.get("value", {})
+
+                    # Skip status updates (delivered, read, etc.)
+                    if "statuses" in value:
+                        continue
+
+                    messages = value.get("messages", [])
+                    for msg in messages:
+                        self._handle_incoming_message(msg)
+
+        except Exception as exc:
+            log.critical(
+                "Webhook payload processing crashed: %s", exc, exc_info=True,
+            )
+
+    def _handle_incoming_message(self, msg: dict) -> None:
+        """
+        Handle a single incoming WhatsApp message.
+
+        Validates sender, deduplicates, and routes to the appropriate
+        handler (approval reply or commander).
+        """
+        try:
+            sender = msg.get("from", "")
+            message_id = msg.get("id", "")
+            msg_type = msg.get("type", "")
+
+            # ── Deduplication ──
+            if message_id:
+                with self._id_lock:
+                    if message_id in self._processed_ids:
+                        log.info("Webhook: duplicate message %s — skipping", message_id[:20])
+                        return
+                    self._processed_ids.add(message_id)
+                    # Keep set bounded
+                    if len(self._processed_ids) > 1000:
+                        # Remove oldest (set doesn't preserve order, but this prevents unbounded growth)
+                        self._processed_ids = set(list(self._processed_ids)[-500:])
+
+            # ── Security: validate sender ──
+            if not self._is_allowed_sender(sender):
+                log.warning(
+                    "Webhook: message from UNKNOWN sender %s — IGNORED",
+                    sender[:6] + "…" if sender else "empty",
+                )
+                return
+
+            # ── Only process text messages ──
+            if msg_type != "text":
+                log.info("Webhook: non-text message (type=%s) — ignoring", msg_type)
+                return
+
+            text_body = msg.get("text", {}).get("body", "").strip()
+            if not text_body:
+                return
+
+            log.info(
+                "Webhook: incoming message  |  from=%s…  |  id=%s  |  text='%s'",
+                sender[:6], message_id[:16], text_body[:60],
+            )
+
+            log.log_action(
+                action="whatsapp_received",
+                agent="webhook",
+                status="success",
+                details={
+                    "sender": sender[-4:],
+                    "message_id": message_id[:20],
+                    "text_preview": text_body[:80],
+                    "type": msg_type,
+                },
+            )
+
+            # ── Route: quick YES/NO → approval system ──
+            if _is_quick_reply(text_body) and self._whatsapp.latest_pending_id:
+                log.info("Quick reply detected: '%s' → routing to approval", text_body[:20])
+                self._whatsapp.receive_reply("latest", text_body)
+                return
+
+            # ── Route: everything else → commander ──
+            try:
+                self._commander.handle_message(text_body, message_id)
+            except Exception as exc:
+                log.critical(
+                    "Commander.handle_message crashed: %s", exc, exc_info=True,
+                )
+                # Best-effort error reply
+                self._whatsapp.send_message(
+                    "⚠️ Sorry sir, internal error aa gaya. "
+                    "Team dekh rahi hai, thodi der mein try karo."
+                )
+
+        except Exception as exc:
+            log.critical(
+                "Webhook: _handle_incoming_message crashed: %s",
+                exc, exc_info=True,
+            )
+
+    def _is_allowed_sender(self, sender: str) -> bool:
+        """Check if *sender* matches the configured owner phone number."""
+        if not self._allowed_sender:
+            log.warning("WHATSAPP_RECIPIENT not set — rejecting all messages")
+            return False
+        # Meta may send with or without country code prefix
+        return (
+            sender == self._allowed_sender
+            or sender.endswith(self._allowed_sender[-10:])
+        )
+
+    # ══════════════════════════════════════════════════════════════════
+    #  SERVER LIFECYCLE
+    # ══════════════════════════════════════════════════════════════════
+
+    def start(self, host: str = "0.0.0.0", port: int = 8000) -> None:
+        """
+        Start the webhook server in a background daemon thread.
+
+        Parameters
+        ----------
+        host : str
+            Bind address (default: all interfaces).
+        port : int
+            Listen port (default: 8000).
+        """
+        if self._thread and self._thread.is_alive():
+            log.warning("Webhook server already running")
+            return
+
+        config = uvicorn.Config(
+            app=self._app,
+            host=host,
+            port=port,
+            log_level="warning",    # reduce uvicorn noise
+            access_log=False,       # we log ourselves
+        )
+        self._server = uvicorn.Server(config)
+
+        self._thread = threading.Thread(
+            target=self._server.run,
+            daemon=True,
+            name="Falcon-Webhook-Server",
+        )
+        self._thread.start()
+
+        log.info("Webhook server started  |  http://%s:%d/webhook", host, port)
+
+    def stop(self) -> None:
+        """Gracefully shut down the webhook server."""
+        if self._server:
+            log.info("Stopping webhook server…")
+            self._server.should_exit = True
+
+            if self._thread and self._thread.is_alive():
+                self._thread.join(timeout=10)
+                if self._thread.is_alive():
+                    log.warning("Webhook server thread did not exit cleanly")
+                else:
+                    log.info("Webhook server stopped")
+        else:
+            log.info("Webhook server was not running")
+
+    @property
+    def app(self) -> FastAPI:
+        """The underlying FastAPI application (for testing)."""
+        return self._app
+
+    def __repr__(self) -> str:
+        running = self._thread is not None and self._thread.is_alive()
+        return f"<FalconWebhook  running={'🟢' if running else '⚫'}>"
+```
+
+**Architecture Summary — core/webhook.py:**
+1. **GET /webhook** — Meta verification handshake with `hub.verify_token` validation
+2. **POST /webhook** — Parses deeply-nested Meta payload, returns 200 immediately, processes in background thread
+3. **Sender validation** — Only `WHATSAPP_RECIPIENT` is processed; all others silently ignored
+4. **Smart routing** — Short YES/NO messages go to approval system; everything else goes to commander
+5. **Daemon thread server** — uvicorn runs alongside the Director without blocking the main loop
+
+---
+
+# File 3: core/commander.py
+
+```python
+"""
+core/commander.py — AI Command Interpreter for Falcon Agency
+==============================================================
+
+The Commander is the AI brain that understands the owner's plain
+English (or Hinglish) WhatsApp messages and routes them to the
+correct system action.
+
+Flow:
+    Owner message → Claude classifies intent → route to handler
+                                                    │
+                        ┌───────────────────────────┼───────────────┐
+                        ▼           ▼               ▼               ▼
+                   status_check  run_task      idea_capture     question
+                        │           │               │               │
+                        ▼           ▼               ▼               ▼
+                   get status   dispatch agent  save to JSON   Claude answers
+                        │           │               │               │
+                        └───────────┴───────────────┴───────────────┘
+                                            │
+                                            ▼
+                                Claude formats Hinglish reply
+                                            │
+                                            ▼
+                                   WhatsApp → Owner
+
+Personality:
+    Director speaks like a trusted, hardworking colleague. Mostly Hinglish.
+    Matches the owner's language automatically. Never says "I am an AI."
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+from core.logger import log
+from core.whatsapp import WhatsAppNotifier
+
+if TYPE_CHECKING:
+    from core.director import Director
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  PATHS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
+IDEAS_FILE: Path = PROJECT_ROOT / "data" / "ideas.json"
+HTTP_TIMEOUT: int = 30    # Claude can take longer than a web request
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  SYSTEM PROMPTS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+INTENT_SYSTEM_PROMPT: str = """You are the command interpreter for Falcon Agency, an AI workforce managing herbal product websites (falconherbs.com — Indian herbs, global market: AU, UAE, USA, UK).
+
+The owner sends messages in plain English, Hindi, or Hinglish via WhatsApp. Your job is to classify intent and extract parameters.
+
+Return ONLY valid JSON. No explanation. No markdown. No code fences. Just the JSON object.
+
+Schema:
+{
+  "intent": one of ["status_check", "run_task", "approve_action", "deny_action", "idea_capture", "question", "unknown"],
+  "task": "task name if run_task, else null",
+  "site": "site domain if mentioned, else falconherbs.com",
+  "params": {},
+  "reply_needed": true or false,
+  "idea_text": "full idea if idea_capture, else null"
+}
+
+Task mapping (use these exact task names for run_task):
+- "run seo report", "seo check", "seo audit" → task: "seo_audit"
+- "security scan", "scan site" → task: "security_scan"
+- "check uptime", "site up?" → task: "uptime_check"
+- "check performance", "speed test" → task: "performance_check"
+- "audit plugins", "plugin check" → task: "plugin_update_check"
+- "audit comments", "spam check" → task: "comment_spam_audit"
+- "sales report", "revenue check" → task: "analyse_sales"
+- "keyword analysis" → task: "analyse_keywords"
+- "content check" → task: "analyse_content_gaps"
+- "competitor check" → task: "check_competitors"
+- "full report", "weekly report" → task: "run_analysis"
+
+Approve/deny detection:
+- "yes", "approve", "haan", "theek hai", "ok", "go ahead", "kar do" → approve_action
+- "no", "deny", "nahi", "cancel", "reject", "ruko", "mat karo" → deny_action
+
+Idea detection (owner sharing a business idea, product idea, strategy idea):
+- "I was thinking we should...", "idea: ...", "what if we...", "let's try..."
+- Capture the FULL idea text
+
+Question detection (owner asking about the business, sites, data):
+- "how is traffic?", "kitne orders aaye?", "ranking kaisi hai?"
+- Any question about site performance, strategy, data
+
+Status check:
+- "status", "kya ho raha hai", "update do", "sab theek?", "what's happening"
+"""
+
+PERSONALITY_PROMPT: str = """You are Director — the trusted, hardworking team leader of Falcon Agency, an AI workforce managing herbal product websites for an Indian business owner.
+
+CRITICAL PERSONALITY RULES:
+
+1. LANGUAGE MATCHING — automatically match the owner's language:
+   - If owner texts in Hinglish → reply in Hinglish (most common mode)
+   - If owner texts formal English → reply in professional English
+   - If owner texts Hindi → reply in Hindi
+   - NEVER force a language change
+
+2. HINGLISH STYLE (default mode):
+   - Casual, warm, like a colleague who's worked with you for years
+   - Use: sir (respectful but friendly), natural Hindi words mixed with English
+   - Common phrases: theek hai, chal raha hai, ho gaya, bilkul, sahi hai, abhi, dekh lete hain, bohot accha
+   - Keep it SHORT — WhatsApp hai, essay nahi
+   - 1-3 emojis per message max, natural placement
+
+3. PERSONALITY:
+   - Always sounds on top of everything ("sab handle ho raha hai sir")
+   - Proactive — mentions things worth knowing
+   - Honest about problems — doesn't hide bad news but frames constructively
+   - Excited about good results
+   - NEVER says "I am an AI" — you are Director, a team member
+   - NEVER uses robotic phrases like "I have processed your request"
+   - NEVER writes long paragraphs — short punchy WhatsApp messages
+
+4. FORMAT:
+   - Max 200 words per response (WhatsApp, not email)
+   - Use line breaks for readability
+   - Numbers with context, not raw data dumps
+
+Respond to the following context and user message naturally."""
+
+
+def _utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  FALCON COMMANDER
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class FalconCommander:
+    """
+    AI brain that interprets the owner's WhatsApp messages.
+
+    Uses Claude Haiku for fast intent classification, then routes
+    to the appropriate handler. Generates natural Hinglish responses
+    using the personality prompt.
+
+    Parameters
+    ----------
+    director : Director
+        The Director orchestrator (for dispatching tasks and getting status).
+    whatsapp : WhatsAppNotifier
+        The WhatsApp client for sending replies.
+    """
+
+    def __init__(
+        self,
+        director: Any,
+        whatsapp: WhatsAppNotifier,
+    ) -> None:
+        """
+        Initialise the Commander.
+
+        Loads the Anthropic client from the ``ANTHROPIC_API_KEY``
+        environment variable.
+        """
+        self._director = director
+        self._whatsapp: WhatsAppNotifier = whatsapp
+        self._client: Any = None
+        self._model: str = "claude-3-haiku-20240307"
+        self._processing_lock: threading.Lock = threading.Lock()
+
+        # ── Load Anthropic client ──
+        try:
+            import anthropic
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if api_key:
+                self._client = anthropic.Anthropic(api_key=api_key)
+                log.info("FalconCommander: Anthropic client ready  |  model=%s", self._model)
+            else:
+                log.warning("FalconCommander: ANTHROPIC_API_KEY not set — AI features disabled")
+        except ImportError:
+            log.critical("FalconCommander: 'anthropic' package not installed")
+        except Exception as exc:
+            log.critical("FalconCommander: Anthropic init failed: %s", exc)
+
+        # Ensure data directory exists
+        try:
+            IDEAS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+
+        log.info("FalconCommander initialised")
+
+    # ══════════════════════════════════════════════════════════════════
+    #  MAIN HANDLER
+    # ══════════════════════════════════════════════════════════════════
+
+    def handle_message(self, text: str, message_id: str) -> None:
+        """
+        Process an incoming WhatsApp message from the owner.
+
+        This is the main entry point called by the webhook. It:
+            1. Classifies intent using Claude
+            2. Routes to the appropriate handler
+            3. Generates a natural-language reply
+            4. Sends the reply via WhatsApp
+
+        Never raises — all errors are caught, logged, and an error
+        message is sent to the owner.
+
+        Parameters
+        ----------
+        text : str
+            The owner's message text.
+        message_id : str
+            WhatsApp message ID (for logging/dedup).
+        """
+        log.info(
+            "Commander processing  |  msg_id=%s  |  text='%s'",
+            message_id[:16], text[:80],
+        )
+
+        try:
+            # ── Step 1: Classify intent ──
+            intent_data = self._classify_intent(text)
+
+            if intent_data is None:
+                self._reply_unknown(text)
+                return
+
+            intent = intent_data.get("intent", "unknown")
+            task = intent_data.get("task")
+            site = intent_data.get("site", "falconherbs.com")
+            params = intent_data.get("params", {})
+            idea_text = intent_data.get("idea_text")
+
+            log.info(
+                "Intent classified  |  intent=%s  |  task=%s  |  site=%s",
+                intent, task, site,
+            )
+
+            log.log_action(
+                action="intent_classified",
+                agent="commander",
+                status="success",
+                details={
+                    "intent": intent,
+                    "task": task,
+                    "site": site,
+                    "original_text": text[:200],
+                },
+            )
+
+            # ── Step 2: Route based on intent ──
+            if intent == "status_check":
+                self._handle_status_check(text)
+
+            elif intent == "run_task":
+                self._handle_run_task(text, task, site, params)
+
+            elif intent == "approve_action":
+                self._handle_approve()
+
+            elif intent == "deny_action":
+                self._handle_deny()
+
+            elif intent == "idea_capture":
+                self._handle_idea_capture(text, idea_text)
+
+            elif intent == "question":
+                self._handle_question(text, site)
+
+            elif intent == "unknown":
+                self._reply_unknown(text)
+
+            else:
+                self._reply_unknown(text)
+
+        except Exception as exc:
+            log.critical(
+                "Commander.handle_message crashed: %s", exc, exc_info=True,
+            )
+            try:
+                self._whatsapp.send_message(
+                    "⚠️ Ek technical issue aa gaya sir. "
+                    "Log mein dekh ke fix karta hun. "
+                    "Thodi der mein phir try karo."
+                )
+            except Exception:
+                pass
+
+    # ══════════════════════════════════════════════════════════════════
+    #  INTENT HANDLERS
+    # ══════════════════════════════════════════════════════════════════
+
+    def _handle_status_check(self, original_text: str) -> None:
+        """Gather system status and send a natural-language reply."""
+        try:
+            status = self._get_director_status()
+            status_summary = self._get_status_message(status)
+
+            # Use Claude to format a natural reply with the status data
+            reply = self._generate_reply(
+                original_text,
+                f"The owner asked for status. Here is the current system data:\n{status_summary}\n\n"
+                "Generate a short, natural WhatsApp reply with this info. "
+                "Include the key numbers but keep it conversational.",
+            )
+
+            self._whatsapp.send_message(reply)
+
+        except Exception as exc:
+            log.warning("Status check failed: %s", exc)
+            self._whatsapp.send_message(
+                "Abhi status pull karne mein issue aa raha hai sir. "
+                "System chal raha hai, details thodi der mein bhejta hun. 🔧"
+            )
+
+    def _handle_run_task(
+        self,
+        original_text: str,
+        task: Optional[str],
+        site: str,
+        params: dict,
+    ) -> None:
+        """Dispatch a task to the Director and report results."""
+        if not task:
+            self._whatsapp.send_message(
+                "Kaunsa task run karna hai sir? 🤔\n"
+                "Try karo: 'seo report chalao', 'security scan karo', "
+                "'performance check karo'"
+            )
+            return
+
+        # Notify owner that task is starting
+        self._whatsapp.send_message(
+            f"⚙️ {task.replace('_', ' ').title()} shuru kar raha hun {site} pe..."
+        )
+
+        try:
+            # Map task to agent
+            agent = self._task_to_agent(task)
+
+            # Dispatch via director
+            result = {}
+            if self._director is not None:
+                if hasattr(self._director, "dispatch_agent"):
+                    result = self._director.dispatch_agent(
+                        agent=agent,
+                        task=task,
+                        site=site,
+                        params=params,
+                    )
+                else:
+                    result = {"status": "skipped", "message": "Director dispatch not available"}
+            else:
+                result = {"status": "skipped", "message": "Director not connected"}
+
+            # Format result as a natural reply
+            result_json = json.dumps(result, default=str, ensure_ascii=False)[:1500]
+
+            reply = self._generate_reply(
+                original_text,
+                f"The owner asked to run task '{task}' on '{site}'. "
+                f"Here are the results:\n{result_json}\n\n"
+                "Summarise the key findings in a short WhatsApp reply. "
+                "Highlight what's good, what needs attention, and any numbers.",
+            )
+
+            self._whatsapp.send_message(reply)
+
+        except Exception as exc:
+            log.critical("Task dispatch failed: %s", exc, exc_info=True)
+            self._whatsapp.send_message(
+                f"⚠️ {task} run karne mein issue aaya sir.\n"
+                f"Error: {str(exc)[:100]}\n"
+                "Log mein dekh ke fix karta hun."
+            )
+
+    def _handle_approve(self) -> None:
+        """Route an approval to the pending request."""
+        pending = self._whatsapp.latest_pending_id
+        if pending:
+            self._whatsapp.receive_reply("latest", "YES")
+            self._whatsapp.send_message("✅ Approved! Kaam shuru karta hun.")
+        else:
+            self._whatsapp.send_message(
+                "Koi pending approval nahi hai abhi sir. "
+                "Jab koi action approval maangega toh bataunga. 👍"
+            )
+
+    def _handle_deny(self) -> None:
+        """Route a denial to the pending request."""
+        pending = self._whatsapp.latest_pending_id
+        if pending:
+            self._whatsapp.receive_reply("latest", "NO")
+            self._whatsapp.send_message("❌ Rejected. Action cancel kar diya.")
+        else:
+            self._whatsapp.send_message(
+                "Koi pending approval nahi hai abhi sir. 👍"
+            )
+
+    def _handle_idea_capture(
+        self,
+        original_text: str,
+        idea_text: Optional[str],
+    ) -> None:
+        """Save an idea to the ideas log."""
+        idea = idea_text or original_text
+
+        self._save_idea(idea)
+
+        preview = idea[:50] + "…" if len(idea) > 50 else idea
+        self._whatsapp.send_message(
+            f"💡 Note kar liya sir!\n"
+            f"Idea: {preview}\n"
+            "Ideas log mein save ho gaya. Baad mein review karenge."
+        )
+
+    def _handle_question(self, original_text: str, site: str) -> None:
+        """Answer a question using Claude with business context."""
+        try:
+            # Gather context
+            status = self._get_director_status()
+            status_text = self._get_status_message(status)
+
+            reply = self._generate_reply(
+                original_text,
+                f"The owner is asking a question about their business/sites.\n"
+                f"Current system status:\n{status_text}\n\n"
+                f"Site in question: {site}\n"
+                f"Business: Indian herbal products (falconherbs.com), "
+                f"markets: Australia, UAE, USA, UK.\n\n"
+                "Answer the question based on available data. "
+                "If you don't have the specific data, say so honestly and "
+                "suggest running a relevant task. Keep it short — WhatsApp reply.",
+            )
+
+            self._whatsapp.send_message(reply)
+
+        except Exception as exc:
+            log.warning("Question handling failed: %s", exc)
+            self._whatsapp.send_message(
+                "Is sawaal ka jawab dene ke liye mujhe thoda data chahiye sir. 🤔\n"
+                "Kya main ek report run karun? 'seo report' ya 'sales report' bol do."
+            )
+
+    def _reply_unknown(self, original_text: str) -> None:
+        """Reply when the message intent cannot be determined."""
+        # Try Claude for a friendly response first
+        try:
+            reply = self._generate_reply(
+                original_text,
+                "The owner sent a message that doesn't clearly match any command. "
+                "Generate a friendly reply that:\n"
+                "1. Acknowledges their message\n"
+                "2. Gently suggests what they can ask (status, run tasks, questions)\n"
+                "3. Keep it short and friendly in Hinglish",
+            )
+            self._whatsapp.send_message(reply)
+        except Exception:
+            self._whatsapp.send_message(
+                "Samajh nahi aaya sir 😅\n"
+                "Ye try karo:\n"
+                "• 'status batao'\n"
+                "• 'seo report chalao'\n"
+                "• 'security scan karo'\n"
+                "• Ya koi bhi sawaal puchho sites ke baare mein"
+            )
+
+    # ══════════════════════════════════════════════════════════════════
+    #  AI ENGINE
+    # ══════════════════════════════════════════════════════════════════
+
+    def _classify_intent(self, text: str) -> Optional[dict]:
+        """
+        Use Claude to classify the owner's message intent.
+
+        Returns parsed JSON dict or None on failure.
+        Falls back to keyword-based classification if Claude is unavailable.
+        """
+        # ── Try Claude first ──
+        if self._client is not None:
+            try:
+                response = self._client.messages.create(
+                    model=self._model,
+                    max_tokens=300,
+                    system=INTENT_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": text}],
+                )
+
+                raw = response.content[0].text.strip()
+
+                # Clean any markdown fences
+                if raw.startswith("```"):
+                    raw = raw.split("\n", 1)[-1]
+                if raw.endswith("```"):
+                    raw = raw.rsplit("```", 1)[0]
+                raw = raw.strip()
+
+                parsed = json.loads(raw)
+                return parsed
+
+            except json.JSONDecodeError as exc:
+                log.warning("Claude returned invalid JSON: %s  |  raw=%s", exc, raw[:200])
+            except Exception as exc:
+                log.warning("Claude intent classification failed: %s", exc)
+
+        # ── Fallback: keyword-based classification ──
+        return self._keyword_classify(text)
+
+    def _keyword_classify(self, text: str) -> dict:
+        """
+        Fallback intent classification using simple keyword matching.
+
+        Used when Claude API is unavailable.
+        """
+        lower = text.lower().strip()
+
+        # Status
+        if any(w in lower for w in ["status", "update", "kya ho raha", "sab theek", "what's happening", "how's"]):
+            return {"intent": "status_check", "task": None, "site": "falconherbs.com",
+                    "params": {}, "reply_needed": True, "idea_text": None}
+
+        # Approve
+        if any(w in lower for w in ["yes", "approve", "haan", "ok", "go ahead", "kar do", "theek"]):
+            return {"intent": "approve_action", "task": None, "site": "falconherbs.com",
+                    "params": {}, "reply_needed": False, "idea_text": None}
+
+        # Deny
+        if any(w in lower for w in ["no", "deny", "nahi", "cancel", "reject", "ruko", "mat"]):
+            return {"intent": "deny_action", "task": None, "site": "falconherbs.com",
+                    "params": {}, "reply_needed": False, "idea_text": None}
+
+        # Tasks
+        task_map = {
+            "seo": "seo_audit",
+            "security": "security_scan",
+            "scan": "security_scan",
+            "uptime": "uptime_check",
+            "performance": "performance_check",
+            "speed": "performance_check",
+            "plugin": "plugin_update_check",
+            "spam": "comment_spam_audit",
+            "comment": "comment_spam_audit",
+            "sales": "analyse_sales",
+            "revenue": "analyse_sales",
+            "keyword": "analyse_keywords",
+            "content": "analyse_content_gaps",
+            "competitor": "check_competitors",
+            "report": "run_analysis",
+        }
+        for keyword, task in task_map.items():
+            if keyword in lower:
+                return {"intent": "run_task", "task": task, "site": "falconherbs.com",
+                        "params": {}, "reply_needed": True, "idea_text": None}
+
+        # Idea
+        if any(w in lower for w in ["idea", "thinking", "what if", "let's try", "socha"]):
+            return {"intent": "idea_capture", "task": None, "site": "falconherbs.com",
+                    "params": {}, "reply_needed": True, "idea_text": text}
+
+        # Question (if ends with ?)
+        if "?" in text or any(w in lower for w in ["kitne", "kaisa", "kaise", "how", "what", "why", "when"]):
+            return {"intent": "question", "task": None, "site": "falconherbs.com",
+                    "params": {}, "reply_needed": True, "idea_text": None}
+
+        return {"intent": "unknown", "task": None, "site": "falconherbs.com",
+                "params": {}, "reply_needed": True, "idea_text": None}
+
+    def _generate_reply(self, owner_message: str, context: str) -> str:
+        """
+        Generate a natural-language reply using Claude with the
+        personality prompt.
+
+        Falls back to returning the raw context if Claude is unavailable.
+
+        Parameters
+        ----------
+        owner_message : str
+            What the owner said.
+        context : str
+            System context and data for Claude to work with.
+
+        Returns
+        -------
+        str
+            A natural, Hinglish-flavoured WhatsApp reply.
+        """
+        if self._client is not None:
+            try:
+                response = self._client.messages.create(
+                    model=self._model,
+                    max_tokens=500,
+                    system=PERSONALITY_PROMPT,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Owner's message: \"{owner_message}\"\n\n"
+                                f"Context for your reply:\n{context}"
+                            ),
+                        },
+                    ],
+                )
+
+                reply = response.content[0].text.strip()
+
+                log.log_action(
+                    action="reply_generated",
+                    agent="commander",
+                    status="success",
+                    details={"chars": len(reply)},
+                )
+
+                return reply
+
+            except Exception as exc:
+                log.warning("Claude reply generation failed: %s", exc)
+
+        # Fallback: return a trimmed version of the context
+        return context[:500] if context else "Processing ho raha hai sir, thodi der mein update dunga. 👍"
+
+    # ══════════════════════════════════════════════════════════════════
+    #  STATUS HELPERS
+    # ══════════════════════════════════════════════════════════════════
+
+    def _get_director_status(self) -> dict:
+        """
+        Gather current status from the Director.
+
+        Assembles data from multiple Director methods/properties.
+        Returns a status dict even if the Director is unavailable.
+        """
+        status: Dict[str, Any] = {
+            "running": False,
+            "cycle_count": 0,
+            "current_task": None,
+            "current_site": None,
+            "daily_spend": 0.0,
+            "monthly_spend": 0.0,
+            "pending_goals": 0,
+            "complete_goals": 0,
+            "failed_goals": 0,
+            "timestamp": _utcnow_iso(),
+        }
+
+        if self._director is None:
+            status["error"] = "Director not connected"
+            return status
+
+        try:
+            status["running"] = getattr(self._director, "_running", False)
+            status["cycle_count"] = getattr(self._director, "_cycle_count", 0)
+            status["current_task"] = getattr(self._director, "_current_task", None)
+            status["current_site"] = getattr(self._director, "_current_site", None)
+
+            # Spend data
+            if hasattr(self._director, "_load_spend"):
+                spend = self._director._load_spend()
+                status["daily_spend"] = spend.get("daily_total", 0.0)
+                status["monthly_spend"] = spend.get("monthly_total", 0.0)
+
+            # Goals
+            if hasattr(self._director, "load_goals"):
+                goals = self._director.load_goals()
+                status["pending_goals"] = sum(1 for g in goals if g.get("status") == "pending")
+                status["complete_goals"] = sum(1 for g in goals if g.get("status") == "complete")
+                status["failed_goals"] = sum(1 for g in goals if g.get("status") == "failed")
+                status["total_goals"] = len(goals)
+
+        except Exception as exc:
+            log.warning("Error gathering director status: %s", exc)
+            status["error"] = str(exc)[:100]
+
+        return status
+
+    def _get_status_message(self, status: dict) -> str:
+        """
+        Format director status into a structured text summary.
+
+        Parameters
+        ----------
+        status : dict
+            Status data from ``_get_director_status()``.
+
+        Returns
+        -------
+        str
+            Multi-line plain text summary.
+        """
+        running = "🟢 Running" if status.get("running") else "⚫ Idle"
+        task = status.get("current_task") or "none"
+        site = status.get("current_site") or "idle"
+        cycle = status.get("cycle_count", 0)
+        daily = status.get("daily_spend", 0.0)
+        monthly = status.get("monthly_spend", 0.0)
+        pending = status.get("pending_goals", 0)
+        done = status.get("complete_goals", 0)
+        failed = status.get("failed_goals", 0)
+
+        lines = [
+            f"System: {running}",
+            f"Cycle: #{cycle}",
+            f"Current: {task} on {site}",
+            f"Spend: ${daily:.2f} today / ${monthly:.2f} this month",
+            f"Goals: {pending} pending, {done} done, {failed} failed",
+        ]
+
+        if status.get("error"):
+            lines.append(f"⚠️ Issue: {status['error']}")
+
+        return "\n".join(lines)
+
+    # ══════════════════════════════════════════════════════════════════
+    #  IDEA STORAGE
+    # ══════════════════════════════════════════════════════════════════
+
+    def _save_idea(self, idea_text: str) -> None:
+        """
+        Append an idea to ``data/ideas.json``.
+
+        Creates the file if it doesn't exist.
+
+        Parameters
+        ----------
+        idea_text : str
+            The full idea text from the owner.
+        """
+        try:
+            IDEAS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+            # Load existing ideas
+            ideas: List[Dict[str, Any]] = []
+            if IDEAS_FILE.exists():
+                try:
+                    text = IDEAS_FILE.read_text(encoding="utf-8")
+                    if text.strip():
+                        ideas = json.loads(text)
+                except (json.JSONDecodeError, OSError):
+                    ideas = []
+
+            # Append new idea
+            ideas.append({
+                "timestamp": _utcnow_iso(),
+                "idea": idea_text,
+                "status": "pending",
+            })
+
+            # Save atomically
+            tmp = IDEAS_FILE.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(ideas, indent=2, ensure_ascii=False, default=str),
+                encoding="utf-8",
+            )
+            tmp.replace(IDEAS_FILE)
+
+            log.info("Idea saved  |  total=%d  |  preview=%s", len(ideas), idea_text[:60])
+
+            log.log_action(
+                action="idea_captured",
+                agent="commander",
+                status="success",
+                details={"idea_preview": idea_text[:100], "total_ideas": len(ideas)},
+            )
+
+        except Exception as exc:
+            log.critical("Failed to save idea: %s", exc, exc_info=True)
+
+    # ══════════════════════════════════════════════════════════════════
+    #  UTILITY
+    # ══════════════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _task_to_agent(task: str) -> str:
+        """Map a task name to the responsible agent."""
+        agent_map = {
+            "security_scan": "sentinel",
+            "uptime_check": "sentinel",
+            "performance_check": "developer",
+            "plugin_update_check": "developer",
+            "comment_spam_audit": "developer",
+            "seo_audit": "strategist",
+            "run_analysis": "strategist",
+            "analyse_keywords": "strategist",
+            "analyse_sales": "strategist",
+            "analyse_traffic": "strategist",
+            "analyse_content_gaps": "strategist",
+            "check_competitors": "strategist",
+        }
+        return agent_map.get(task, "developer")
+
+    def _resolve_credential(self, value: str) -> str:
+        """Resolve ``{{ENV:VAR}}`` placeholders from environment."""
+        if isinstance(value, str) and value.startswith("{{ENV:"):
+            var_name = value[6:-2]
+            return os.environ.get(var_name, "")
+        return value
+
+    def __repr__(self) -> str:
+        ai = "✅" if self._client else "❌"
+        director = "✅" if self._director else "❌"
+        return f"<FalconCommander  ai={ai}  director={director}>"
+```
+
+**Architecture Summary — core/commander.py:**
+1. **Two-stage AI pipeline** — Claude Haiku classifies intent (fast JSON), then generates personality-matched Hinglish responses
+2. **Keyword fallback** — If Claude is unavailable, basic keyword matching handles all intent types
+3. **Director integration** — Reads status, dispatches tasks, and gathers goal data via Director's existing API
+4. **Idea persistence** — Atomic JSON writes to `data/ideas.json` with timestamp and pending status
+5. **Zero-crash design** — Every handler wrapped in try/except with friendly error messages sent to owner
+
+---
+
+# INTEGRATION CHECKLIST
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ INTEGRATION CHECKLIST — Changes Required in Existing Files
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. .env — ADD these variables:
+   ┌─────────────────────────────────────────────────────────┐
+   │ WHATSAPP_PHONE_ID=your_meta_phone_number_id            │
+   │ WHATSAPP_ACCESS_TOKEN=your_meta_permanent_access_token │
+   │ WHATSAPP_RECIPIENT=91XXXXXXXXXX                        │
+   │ WHATSAPP_VERIFY_TOKEN=your_custom_webhook_verify_token │
+   │ ANTHROPIC_API_KEY=sk-ant-...  (already exists)         │
+   └─────────────────────────────────────────────────────────┘
+
+2. requirements.txt — ADD if not present:
+   ┌─────────────────────────────────────────────────────────┐
+   │ fastapi>=0.104.0                                       │
+   │ uvicorn>=0.24.0                                        │
+   │ anthropic>=0.18.0                                      │
+   └─────────────────────────────────────────────────────────┘
+
+3. core/approval.py — MODIFY request_approval():
+   ┌─────────────────────────────────────────────────────────┐
+   │ REPLACE Telegram approval flow WITH:                    │
+   │                                                         │
+   │ from core.whatsapp import WhatsAppNotifier              │
+   │                                                         │
+   │ def __init__(self):                                     │
+   │     self._whatsapp = WhatsAppNotifier()                 │
+   │     # ... keep existing init ...                        │
+   │                                                         │
+   │ def request_approval(self, action, details, ...) -> bool│
+   │     if not self._whatsapp.is_configured:                │
+   │         log.critical("WhatsApp not configured — "       │
+   │                      "auto-denying for safety")         │
+   │         return False                                    │
+   │                                                         │
+   │     request_id = uuid.uuid4().hex[:8].upper()           │
+   │     self._whatsapp.send_approval_request(               │
+   │         action, details, request_id)                    │
+   │     reply = self._whatsapp.poll_for_reply(              │
+   │         request_id, timeout=self._timeout)              │
+   │     return reply == "YES"                               │
+   │                                                         │
+   │ def send_alert(self, message):                          │
+   │     self._whatsapp.send_message(message)                │
+   └─────────────────────────────────────────────────────────┘
+
+4. core/director.py — ADD to __init__() AFTER existing init:
+   ┌─────────────────────────────────────────────────────────┐
+   │ from core.whatsapp import WhatsAppNotifier              │
+   │ from core.commander import FalconCommander              │
+   │ from core.webhook import FalconWebhook                  │
+   │                                                         │
+   │ # In __init__():                                        │
+   │ self._whatsapp = WhatsAppNotifier()                     │
+   │ self._commander = FalconCommander(self, self._whatsapp) │
+   │ self._webhook = FalconWebhook(                          │
+   │     self._whatsapp, self._commander)                    │
+   │                                                         │
+   │ # In run(), BEFORE the main loop:                       │
+   │ self._webhook.start(host="0.0.0.0", port=8000)         │
+   │                                                         │
+   │ # In _shutdown():                                       │
+   │ self._webhook.stop()                                    │
+   └─────────────────────────────────────────────────────────┘
+
+5. Meta Developer Portal — CONFIGURE:
+   ┌─────────────────────────────────────────────────────────┐
+   │ • Webhook URL: https://your-server:8000/webhook         │
+   │ • Verify token: same as WHATSAPP_VERIFY_TOKEN in .env   │
+   │ • Subscribe to: messages                                │
+   │ • Generate permanent access token (System User)         │
+   │ • Note: Server must have HTTPS (use nginx reverse proxy │
+   │   or Cloudflare tunnel for the webhook endpoint)        │
+   └─────────────────────────────────────────────────────────┘
+
+6. Firewall — OPEN port 8000 (or reverse proxy port):
+   ┌─────────────────────────────────────────────────────────┐
+   │ Linux: sudo ufw allow 8000/tcp                          │
+   │ Or configure nginx reverse proxy:                       │
+   │   location /webhook {                                   │
+   │       proxy_pass http://127.0.0.1:8000;                 │
+   │   }                                                     │
+   └─────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

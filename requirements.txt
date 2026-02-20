@@ -21,3 +21,6 @@ paramiko==3.4.0
 # Utilities
 schedule==1.2.1
 rich==13.7.1
+# WhatsApp + Commander
+fastapi>=0.104.0
+uvicorn>=0.24.0

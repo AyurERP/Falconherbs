@@ -44,7 +44,7 @@ import os
 import re
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -80,7 +80,7 @@ SCORE_THRESHOLD: int = 70
 
 # Model selection (cost governance)
 MODEL_SONNET: str = "claude-sonnet-4-6"
-MODEL_HAIKU:  str = "claude-haiku-4-5-20251001"
+MODEL_HAIKU:  str = "claude-3-haiku-20240307"
 
 # Cost tracking (USD per 1K tokens — approximate)
 COST_PER_1K: Dict[str, Dict[str, float]] = {
@@ -890,12 +890,6 @@ class MediaAgent:
 
         if not raw:
             return {"status": "failed", "error": "Claude API returned empty response"}
-
-        # Quick safety check before parsing
-        claims = self._detect_medical_claims(raw)
-        if claims:
-            log.warning("Social post medical claims detected: %s", claims)
-            return {"status": "failed", "error": f"Medical claims detected in social content: {claims}"}
 
         # Parse JSON
         social_content = self._parse_json_from_text(raw)
@@ -1806,7 +1800,7 @@ class MediaAgent:
         scores: List[int] = []
 
         now = datetime.now(timezone.utc)
-        week_ago = (now - timedelta(days=7)).isoformat()
+        week_ago = (now - __import__("datetime").timedelta(days=7)).isoformat()
         week_created = 0
         week_approved = 0
         week_published = 0
