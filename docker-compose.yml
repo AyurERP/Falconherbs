@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  falcon_agency:
+    build: .
+    container_name: falcon_agency
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config/profiles:/app/config/profiles
+    environment:
+      - ENVIRONMENT=development
+    command: python main.py

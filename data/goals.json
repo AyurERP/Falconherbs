@@ -1,0 +1,79 @@
+[
+  {
+    "id": "goal-001",
+    "site": "falconherbs.com",
+    "description": "Run full site audit and performance check",
+    "priority": 1,
+    "agent": "developer",
+    "task": "run_audit",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-002",
+    "site": "falconherbs.com",
+    "description": "Check site performance against 1500ms target",
+    "priority": 2,
+    "agent": "developer",
+    "task": "check_performance",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-003",
+    "site": "falconherbs.com",
+    "description": "Audit all plugins for updates and risk levels",
+    "priority": 3,
+    "agent": "developer",
+    "task": "audit_plugins",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-004",
+    "site": "falconherbs.com",
+    "description": "Run SEO report against global English target keywords (AU, UAE, USA, UK, India)",
+    "priority": 4,
+    "agent": "developer",
+    "task": "run_seo_report",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-005",
+    "site": "falconherbs.com",
+    "description": "Audit comments for spam \u00e2\u20ac\u201d 3144 pending review",
+    "priority": 5,
+    "agent": "developer",
+    "task": "audit_comments",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-006",
+    "site": "falconherbs.com",
+    "description": "Analyse traffic trends and produce growth strategy",
+    "priority": 6,
+    "agent": "strategist",
+    "task": "run_analysis",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  },
+  {
+    "id": "goal-007",
+    "site": "falconherbs.com",
+    "description": "Create global English SEO blog content for Ayurvedic/herbal target keywords",
+    "priority": 7,
+    "agent": "media",
+    "task": "create_content",
+    "status": "pending",
+    "created_at": "2026-02-21T00:00:00",
+    "completed_at": null
+  }
+]

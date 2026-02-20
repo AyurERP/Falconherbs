@@ -1,0 +1,526 @@
+{
+  "identity": {
+    "site_id": "falconherbs-001",
+    "name": "Falcon Herbs",
+    "url": "https://falconherbs.com",
+    "market": "Poland",
+    "language": "pl",
+    "currency": "PLN",
+    "platform": "WordPress",
+    "platform_version": null,
+    "ecommerce_engine": "WooCommerce",
+    "page_builder": "Elementor",
+    "hosting_type": "WHM/cPanel",
+    "hosting_provider": null,
+    "admin_user": "HerbsAd",
+    "admin_url": "https://falconherbs.com/wp-admin/",
+    "login_url": "https://falconherbs.com/wp-login.php",
+    "site_category": "e-commerce",
+    "product_niche": "herbs, herbal teas, natural supplements",
+    "created_at": "2026-02-20T00:00:00",
+    "last_updated": "2026-02-20T00:00:00"
+  },
+  "security": {
+    "security_priority": "critical",
+    "history": [
+      {
+        "event": "site_hacked",
+        "date": null,
+        "description": "Site was previously compromised. Full details unknown. All security measures implemented as a direct result of this incident.",
+        "remediation_status": "remediated"
+      }
+    ],
+    "current_findings": [
+      {
+        "title": "Slow Response Time",
+        "severity": "MEDIUM",
+        "category": "performance",
+        "description": "Server responded in 3.07 seconds, exceeding the 3-second threshold. Likely caused by server load, unoptimized database queries, or heavy plugin overhead.",
+        "recommendation": "Investigate server resource allocation in WHM/cPanel, enable object caching (Redis/Memcached), audit slow database queries, review Elementor rendering performance.",
+        "detected_date": "2026-02-20T00:00:00",
+        "status": "open"
+      },
+      {
+        "title": "CSP Contains Unsafe Directives",
+        "severity": "MEDIUM",
+        "category": "headers",
+        "description": "Content-Security-Policy includes unsafe-inline and unsafe-eval. These are required by Elementor page builder and WooCommerce for inline styles and dynamic script evaluation.",
+        "recommendation": "Accepted as necessary for current tech stack. Monitor for alternatives. If Elementor is ever replaced, tighten CSP immediately. Consider nonce-based CSP when WordPress core supports it.",
+        "detected_date": "2026-02-20T00:00:00",
+        "status": "accepted_risk"
+      }
+    ],
+    "headers_status": {
+      "strict_transport_security": "configured",
+      "x_frame_options": "configured",
+      "x_content_type_options": "configured",
+      "content_security_policy": "configured_with_accepted_exceptions",
+      "referrer_policy": "configured",
+      "permissions_policy": "configured",
+      "x_xss_protection": "configured",
+      "headers_fixed_date": "2026-02-20T00:00:00"
+    },
+    "scan_interval_minutes": 30,
+    "allowed_auto_actions": [
+      "scan",
+      "report",
+      "uptime_check",
+      "header_check",
+      "ssl_check"
+    ],
+    "requires_approval": [
+      "file_write",
+      "file_delete",
+      "plugin_update",
+      "plugin_install",
+      "plugin_deactivate",
+      "theme_change",
+      "deploy",
+      "database_modify",
+      "user_create",
+      "user_modify",
+      "config_change",
+      "htaccess_modify",
+      "ip_block"
+    ],
+    "two_factor_enabled": null,
+    "login_attempt_limit": null,
+    "xml_rpc_disabled": null,
+    "file_editing_disabled": null,
+    "notes": "This site was previously hacked. Every write operation, deployment, and configuration change MUST go through human approval via Telegram. No exceptions. Security scans run every 30 minutes automatically. The owner is highly security-conscious \u00e2\u20ac\u201d err on the side of caution with every recommendation."
+  },
+  "plugins": [
+    {
+      "name": "Contact Form 7",
+      "slug": "contact-form-7",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "high",
+      "notes": "One of the most targeted WordPress plugins globally. Has a history of critical CVEs including unrestricted file upload (CVE-2020-35489) and stored XSS vulnerabilities. Update is URGENT. After update, verify all forms still submit correctly and email delivery works."
+    },
+    {
+      "name": "Elementor",
+      "slug": "elementor",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "medium",
+      "notes": "Large attack surface due to extensive JavaScript and AJAX endpoints. Has had authenticated RCE and stored XSS vulnerabilities in the past. Requires unsafe-inline and unsafe-eval in CSP which weakens overall security posture. Update promptly but test page layouts after update \u00e2\u20ac\u201d Elementor updates can break visual layouts."
+    },
+    {
+      "name": "Kirki Customizer Framework",
+      "slug": "kirki",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "low",
+      "notes": "Customizer toolkit with minimal network-facing surface area. Low historical vulnerability count. Update at convenience but no urgency. Verify theme customizer settings are intact after update."
+    },
+    {
+      "name": "MC4WP: Mailchimp for WordPress",
+      "slug": "mailchimp-for-wp",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "medium",
+      "notes": "Handles external API communication with Mailchimp servers. API key stored in database. Has had CSRF and authentication bypass issues historically. Update recommended. After update, verify newsletter signup forms and Mailchimp API connection."
+    },
+    {
+      "name": "Meta Box",
+      "slug": "meta-box",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "low",
+      "notes": "Custom fields framework. Operates primarily in wp-admin context with minimal frontend exposure. Low vulnerability history. Update at convenience. Check that all custom product fields display correctly after update."
+    },
+    {
+      "name": "WCBoost - Products Compare",
+      "slug": "wcboost-products-compare",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "low",
+      "notes": "Niche WooCommerce extension for product comparison tables. Small codebase, limited attack surface. Relatively new plugin \u00e2\u20ac\u201d fewer security audits available. Update and verify comparison feature works on product pages."
+    },
+    {
+      "name": "WCBoost - Wishlist",
+      "slug": "wcboost-wishlist",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "low",
+      "notes": "WooCommerce wishlist functionality. Stores user preferences in database. Minimal security concern but should be kept updated. Verify wishlist add/remove and persistent storage after update."
+    },
+    {
+      "name": "WooCommerce",
+      "slug": "woocommerce",
+      "status": "active",
+      "update_available": true,
+      "risk_level": "medium",
+      "notes": "Core e-commerce engine handling payments, customer data, and orders. Massive codebase and high-value target. Has had SQL injection, authentication bypass, and payment manipulation vulnerabilities historically. Updates are critical but HIGH RISK \u00e2\u20ac\u201d always backup database before updating. Test checkout flow, payment processing, cart functionality, and order management after every update. WooCommerce updates can break theme compatibility and other plugin integrations."
+    },
+    {
+      "name": "CartFlows",
+      "slug": "cartflows",
+      "status": "active",
+      "update_available": false,
+      "risk_level": "medium",
+      "notes": "Cart abandonment recovery and checkout flow optimization. Handles sensitive checkout data and modifies the purchase funnel. Keep updated for security patches. Monitor abandonment rate reports and verify checkout flow integrity regularly."
+    },
+    {
+      "name": "Rank Math SEO",
+      "slug": "seo-by-rank-math",
+      "status": "active",
+      "update_available": false,
+      "risk_level": "low",
+      "notes": "SEO optimization plugin. Primarily generates meta tags, sitemaps, and schema markup. Has had some privilege escalation issues in older versions but current versions are well-audited. Important for the SEO goals \u00e2\u20ac\u201d do not deactivate. Verify sitemap generation and meta tags after any update."
+    },
+    {
+      "name": "Starter Templates",
+      "slug": "astra-sites",
+      "status": "active",
+      "update_available": false,
+      "risk_level": "low",
+      "notes": "Template import library from Brainstorm Force (Astra ecosystem). Primarily used during initial site setup. Consider deactivating if no longer needed for importing templates \u00e2\u20ac\u201d reducing active plugin count reduces attack surface. Deactivation requires approval."
+    }
+  ],
+  "goals": [
+    {
+      "goal_id": "fh-goal-001",
+      "priority": 1,
+      "description": "Fix slow server response time. Current: 3070ms, target: under 1500ms. Investigate WHM/cPanel resource allocation, enable PHP OPcache if not active, audit WordPress autoloaded options table, check if object caching (Redis or Memcached) is available on hosting plan, optimize WooCommerce database tables, and review Elementor CSS/JS loading strategy.",
+      "agent": "developer",
+      "status": "pending",
+      "due": "2026-02-27T00:00:00",
+      "acceptance_criteria": "Homepage response time consistently under 1500ms measured by Sentinel over 24-hour period.",
+      "requires_approval": true
+    },
+    {
+      "goal_id": "fh-goal-002",
+      "priority": 2,
+      "description": "Update all 8 pending WordPress plugins one at a time in this order: 1) Meta Box, 2) Kirki, 3) WCBoost Products Compare, 4) WCBoost Wishlist, 5) MC4WP Mailchimp, 6) Contact Form 7, 7) Elementor, 8) WooCommerce. Take a full database backup before starting. Update lowest-risk plugins first. Test site functionality after each individual update. WooCommerce MUST be updated last because it has the highest breakage risk.",
+      "agent": "developer",
+      "status": "pending",
+      "due": "2026-02-25T00:00:00",
+      "acceptance_criteria": "All 8 plugins updated to latest versions. No visual breakage on homepage, product pages, cart, and checkout. All forms submit correctly. WooCommerce order flow tested end to end.",
+      "requires_approval": true
+    },
+    {
+      "goal_id": "fh-goal-003",
+      "priority": 3,
+      "description": "Audit all 3,144 pending comments for spam. Expected outcome: vast majority are spam given the volume and the site's hack history. Bulk-delete confirmed spam. Flag borderline comments for human review. Install or verify Akismet anti-spam is configured. If not available, recommend an alternative spam protection strategy.",
+      "agent": "developer",
+      "status": "pending",
+      "due": "2026-02-23T00:00:00",
+      "acceptance_criteria": "Comment queue reduced to under 50 legitimate comments. Spam protection mechanism active and verified. Report delivered showing how many comments deleted vs kept.",
+      "requires_approval": true
+    },
+    {
+      "goal_id": "fh-goal-004",
+      "priority": 4,
+      "description": "Run comprehensive SEO audit using Rank Math data. Extract current keyword rankings, identify thin or missing meta descriptions, check sitemap.xml validity, verify robots.txt configuration, analyze internal linking structure, check for broken links (404s), and evaluate schema markup on product pages. Produce actionable report with specific fix recommendations prioritized by traffic impact.",
+      "agent": "strategist",
+      "status": "pending",
+      "due": "2026-02-28T00:00:00",
+      "acceptance_criteria": "SEO audit report delivered with: current ranking positions for target keywords, list of pages missing meta descriptions, broken link inventory, schema markup coverage percentage, and top 10 prioritized recommendations.",
+      "requires_approval": false
+    },
+    {
+      "goal_id": "fh-goal-005",
+      "priority": 5,
+      "description": "Set up WooCommerce sales reporting dashboard. Configure automated daily and weekly sales summaries including: total revenue, number of orders, average order value, top-selling products, revenue by product category, abandoned cart count from CartFlows. Format reports for Telegram delivery via the Director's status report system.",
+      "agent": "strategist",
+      "status": "pending",
+      "due": "2026-03-05T00:00:00",
+      "acceptance_criteria": "Automated daily sales summary delivered via Telegram by 08:00 UTC each morning. Weekly summary every Monday. Report includes all specified metrics with PLN currency formatting.",
+      "requires_approval": false
+    },
+    {
+      "goal_id": "fh-goal-006",
+      "priority": 6,
+      "description": "Review CartFlows cart abandonment data. Analyze current abandonment rate, identify the checkout step where most users drop off, review recovery email sequences if configured, and recommend optimizations. Check if CartFlows recovery emails are actually sending and what the recapture rate is.",
+      "agent": "strategist",
+      "status": "pending",
+      "due": "2026-03-07T00:00:00",
+      "acceptance_criteria": "Report delivered with: current abandonment rate percentage, drop-off funnel analysis by checkout step, recovery email open and click rates, and 5 specific recommendations to reduce abandonment.",
+      "requires_approval": false
+    },
+    {
+      "goal_id": "fh-goal-007",
+      "priority": 7,
+      "description": "Verify all Contact Form 7 forms are functioning correctly after the plugin update (goal fh-goal-002). Test each form by submitting test data. Verify email delivery to the correct recipient addresses. Check for CAPTCHA or anti-spam protection on all public forms. Confirm form submission success/error messages display in Polish.",
+      "agent": "developer",
+      "status": "pending",
+      "due": "2026-02-26T00:00:00",
+      "acceptance_criteria": "All Contact Form 7 forms identified, tested with submission, email delivery confirmed, anti-spam verified, Polish language messages confirmed. Test report delivered.",
+      "requires_approval": false,
+      "depends_on": "fh-goal-002"
+    }
+  ],
+  "schedule": {
+    "security_scan": {
+      "interval_minutes": 30,
+      "description": "Full Sentinel vulnerability scan including HTTP headers, SSL, response time, and server status.",
+      "agent": "sentinel",
+      "auto_run": true
+    },
+    "uptime_check": {
+      "interval_minutes": 5,
+      "description": "Lightweight HTTP HEAD request to verify site is responding. Alert immediately on failure.",
+      "agent": "sentinel",
+      "auto_run": true
+    },
+    "seo_audit": {
+      "interval_minutes": 1440,
+      "description": "Daily SEO health check: sitemap validity, meta tag coverage, Rank Math score changes, and keyword ranking movement.",
+      "agent": "strategist",
+      "auto_run": true
+    },
+    "plugin_update_check": {
+      "interval_minutes": 1440,
+      "description": "Daily check for new plugin and WordPress core updates. Report available updates but do NOT auto-install. All installations require human approval.",
+      "agent": "developer",
+      "auto_run": true
+    },
+    "comment_spam_audit": {
+      "interval_minutes": 10080,
+      "description": "Weekly audit of new comments for spam patterns. Auto-flag obvious spam for review. Delete nothing without approval.",
+      "agent": "developer",
+      "auto_run": true
+    },
+    "performance_check": {
+      "interval_minutes": 360,
+      "description": "Measure homepage load time, TTFB, and check server resource indicators. Alert if response time exceeds 3000ms. Track trend over time to detect degradation.",
+      "agent": "sentinel",
+      "auto_run": true
+    }
+  },
+  "performance_targets": {
+    "response_time_target_ms": 1500,
+    "current_response_time_ms": 3070,
+    "response_time_measured_at": "2026-02-20T00:00:00",
+    "response_time_alert_threshold_ms": 3000,
+    "lighthouse_target_score": 80,
+    "current_lighthouse_score": null,
+    "uptime_target_percent": 99.9,
+    "current_uptime_percent": null,
+    "ttfb_target_ms": 600,
+    "current_ttfb_ms": null,
+    "max_page_size_kb": 3000,
+    "notes": "Current response time of 3070ms is unacceptable for an e-commerce site. Polish users on mobile connections will experience even worse performance. Google Core Web Vitals directly impact search ranking. This is the highest priority performance issue."
+  },
+  "seo": {
+    "plugin": "Rank Math SEO",
+    "plugin_slug": "seo-by-rank-math",
+    "market": "Poland",
+    "language": "pl",
+    "target_keywords": [
+      {
+        "keyword": "zio\u00c5\u201aa",
+        "translation": "herbs",
+        "priority": 1,
+        "current_position": null,
+        "target_position": 10
+      },
+      {
+        "keyword": "herbata zio\u00c5\u201aowa",
+        "translation": "herbal tea",
+        "priority": 1,
+        "current_position": null,
+        "target_position": 10
+      },
+      {
+        "keyword": "sklep zio\u00c5\u201aowy",
+        "translation": "herb shop",
+        "priority": 2,
+        "current_position": null,
+        "target_position": 5
+      },
+      {
+        "keyword": "zio\u00c5\u201aa lecznicze",
+        "translation": "medicinal herbs",
+        "priority": 2,
+        "current_position": null,
+        "target_position": 10
+      },
+      {
+        "keyword": "naturalne suplementy",
+        "translation": "natural supplements",
+        "priority": 3,
+        "current_position": null,
+        "target_position": 15
+      },
+      {
+        "keyword": "zio\u00c5\u201aa na odporno\u00c5\u203a\u00c4\u2021",
+        "translation": "herbs for immunity",
+        "priority": 3,
+        "current_position": null,
+        "target_position": 10
+      },
+      {
+        "keyword": "herbata na trawienie",
+        "translation": "tea for digestion",
+        "priority": 3,
+        "current_position": null,
+        "target_position": 10
+      }
+    ],
+    "target_monthly_visits": 10000,
+    "current_monthly_visits": null,
+    "google_search_console_connected": null,
+    "google_analytics_connected": null,
+    "sitemap_url": "https://falconherbs.com/sitemap_index.xml",
+    "robots_txt_url": "https://falconherbs.com/robots.txt",
+    "notes": "All SEO content must be written in native Polish \u00e2\u20ac\u201d not translated. Polish users can instantly detect machine-translated text which damages trust and conversion rates. Long-tail keywords in Polish herbal medicine niche have lower competition and higher purchase intent."
+  },
+  "ecommerce": {
+    "engine": "WooCommerce",
+    "currency": "PLN",
+    "currency_symbol": "z\u00c5\u201a",
+    "payment_gateways": null,
+    "shipping_zones": null,
+    "cart_abandonment_plugin": "CartFlows",
+    "product_compare_plugin": "WCBoost - Products Compare",
+    "wishlist_plugin": "WCBoost - Wishlist",
+    "total_products": null,
+    "total_orders": null,
+    "average_order_value_pln": null,
+    "notes": "WooCommerce handles payment data \u00e2\u20ac\u201d any changes to WooCommerce configuration, checkout flow, or payment gateway settings are CRITICAL sensitivity and require immediate human approval. Never modify pricing, inventory, or order data without explicit authorization."
+  },
+  "credentials": {
+    "_warning": "NO REAL CREDENTIALS IN THIS FILE. All values are placeholder references to environment variables loaded via KeyVault from .env file.",
+    "wp_admin_password": "{{ENV:FALCONHERBS_WP_PASSWORD}}",
+    "wp_admin_url": "https://falconherbs.com/wp-admin/",
+    "wp_admin_user": "HerbsAd",
+    "cpanel_url": "{{ENV:FALCONHERBS_CPANEL_URL}}",
+    "cpanel_username": "{{ENV:FALCONHERBS_CPANEL_USER}}",
+    "cpanel_password": "{{ENV:FALCONHERBS_CPANEL_PASSWORD}}",
+    "ftp_host": "{{ENV:FALCONHERBS_FTP_HOST}}",
+    "ftp_username": "{{ENV:FALCONHERBS_FTP_USER}}",
+    "ftp_password": "{{ENV:FALCONHERBS_FTP_PASSWORD}}",
+    "woocommerce_api_url": "https://falconherbs.com/wp-json/wc/v3/",
+    "woocommerce_api_key": "{{ENV:FALCONHERBS_WC_API_KEY}}",
+    "woocommerce_api_secret": "{{ENV:FALCONHERBS_WC_API_SECRET}}",
+    "database_host": "{{ENV:FALCONHERBS_DB_HOST}}",
+    "database_name": "{{ENV:FALCONHERBS_DB_NAME}}",
+    "database_user": "{{ENV:FALCONHERBS_DB_USER}}",
+    "database_password": "{{ENV:FALCONHERBS_DB_PASSWORD}}",
+    "mailchimp_api_key": "{{ENV:FALCONHERBS_MAILCHIMP_API_KEY}}",
+    "notes": "All credentials loaded from F:/FALCON AGENCY/.env via KeyVault at runtime. Never log, print, or transmit credential values. If a credential is needed, reference it by its ENV key and let KeyVault resolve it."
+  },
+  "agent_permissions": {
+    "sentinel": {
+      "allowed_actions": [
+        "scan",
+        "report",
+        "alert",
+        "uptime_check",
+        "header_check",
+        "ssl_check",
+        "performance_check"
+      ],
+      "denied_actions": [
+        "file_write",
+        "file_delete",
+        "plugin_modify",
+        "config_change"
+      ],
+      "can_auto_execute": true,
+      "notes": "Sentinel is read-only. It observes and reports but never modifies the site. It can recommend IP blocks but the owner must execute them manually."
+    },
+    "developer": {
+      "allowed_actions": [
+        "read",
+        "audit",
+        "code_review",
+        "git_commit",
+        "suggest_fix",
+        "apply_fix_with_approval",
+        "plugin_update_with_approval",
+        "database_query_readonly",
+        "backup_create_with_approval"
+      ],
+      "denied_actions": [
+        "direct_production_write_without_approval",
+        "plugin_install_without_approval",
+        "user_create",
+        "credential_access"
+      ],
+      "can_auto_execute": false,
+      "notes": "Developer can read and analyze freely but all write operations require human Telegram approval. Always create a backup before any modification. Code changes should be reviewed before deployment."
+    },
+    "strategist": {
+      "allowed_actions": [
+        "read",
+        "report",
+        "suggest",
+        "seo_audit",
+        "analytics_read",
+        "keyword_research",
+        "competitor_analysis"
+      ],
+      "denied_actions": [
+        "file_write",
+        "content_publish",
+        "seo_settings_modify",
+        "plugin_modify"
+      ],
+      "can_auto_execute": true,
+      "notes": "Strategist is advisory. It reads data, generates reports, and makes recommendations. It never modifies site content or settings directly. Content suggestions must be approved before publishing."
+    },
+    "media": {
+      "allowed_actions": [
+        "read",
+        "create_content",
+        "image_generate",
+        "copy_write",
+        "schedule_post_with_approval",
+        "social_media_draft"
+      ],
+      "denied_actions": [
+        "publish_without_approval",
+        "delete_media",
+        "modify_existing_content",
+        "access_payment_data"
+      ],
+      "can_auto_execute": false,
+      "notes": "Media agent creates content but never publishes without approval. All generated content must be reviewed for Polish language quality, brand consistency, and accuracy of herbal product claims. Health-related claims must comply with Polish and EU advertising regulations."
+    }
+  },
+  "compliance": {
+    "gdpr_applicable": true,
+    "cookie_consent_configured": null,
+    "privacy_policy_url": null,
+    "terms_of_service_url": null,
+    "eu_health_claims_regulation": true,
+    "notes": "As a Polish e-commerce site selling herbal products, this site must comply with GDPR (data protection), EU Regulation 1924/2006 (health claims on food), and Polish consumer protection laws. All marketing content generated by agents must avoid unsubstantiated health claims. The media agent must be instructed to use compliant language when describing product benefits."
+  },
+  "metadata": {
+    "falcon_agency_version": "0.1.0",
+    "profile_version": "1.0.0",
+    "profile_schema": "falcon-site-profile-v1",
+    "created_by": "Claude.ai HQ",
+    "created_at": "2026-02-20T00:00:00",
+    "last_updated": "2026-02-20T00:00:00",
+    "reviewed": false,
+    "review_requested_from": "site_owner",
+    "file_path": "config/profiles/falconherbs.json",
+    "notes": "This is the master briefing document for ALL Falcon Agency agents operating on falconherbs.com. Agents MUST read this profile before taking any action on the site. Key constraints: (1) Site was previously hacked \u00e2\u20ac\u201d treat security as life-or-death. (2) All content must be native Polish. (3) This is a live revenue-generating e-commerce store \u00e2\u20ac\u201d any downtime directly costs the owner money. (4) Plugin updates are the highest operational risk \u00e2\u20ac\u201d always backup first, update one at a time, test after each. (5) The 3,144 pending comments are almost certainly 99%+ spam from the hack period. (6) The owner communicates exclusively via Telegram and expects clear, concise status updates in English. (7) When in doubt, ask for approval rather than proceeding autonomously."
+  },
+  "language": "en",
+  "market": "GLOBAL",
+  "target_markets": [
+    "Australia",
+    "UAE",
+    "USA",
+    "UK",
+    "India"
+  ],
+  "target_keywords": [
+    "buy Indian herbs online",
+    "authentic ayurvedic products",
+    "natural herbal remedies",
+    "buy herbs from India",
+    "ayurvedic supplements",
+    "indian medicinal herbs",
+    "ashwagandha buy online",
+    "tulsi herb benefits",
+    "triphala online",
+    "organic indian herbs"
+  ]
+}

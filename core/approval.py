@@ -1,0 +1,731 @@
+"""
+core/approval.py — Human-in-the-Loop Approval System for Falcon Agency
+=======================================================================
+
+This module is the CRITICAL SAFETY VALVE between autonomous AI agents and
+real-world actions (deployments, purchases, content changes, etc.).
+
+Design Principles:
+    1. DENY BY DEFAULT  — any failure, timeout, or ambiguity → auto-reject.
+    2. NEVER CRASH      — every code path is wrapped; errors are logged, not raised.
+    3. SERIALIZE         — only one approval dialog at a time to avoid owner confusion.
+    4. LOG EVERYTHING    — every request, decision, and failure is immutably recorded.
+    5. VERIFY ON BOOT   — test_connection() proves Telegram is reachable before agents start.
+
+Owner communicates exclusively via Telegram.
+Approval timeout defaults to 300 seconds (5 minutes).
+
+Dependencies:
+    python-telegram-bot==21.3  (async Telegram API)
+    config/keys.py             (vault.telegram_token, vault.telegram_chat_id)
+    config/settings.py         (settings.approval_timeout_seconds)
+    core/logger.py             (log.info, log.warning, log.critical, log.log_action)
+"""
+
+from __future__ import annotations
+
+import asyncio
+import threading
+import time
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from telegram import Bot
+from telegram.error import (
+    BadRequest,
+    Forbidden,
+    NetworkError,
+    TelegramError,
+    TimedOut,
+)
+
+from config.keys import vault
+from config.settings import settings
+from core.logger import log
+
+# ──────────────────────────────────────────────────────────────────────
+# Module-level constants
+# ──────────────────────────────────────────────────────────────────────
+
+# Telegram long-poll timeout — how long each getUpdates call waits for
+# new messages before returning empty.  Keeps responsiveness high while
+# minimising API calls.
+_LONG_POLL_SECONDS: int = 5
+
+# Brief sleep between poll cycles so we don't hammer Telegram when
+# long-poll returns nothing.
+_POLL_SLEEP_SECONDS: float = 1.5
+
+# Telegram hard-limits messages to 4 096 UTF-8 characters.
+_MAX_MSG_LEN: int = 4096
+
+# Safety ceiling for the async→sync bridge thread.  Must exceed any
+# possible coroutine runtime (approval timeout + network overhead).
+_THREAD_JOIN_BUFFER: int = 120  # seconds beyond self._timeout
+
+# Owner replies we accept as affirmative / negative.
+_YES_TOKENS: frozenset[str] = frozenset({"YES", "Y", "APPROVE", "APPROVED", "✅", "👍"})
+_NO_TOKENS: frozenset[str] = frozenset({"NO", "N", "REJECT", "REJECTED", "DENY", "DENIED", "❌", "👎"})
+
+
+# ──────────────────────────────────────────────────────────────────────
+# ApprovalSystem
+# ──────────────────────────────────────────────────────────────────────
+
+class ApprovalSystem:
+    """
+    Gatekeeper that ensures no sensitive action fires without explicit
+    human approval from the Falcon Agency owner via Telegram.
+
+    Typical lifecycle::
+
+        approval = ApprovalSystem()
+        approval.test_connection()          # once at startup
+
+        # Agent wants to deploy code:
+        ok = approval.request_approval(
+            action="deploy_code",
+            details={
+                "site": "falconherbs.com",
+                "description": "Updating homepage CSS",
+                "agent": "WebDev-Agent",
+                "risk_level": "low",
+            },
+        )
+        if ok:
+            perform_deploy()
+        else:
+            abort_deploy()
+    """
+
+    # ------------------------------------------------------------------ #
+    #  Initialisation                                                     #
+    # ------------------------------------------------------------------ #
+
+    def __init__(self) -> None:
+        # ── Telegram credentials (from encrypted vault) ──
+        self._token: str = vault.telegram_token
+        self._chat_id: str = str(vault.telegram_chat_id)
+
+        # ── Configurable timeout — falls back to 300 s ──
+        self._timeout: int = int(
+            getattr(settings, "approval_timeout_seconds", 300)
+        )
+
+        # ── Update-offset tracker ──
+        # Telegram's getUpdates API uses an integer offset so we never
+        # re-process the same message.  Persists across calls for the
+        # lifetime of this process.
+        self._last_update_id: Optional[int] = None
+
+        # ── Approval serialisation lock ──
+        # Only one approval dialog may be active at a time.  If two agents
+        # fire concurrently, the second blocks until the first resolves.
+        self._approval_lock: threading.Lock = threading.Lock()
+
+        log.info(
+            "ApprovalSystem created  ·  chat_id=%s  ·  timeout=%ds",
+            self._chat_id,
+            self._timeout,
+        )
+
+    # ================================================================== #
+    #  PUBLIC SYNCHRONOUS API                                             #
+    #  Every method below is safe to call from synchronous agent code.    #
+    # ================================================================== #
+
+    def test_connection(self) -> bool:
+        """
+        Verify the Telegram bot token is valid, the bot is reachable,
+        and the configured chat_id can receive messages.
+
+        Should be called **once** during Falcon Agency startup.  If this
+        returns ``False``, the system should refuse to start — operating
+        without a working approval channel is a security violation.
+
+        Returns
+        -------
+        bool
+            ``True`` if the bot authenticated and the startup ping was
+            delivered; ``False`` on any error.
+        """
+        try:
+            return self._run_async(
+                self._async_test_connection(),
+                max_wait=60,
+            )
+        except Exception as exc:
+            log.critical(
+                "❌ Telegram connection test FAILED: %s", exc, exc_info=True
+            )
+            return False
+
+    def request_approval(self, action: str, details: dict) -> bool:
+        """
+        Request explicit human approval for *action*.
+
+        Sends a rich Telegram message to the owner, then polls for a
+        YES / NO reply.  Returns ``True`` **only** on an explicit YES.
+        Everything else — NO, timeout, network failure, crash —
+        returns ``False``.
+
+        This method is **blocking** and **thread-safe** (serialised via
+        an internal lock).
+
+        Parameters
+        ----------
+        action : str
+            Machine-readable action identifier, e.g. ``"deploy_code"``.
+        details : dict
+            Human-readable context.  Recognised keys:
+            ``site``, ``description``, ``agent``, ``risk_level``.
+
+        Returns
+        -------
+        bool
+            ``True`` → owner replied YES.
+            ``False`` → owner replied NO **or** timeout elapsed **or**
+            any system / network error.
+        """
+        with self._approval_lock:
+            try:
+                return self._run_async(
+                    self._async_request_approval(action, details),
+                    max_wait=self._timeout + _THREAD_JOIN_BUFFER,
+                )
+            except Exception as exc:
+                # ── ABSOLUTE LAST RESORT — never propagate to the agent ──
+                log.critical(
+                    "Approval system hard-failure for '%s': %s",
+                    action,
+                    exc,
+                    exc_info=True,
+                )
+                log.log_action(
+                    action=action,
+                    details=details,
+                    approved=False,
+                    reason=f"system_hard_failure: {type(exc).__name__}: {exc}",
+                )
+                return False
+
+    def send_alert(self, message: str) -> None:
+        """
+        Send a one-way alert to the owner.  No reply is expected.
+
+        Used by Sentinel, intrusion-detection agents, and operational
+        monitors to push urgent notifications.
+
+        Parameters
+        ----------
+        message : str
+            Plain-text alert body.
+        """
+        try:
+            self._run_async(
+                self._async_send_alert(message),
+                max_wait=30,
+            )
+        except Exception as exc:
+            log.critical(
+                "Failed to deliver alert to owner: %s  ·  alert_body=%s",
+                exc,
+                message[:200],
+                exc_info=True,
+            )
+
+    def send_status_report(self, report: dict) -> None:
+        """
+        Send a formatted status report to the owner.
+
+        Parameters
+        ----------
+        report : dict
+            Expected keys (all optional, sensible defaults used):
+            ``period``, ``tasks_completed``, ``tasks_failed``,
+            ``money_spent``, ``revenue``, ``sites_active``,
+            ``approvals_requested``, ``approvals_granted``,
+            ``errors`` (list[str]), ``blocks`` (list[str]).
+        """
+        try:
+            self._run_async(
+                self._async_send_status_report(report),
+                max_wait=30,
+            )
+        except Exception as exc:
+            log.critical(
+                "Failed to deliver status report: %s", exc, exc_info=True
+            )
+
+    # ================================================================== #
+    #  ASYNC INTERNALS                                                    #
+    # ================================================================== #
+
+    async def _async_test_connection(self) -> bool:
+        """Authenticate with Telegram and send a startup ping."""
+        async with Bot(self._token) as bot:
+            me = await bot.get_me()
+            log.info(
+                "Telegram bot authenticated  ·  @%s  ·  id=%s",
+                me.username,
+                me.id,
+            )
+
+            startup_msg = (
+                "🦅 FALCON AGENCY — System Online\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: @{me.username}\n"
+                f"🕐 {self._utcnow()}\n"
+                f"⏱  Approval timeout: {self._timeout // 60}m {self._timeout % 60}s\n"
+                "✅ Approval channel operational.\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+            await bot.send_message(chat_id=self._chat_id, text=startup_msg)
+            log.info("Startup ping delivered to owner.")
+            return True
+
+    async def _async_request_approval(
+        self, action: str, details: dict
+    ) -> bool:
+        """
+        Core approval loop:
+        1. Flush stale updates.
+        2. Send approval prompt.
+        3. Long-poll for owner reply until YES, NO, or timeout.
+        """
+        # ── Generate a unique, short request ID for traceability ──
+        approval_id: str = uuid.uuid4().hex[:8].upper()
+        now_str: str = self._utcnow()
+
+        # ── Extract detail fields (with safe defaults) ──
+        site: str = details.get("site", "N/A")
+        description: str = details.get("description", str(details))
+        agent: str = details.get("agent", "unknown")
+        risk_level: str = details.get("risk_level", "standard")
+
+        log.info(
+            "Approval request [%s]  ·  action=%s  ·  site=%s  ·  agent=%s  ·  risk=%s",
+            approval_id, action, site, agent, risk_level,
+        )
+
+        # ── Compose the approval message ──
+        timeout_min = self._timeout // 60
+        prompt = (
+            "🔔 FALCON AGENCY — Approval Required\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🆔 Request ID: {approval_id}\n"
+            f"⚡ Action: {action}\n"
+            f"🌐 Site: {site}\n"
+            f"🤖 Agent: {agent}\n"
+            f"⚠️  Risk Level: {risk_level}\n"
+            f"📋 Details: {description}\n"
+            f"🕐 Time: {now_str}\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "\n"
+            "Reply YES to approve or NO to reject.\n"
+            f"⏱ Timeout: {timeout_min} minutes — no reply = auto rejected."
+        )
+
+        async with Bot(self._token) as bot:
+            # ── 1. Flush any stale incoming messages ──
+            await self._flush_pending_updates(bot)
+
+            # ── 2. Deliver the prompt ──
+            try:
+                sent = await bot.send_message(
+                    chat_id=self._chat_id, text=prompt
+                )
+                log.info(
+                    "Approval prompt [%s] sent  ·  message_id=%s",
+                    approval_id,
+                    sent.message_id,
+                )
+            except TelegramError as exc:
+                log.critical(
+                    "Cannot deliver approval prompt [%s]: %s",
+                    approval_id,
+                    exc,
+                )
+                log.log_action(
+                    action=action,
+                    details=details,
+                    approved=False,
+                    reason=f"telegram_send_error: {exc}",
+                )
+                return False
+
+            # ── 3. Poll for the owner's reply ──
+            deadline = time.monotonic() + self._timeout
+
+            while time.monotonic() < deadline:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+
+                # Fetch new updates (long-poll capped to remaining time)
+                try:
+                    poll_timeout = min(_LONG_POLL_SECONDS, max(1, int(remaining)))
+                    updates = await bot.get_updates(
+                        offset=self._last_update_id,
+                        timeout=poll_timeout,
+                        allowed_updates=["message"],
+                    )
+                except (NetworkError, TimedOut) as exc:
+                    # Transient network issue — log and retry
+                    log.warning(
+                        "Network blip while polling [%s]: %s  (retrying)",
+                        approval_id,
+                        exc,
+                    )
+                    await asyncio.sleep(_POLL_SLEEP_SECONDS)
+                    continue
+                except TelegramError as exc:
+                    # Fatal Telegram error — auto-reject
+                    log.critical(
+                        "Fatal Telegram error during poll [%s]: %s",
+                        approval_id,
+                        exc,
+                    )
+                    log.log_action(
+                        action=action,
+                        details=details,
+                        approved=False,
+                        reason=f"telegram_poll_fatal: {exc}",
+                    )
+                    return False
+
+                # ── Process each update ──
+                for update in updates:
+                    # Always advance offset to avoid reprocessing
+                    self._last_update_id = update.update_id + 1
+
+                    # Ignore updates that are not text messages from the owner
+                    if not self._is_owner_text_message(update):
+                        continue
+
+                    reply_text = update.message.text.strip().upper()
+
+                    # ── APPROVED ──
+                    if reply_text in _YES_TOKENS:
+                        log.info(
+                            "✅ APPROVED [%s]  ·  action=%s  ·  reply='%s'",
+                            approval_id, action, reply_text,
+                        )
+                        log.log_action(
+                            action=action,
+                            details=details,
+                            approved=True,
+                            reason="owner_approved",
+                        )
+                        await self._ack(
+                            bot, approved=True,
+                            action=action, approval_id=approval_id,
+                        )
+                        return True
+
+                    # ── REJECTED ──
+                    if reply_text in _NO_TOKENS:
+                        log.warning(
+                            "❌ REJECTED [%s]  ·  action=%s  ·  reply='%s'",
+                            approval_id, action, reply_text,
+                        )
+                        log.log_action(
+                            action=action,
+                            details=details,
+                            approved=False,
+                            reason="owner_rejected",
+                        )
+                        await self._ack(
+                            bot, approved=False,
+                            action=action, approval_id=approval_id,
+                        )
+                        return False
+
+                    # Owner sent something but it wasn't YES/NO — nudge
+                    log.info(
+                        "Unrecognised reply for [%s]: '%s'  ·  ignoring",
+                        approval_id,
+                        update.message.text[:80],
+                    )
+                    await self._safe_send(
+                        bot,
+                        f"⚠️ Unrecognised reply for [{approval_id}].\n"
+                        f"Please reply YES or NO.",
+                    )
+
+                # Small sleep to prevent a tight loop when long-poll
+                # returns immediately (e.g. due to stale offset edge-case)
+                if time.monotonic() < deadline:
+                    await asyncio.sleep(_POLL_SLEEP_SECONDS)
+
+            # ── 4. Timeout — auto-reject ──
+            log.warning(
+                "⏱ TIMEOUT [%s]  ·  action=%s  ·  after %ds",
+                approval_id, action, self._timeout,
+            )
+            log.log_action(
+                action=action,
+                details=details,
+                approved=False,
+                reason=f"timeout_{self._timeout}s",
+            )
+            await self._safe_send(
+                bot,
+                f"⏱ TIMEOUT — Auto-Rejected\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🆔 {approval_id}\n"
+                f"⚡ Action: {action}\n"
+                f"No response received within {timeout_min} minutes.\n"
+                f"The action has been blocked.",
+            )
+            return False
+
+    async def _async_send_alert(self, message: str) -> None:
+        """Format and deliver a one-way alert."""
+        formatted = (
+            "🚨 FALCON AGENCY — Security Alert\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{message}\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🕐 {self._utcnow()}"
+        )
+        async with Bot(self._token) as bot:
+            for chunk in self._chunk_text(formatted):
+                await bot.send_message(chat_id=self._chat_id, text=chunk)
+
+        log.info("Alert delivered  ·  preview=%s", message[:120])
+
+    async def _async_send_status_report(self, report: dict) -> None:
+        """Build and deliver a formatted status report."""
+        # ── Extract fields with safe defaults ──
+        period: str          = report.get("period", "Daily")
+        tasks_done: int      = report.get("tasks_completed", 0)
+        tasks_fail: int      = report.get("tasks_failed", 0)
+        spent: float         = report.get("money_spent", 0.0)
+        revenue: float      = report.get("revenue", 0.0)
+        sites: int           = report.get("sites_active", 0)
+        appr_req: int        = report.get("approvals_requested", 0)
+        appr_ok: int         = report.get("approvals_granted", 0)
+        errors: List[str]    = report.get("errors", [])
+        blocks: List[str]    = report.get("blocks", [])
+
+        net = revenue - spent
+        net_emoji = "📈" if net >= 0 else "📉"
+
+        lines = [
+            f"📊 FALCON AGENCY — {period} Status Report",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"🕐 {self._utcnow()}",
+            "",
+            "── PERFORMANCE ──────────────",
+            f"  ✅ Tasks completed : {tasks_done}",
+            f"  ❌ Tasks failed    : {tasks_fail}",
+            f"  🌐 Sites active    : {sites}",
+            "",
+            "── FINANCIALS ───────────────",
+            f"  💸 Spent    : ${spent:,.2f}",
+            f"  💵 Revenue  : ${revenue:,.2f}",
+            f"  {net_emoji} Net      : ${net:,.2f}",
+            "",
+            "── APPROVALS ────────────────",
+            f"  📩 Requested : {appr_req}",
+            f"  ✅ Granted   : {appr_ok}",
+            f"  ❌ Denied    : {appr_req - appr_ok}",
+        ]
+
+        if errors:
+            lines.append("")
+            lines.append("── ERRORS ───────────────────")
+            for i, err in enumerate(errors[:10], start=1):
+                lines.append(f"  {i}. {err}")
+            if len(errors) > 10:
+                lines.append(f"  … and {len(errors) - 10} more")
+
+        if blocks:
+            lines.append("")
+            lines.append("── BLOCKS (need attention) ──")
+            for i, blk in enumerate(blocks[:5], start=1):
+                lines.append(f"  🚧 {i}. {blk}")
+            if len(blocks) > 5:
+                lines.append(f"  … and {len(blocks) - 5} more")
+
+        lines += ["", "━━━━━━━━━━━━━━━━━━━━━━━━━━━"]
+
+        formatted = "\n".join(lines)
+
+        async with Bot(self._token) as bot:
+            for chunk in self._chunk_text(formatted):
+                await bot.send_message(chat_id=self._chat_id, text=chunk)
+
+        log.info(
+            "Status report delivered  ·  tasks=%d  ·  spent=$%.2f  ·  revenue=$%.2f",
+            tasks_done, spent, revenue,
+        )
+
+    # ================================================================== #
+    #  PRIVATE HELPERS                                                    #
+    # ================================================================== #
+
+    async def _flush_pending_updates(self, bot: Bot) -> None:
+        """
+        Consume and discard all pending Telegram updates so that only
+        messages arriving *after* the approval prompt are considered.
+
+        This is critical to prevent a stale "YES" from a previous
+        conversation from accidentally approving a new action.
+        """
+        try:
+            updates = await bot.get_updates(
+                offset=self._last_update_id, timeout=1
+            )
+            if updates:
+                self._last_update_id = updates[-1].update_id + 1
+                log.info("Flushed %d stale update(s)", len(updates))
+        except TelegramError as exc:
+            log.warning("Could not flush stale updates: %s", exc)
+
+    def _is_owner_text_message(self, update) -> bool:
+        """Return True only if the update is a text message from the owner."""
+        return bool(
+            update.message
+            and update.message.text
+            and str(update.message.chat_id) == self._chat_id
+        )
+
+    async def _ack(
+        self,
+        bot: Bot,
+        *,
+        approved: bool,
+        action: str,
+        approval_id: str,
+    ) -> None:
+        """Send a short confirmation receipt so the owner knows we received their reply."""
+        emoji = "✅" if approved else "❌"
+        verb = "Approved" if approved else "Rejected"
+        await self._safe_send(
+            bot,
+            f"{emoji} {verb}: {action}\n"
+            f"🆔 {approval_id}  ·  🕐 {self._utcnow()}",
+        )
+
+    async def _safe_send(self, bot: Bot, text: str) -> None:
+        """
+        Best-effort message send.  Failures are logged but never raised,
+        because the primary decision (approve/reject) has already been
+        recorded — the confirmation is courtesy only.
+        """
+        try:
+            for chunk in self._chunk_text(text):
+                await bot.send_message(chat_id=self._chat_id, text=chunk)
+        except TelegramError as exc:
+            log.warning("Best-effort send failed: %s", exc)
+
+    # ------------------------------------------------------------------ #
+    #  Pure helpers (no I/O)                                              #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _utcnow() -> str:
+        """ISO-ish UTC timestamp string for display."""
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    @staticmethod
+    def _chunk_text(text: str, limit: int = _MAX_MSG_LEN) -> List[str]:
+        """
+        Split *text* into chunks that each fit within Telegram's message
+        length limit.  Prefers splitting on newline boundaries.
+        """
+        if len(text) <= limit:
+            return [text]
+
+        chunks: List[str] = []
+        while text:
+            if len(text) <= limit:
+                chunks.append(text)
+                break
+            # Try to break at the last newline within the limit
+            split_at = text.rfind("\n", 0, limit)
+            if split_at <= 0:
+                # No newline found — hard-break at the limit
+                split_at = limit
+            chunks.append(text[:split_at])
+            text = text[split_at:].lstrip("\n")
+        return chunks
+
+    # ------------------------------------------------------------------ #
+    #  Async ↔ Sync bridge                                                #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_async(coro, *, max_wait: Optional[float] = None) -> Any:
+        """
+        Execute an ``async`` coroutine from synchronous code, regardless
+        of whether an asyncio event loop is already running in the
+        current thread.
+
+        Strategy:
+            • If no loop is running → ``asyncio.run(coro)`` directly.
+            • If a loop *is* running (e.g. inside a Jupyter notebook or
+              another async framework) → spin up a **daemon thread** with
+              its own loop so we never block or conflict with the caller's
+              loop.
+
+        Parameters
+        ----------
+        coro : coroutine
+            The async coroutine to execute.
+        max_wait : float | None
+            Maximum seconds to wait for the thread to finish.  ``None``
+            means wait indefinitely (the coroutine's own timeout applies).
+        """
+        # Check if there is already a running event loop
+        try:
+            asyncio.get_running_loop()
+            has_running_loop = True
+        except RuntimeError:
+            has_running_loop = False
+
+        if not has_running_loop:
+            # Simple path — no existing loop, safe to use asyncio.run()
+            return asyncio.run(coro)
+
+        # Complex path — run in a separate thread with its own event loop
+        container: Dict[str, Any] = {}
+
+        def _worker() -> None:
+            try:
+                container["result"] = asyncio.run(coro)
+            except Exception as exc:          # noqa: BLE001
+                container["error"] = exc
+
+        thread = threading.Thread(target=_worker, daemon=True)
+        thread.start()
+        thread.join(timeout=max_wait)
+
+        if thread.is_alive():
+            # Thread didn't finish in time — treat as a timeout
+            log.critical(
+                "Async bridge thread exceeded max_wait=%s — forcing rejection",
+                max_wait,
+            )
+            raise TimeoutError(
+                f"_run_async thread did not finish within {max_wait}s"
+            )
+
+        if "error" in container:
+            raise container["error"]
+
+        return container.get("result")
+
+    # ------------------------------------------------------------------ #
+    #  Repr for debugging                                                 #
+    # ------------------------------------------------------------------ #
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"<ApprovalSystem  chat_id={self._chat_id}  "
+            f"timeout={self._timeout}s  "
+            f"offset={self._last_update_id}>"
+        )

@@ -1,0 +1,16 @@
+{
+  "falconherbs.com": {
+    "security_scan": {
+      "interval_minutes": 30,
+      "last_run": null
+    },
+    "seo_audit": {
+      "interval_minutes": 1440,
+      "last_run": null
+    },
+    "uptime_check": {
+      "interval_minutes": 5,
+      "last_run": null
+    }
+  }
+}
