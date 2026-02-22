@@ -69,6 +69,8 @@ from core.whatsapp import WhatsAppNotifier
 from core.commander import FalconCommander
 from core.webhook import FalconWebhook
 from core.ai_client import call_ai
+from core.woocommerce_connector import WooCommerceConnector
+from core.revenue_tracker import RevenueTracker
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -110,12 +112,14 @@ TASK_AGENT_MAP: Dict[str, str] = {
     "security_scan":  "sentinel",
     "uptime_check":   "sentinel",
     "seo_audit":      "strategist",
+    "revenue_sync":   "internal",
 }
 
 # Estimated API cost per task (USD).  Zero = free (local HTTP only).
 TASK_ESTIMATED_COST: Dict[str, float] = {
     "uptime_check":     0.00,
     "security_scan":    0.00,
+    "revenue_sync":     0.00,
     "seo_audit":        0.05,
     "content_update":   0.50,
     "code_deploy":      0.10,
@@ -151,6 +155,7 @@ _DEFAULT_SITE_SCHEDULE: Dict[str, Dict[str, Any]] = {
     "security_scan": {"interval_minutes": 30,   "last_run": None},
     "seo_audit":     {"interval_minutes": 1440, "last_run": None},
     "uptime_check":  {"interval_minutes": 5,    "last_run": None},
+    "revenue_sync":  {"interval_minutes": 60,   "last_run": None},
 }
 
 
@@ -1108,6 +1113,8 @@ Respond in JSON:
                 result = self._dispatch_sentinel(task, site, params)
             elif agent in ("developer", "strategist", "media"):
                 result = self._dispatch_dynamic_agent(agent, task, site, params)
+            elif agent == "internal":
+                result = self._dispatch_internal(task, site, params)
             else:
                 result = {
                     "status": "error",
@@ -1185,6 +1192,45 @@ Respond in JSON:
             return self._quick_uptime_check(site)
 
         return {"status": "error", "message": f"Unknown sentinel task: {task}"}
+
+    # ── Internal dispatcher ──
+
+    def _dispatch_internal(self, task: str, site: str, params: dict) -> dict:
+        """Route internal non-agent tasks."""
+        if task == "revenue_sync":
+            try:
+                # Add protocol if missing
+                url = site if site.startswith("http") else f"https://{site}"
+                woo = WooCommerceConnector(site_url=url)
+                
+                # Fetch recent orders
+                orders_data = woo.get_orders(days_back=7, save=False)
+                if not orders_data["success"]:
+                    return {
+                        "status": "error",
+                        "error": f"WooCommerce failed: {orders_data.get('error')}"
+                    }
+                
+                tracker = RevenueTracker()
+                result = tracker.sync_from_woocommerce(orders_data)
+                
+                if "error" in result:
+                    return {
+                        "status": "error",
+                        "error": f"Revenue sync error: {result['error']}"
+                    }
+                
+                return {
+                    "status": "success",
+                    "message": f"Revenue synced successfully. {result.get('imported', 0)} new entries."
+                }
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "error": f"Internal task crash: {str(e)}"
+                }
+                
+        return {"status": "error", "message": f"Unknown internal task: {task}"}
 
     # ── Dynamic agent dispatcher (developer / strategist / media) ──
 
