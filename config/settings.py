@@ -29,7 +29,7 @@ class AgencySettings:
         "purchase",
         "modify_database_schema",
     ])
-    approval_timeout_seconds: int = 300  # 5 min to approve, then auto-reject
+    approval_timeout_seconds: int = 900  # 15 min to approve, then auto-reject
     max_retries_per_task: int = 3
 
     # === PERFORMANCE TARGETS ===

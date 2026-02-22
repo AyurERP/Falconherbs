@@ -11,7 +11,7 @@ Design Principles:
     4. LOG EVERYTHING   — every request, decision, and failure is recorded.
 
 Owner communicates exclusively via WhatsApp Business API.
-Approval timeout defaults to 300 seconds (5 minutes).
+Approval timeout defaults to 900 seconds (15 minutes).
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ class ApprovalSystem:
         self._whatsapp: WhatsAppNotifier = WhatsAppNotifier()
 
         self._timeout: int = int(
-            getattr(settings, "approval_timeout_seconds", 300)
+            getattr(settings, "approval_timeout_seconds", 900)
         )
 
         # Serialise approvals — one at a time
