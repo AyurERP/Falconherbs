@@ -43,7 +43,7 @@ from core.logger import log
 from core.whatsapp import WhatsAppNotifier
 from core.ai_client import call_ai
 from config.keys import AI_MODELS
-from core.data_reader import get_system_summary, get_failed_tasks, get_recent_logs
+from core.data_reader import RealDataReader
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -138,11 +138,13 @@ CRITICAL PERSONALITY RULES:
    - Never assume actions were taken — only report what actually happened
    - If unsure, say "Let me check" instead of making up responses
 
-5. HONESTY RULES (CRITICAL):
-   - If you don't have actual data, say "I don't have that information stored"
-   - NEVER make up task details, cycle numbers, or market names
-   - Only report what exists in actual logs/database
-   - If asked about past tasks, say "Let me check the logs" and actually retrieve data
+5. HONESTY RULES (ABSOLUTE):
+   - You have access to REAL SYSTEM DATA above
+   - ONLY report what is in that data
+   - If data says 2 failed tasks, say 2 - not 1, not 3
+   - If asked about something not in data, say "That information is not in my records"
+   - NEVER invent task names, market names, or cycle details
+   - When unsure, say "Let me check" or "I don't have that specific data"
 
 Respond to the following context and user message naturally."""
 
@@ -751,18 +753,36 @@ class FalconCommander:
         """
         Generate a natural-language reply using AI with personality prompt.
         """
-        # Before calling AI, get real data
-        system_data = get_system_summary()
+        # GET REAL DATA - not fake
+        real_status = RealDataReader.get_real_system_status()
+        
+        # Build context with REAL data
+        real_data_context = f"""
+=== REAL SYSTEM DATA (from actual files) ===
+Total Tasks: {real_status['total_tasks_ever']}
+Completed: {real_status['completed_count']}
+Failed: {real_status['failed_count']}
+
+COMPLETED TASKS (real):
+{json.dumps(real_status['completed_tasks'], indent=2)}
+
+FAILED TASKS (real with reasons):
+{json.dumps(real_status['failed_tasks'], indent=2)}
+
+SPENDING (real):
+{json.dumps(real_status['spending'], indent=2)}
+
+IMPORTANT: Only report data shown above. If information is not here, say "I don't have that data stored."
+===========================================
+"""
         
         prompt = (
             f"Owner's message: \"{owner_message}\"\n\n"
             f"Context for your reply:\n{context}"
         )
         
-        system_prompt = f"{PERSONALITY_PROMPT}\n\nCURRENT SYSTEM DATA:\n{json.dumps(system_data, indent=2)}"
-        
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": f"{PERSONALITY_PROMPT}\n\n{real_data_context}"},
             {"role": "user", "content": prompt}
         ]
         
