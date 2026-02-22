@@ -96,7 +96,7 @@ MONTHLY_LIMIT: float = 150.00   # USD — absolute ceiling per calendar month
 
 CYCLE_SECONDS: int          = 60     # main loop period
 CYCLE_TIME_BUDGET: float    = 25.0   # max seconds of work per cycle
-IDLE_ALERT_SECONDS: int     = 300    # 5 minutes → "Director idle" alert
+IDLE_ALERT_SECONDS: int     = 3600   # 60 minutes → "Director idle" alert
 MAX_TASKS_PER_CYCLE: int    = 10     # cap to avoid monopolising the loop
 UPTIME_CHECK_TIMEOUT: int   = 5      # seconds for lightweight HEAD request
 
