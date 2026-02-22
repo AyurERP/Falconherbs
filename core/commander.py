@@ -43,6 +43,7 @@ from core.logger import log
 from core.whatsapp import WhatsAppNotifier
 from core.ai_client import call_ai
 from config.keys import AI_MODELS
+from core.data_reader import get_system_summary, get_failed_tasks, get_recent_logs
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -750,13 +751,18 @@ class FalconCommander:
         """
         Generate a natural-language reply using AI with personality prompt.
         """
+        # Before calling AI, get real data
+        system_data = get_system_summary()
+        
         prompt = (
             f"Owner's message: \"{owner_message}\"\n\n"
             f"Context for your reply:\n{context}"
         )
         
+        system_prompt = f"{PERSONALITY_PROMPT}\n\nCURRENT SYSTEM DATA:\n{json.dumps(system_data, indent=2)}"
+        
         messages = [
-            {"role": "system", "content": PERSONALITY_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ]
         
