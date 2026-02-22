@@ -44,6 +44,8 @@ from core.whatsapp import WhatsAppNotifier
 from core.ai_client import call_ai
 from config.keys import AI_MODELS
 from core.data_reader import RealDataReader
+from core.integration_bridge import IntegrationBridge
+from core.commander_intents import ExtendedIntentClassifier, IntentResponseHandler
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -190,6 +192,18 @@ class FalconCommander:
         from core.approval import ApprovalSystem
         self._approval = ApprovalSystem()
 
+        # ── Extended tools (safe — if fails, old system continues) ──
+        try:
+            self._bridge = IntegrationBridge()
+            self._extended_classifier = ExtendedIntentClassifier(self._bridge)
+            self._extended_handler = IntentResponseHandler(self._bridge)
+            log.info("Extended intents loaded (bridge OK)")
+        except Exception as e:
+            self._bridge = None
+            self._extended_classifier = None
+            self._extended_handler = None
+            log.warning("Extended intents unavailable: %s", e)
+
         # Ensure data directory exists
         try:
             IDEAS_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -236,6 +250,19 @@ class FalconCommander:
                 return self._handle_direct_agent(text, message_id)
 
             lower_text = text.lower().strip()
+
+            # ── Step 0: Try new extended intents first ──
+            if self._extended_classifier:
+                try:
+                    ext_result = self._extended_classifier.classify(text)
+                    if ext_result:
+                        response = self._extended_handler.handle(ext_result)
+                        if response.get("success"):
+                            self._whatsapp.send_message(response["response"])
+                            log.info("Extended intent handled: %s", ext_result["intent"])
+                            return
+                except Exception as e:
+                    log.warning("Extended intent failed (falling through): %s", e)
 
             # Step 3: no pending plan → normal intent classification
             # ── Step 1: Classify intent ──

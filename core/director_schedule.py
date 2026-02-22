@@ -1,0 +1,551 @@
+"""
+Falcon Agency — Director Schedule Extensions
+Adds new scheduled tasks for content, health scans,
+revenue tracking, and store monitoring.
+
+This EXTENDS the Director's existing schedule.
+Import in director.py to add new capabilities.
+"""
+
+import json
+from datetime import datetime, time
+from pathlib import Path
+
+
+class ExtendedSchedule:
+    """
+    New scheduled tasks for the Director's 60-second loop.
+    Each task has a schedule, last_run tracking, and
+    safe execution wrapper.
+    """
+    
+    def __init__(self, integration_bridge=None):
+        self.bridge = integration_bridge
+        self.schedule_file = Path("data/extended_schedule.json")
+        self.schedule = self._load_schedule()
+    
+    def _load_schedule(self):
+        """Load or create schedule state"""
+        if self.schedule_file.exists():
+            with open(self.schedule_file) as f:
+                return json.load(f)
+        
+        default = {
+            "tasks": {
+                "morning_report": {
+                    "time": "06:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Send morning WhatsApp report"
+                },
+                "evening_report": {
+                    "time": "22:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Send evening WhatsApp report"
+                },
+                "site_health_check": {
+                    "time": "06:30",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Quick site uptime + "
+                                   "response check"
+                },
+                "order_check": {
+                    "time": "08:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Check for new orders"
+                },
+                "content_generation": {
+                    "time": "09:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Generate daily content drafts"
+                },
+                "revenue_update": {
+                    "time": "20:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Update revenue tracking"
+                },
+                "full_store_audit": {
+                    "time": "07:00",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Full WooCommerce store audit"
+                },
+                "health_claims_scan": {
+                    "time": "07:00",
+                    "day": "wednesday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Full health claims re-scan"
+                },
+                "weekly_content_batch": {
+                    "time": "08:00",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Generate full week's "
+                                   "content batch"
+                },
+                "customer_analysis": {
+                    "time": "09:00",
+                    "day": "friday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Analyze customer data and "
+                                   "suggest recovery actions"
+                },
+            },
+            "created_at": datetime.now().isoformat()
+        }
+        
+        self._save_schedule(default)
+        return default
+    
+    def _save_schedule(self, data=None):
+        """Save schedule state"""
+        if data is None:
+            data = self.schedule
+        self.schedule_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.schedule_file, "w") as f:
+            json.dump(data, f, indent=2)
+    
+    def should_run_task(self, task_name):
+        """
+        Check if a task should run right now.
+        Called every 60 seconds by Director's main loop.
+        """
+        task = self.schedule["tasks"].get(task_name)
+        if not task or not task.get("enabled"):
+            return False
+        
+        now = datetime.now()
+        current_time = now.strftime("%H:%M")
+        current_day = now.strftime("%A").lower()
+        today_date = now.strftime("%Y-%m-%d")
+        
+        task_time = task.get("time", "00:00")
+        frequency = task.get("frequency", "daily")
+        last_run = task.get("last_run")
+        
+        # Already ran today?
+        if last_run and last_run.startswith(today_date):
+            return False
+        
+        # Check time (within 5-minute window)
+        task_hour, task_min = map(int, task_time.split(":"))
+        now_minutes = now.hour * 60 + now.minute
+        task_minutes = task_hour * 60 + task_min
+        
+        if abs(now_minutes - task_minutes) > 5:
+            return False
+        
+        # Check day for weekly tasks
+        if frequency == "weekly":
+            task_day = task.get("day", "monday")
+            if current_day != task_day:
+                return False
+        
+        return True
+    
+    def mark_completed(self, task_name):
+        """Mark a task as completed"""
+        if task_name in self.schedule["tasks"]:
+            self.schedule["tasks"][task_name]["last_run"] = \
+                datetime.now().isoformat()
+            self._save_schedule()
+    
+    def get_pending_tasks(self):
+        """Get all tasks that should run now"""
+        pending = []
+        for name, task in self.schedule["tasks"].items():
+            if self.should_run_task(name):
+                pending.append({
+                    "name": name,
+                    "description": task["description"],
+                    "time": task["time"],
+                    "frequency": task["frequency"]
+                })
+        return pending
+    
+    def execute_task(self, task_name):
+        """
+        Execute a scheduled task safely.
+        Returns result for WhatsApp notification.
+        """
+        if not self.bridge:
+            return {
+                "success": False,
+                "error": "IntegrationBridge not connected"
+            }
+        
+        handlers = {
+            "morning_report": self._task_morning_report,
+            "evening_report": self._task_evening_report,
+            "site_health_check": self._task_site_health,
+            "order_check": self._task_order_check,
+            "content_generation": self._task_daily_content,
+            "revenue_update": self._task_revenue_update,
+            "full_store_audit": self._task_store_audit,
+            "health_claims_scan": self._task_health_scan,
+            "weekly_content_batch": self._task_weekly_content,
+            "customer_analysis": self._task_customer_analysis,
+        }
+        
+        handler = handlers.get(task_name)
+        if not handler:
+            return {
+                "success": False,
+                "error": f"No handler for task: {task_name}"
+            }
+        
+        try:
+            result = handler()
+            self.mark_completed(task_name)
+            return result
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Task {task_name} failed: {e}",
+                "task": task_name
+            }
+    
+    # ========= TASK HANDLERS =========
+    
+    def _task_morning_report(self):
+        """Generate and return morning report"""
+        report = self.bridge.generate_morning_report()
+        return {
+            "success": True,
+            "send_whatsapp": True,
+            "message": report
+        }
+    
+    def _task_evening_report(self):
+        """Generate and return evening report"""
+        report = self.bridge.generate_evening_report()
+        return {
+            "success": True,
+            "send_whatsapp": True,
+            "message": report
+        }
+    
+    def _task_site_health(self):
+        """Quick site health check"""
+        import requests
+        try:
+            import os
+            site_url = os.getenv(
+                "WOO_SITE_URL", "https://falconherbs.com"
+            )
+            r = requests.get(site_url, timeout=15)
+            
+            response_time = round(
+                r.elapsed.total_seconds() * 1000
+            )
+            
+            if r.status_code == 200 and response_time < 5000:
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": f"Site OK: {response_time}ms"
+                }
+            else:
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": (
+                        f"⚠️ *SITE ALERT*\n"
+                        f"Status: {r.status_code}\n"
+                        f"Response: {response_time}ms\n"
+                        f"{'🐌 SLOW!' if response_time > 5000 else ''}"
+                    )
+                }
+        except Exception as e:
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": (
+                    f"🚨 *SITE DOWN!*\n"
+                    f"Error: {str(e)[:100]}\n"
+                    f"Check immediately!"
+                )
+            }
+    
+    def _task_order_check(self):
+        """Check for new orders"""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"success": False, 
+                       "error": "WooCommerce not loaded"}
+            
+            result = woo.get_orders(days_back=1)
+            if result["success"]:
+                total = result["data"]["total_orders"]
+                revenue = result["data"]["revenue"]["total"]
+                
+                if total > 0:
+                    return {
+                        "success": True,
+                        "send_whatsapp": True,
+                        "message": (
+                            f"🎉 *NEW ORDERS!*\n"
+                            f"📦 Orders today: {total}\n"
+                            f"💰 Revenue: ₹{revenue:,.0f}\n"
+                            f"Check WooCommerce for details!"
+                        )
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "send_whatsapp": False,
+                        "message": "No new orders today"
+                    }
+            
+            return {"success": False, 
+                   "error": result.get("error")}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _task_daily_content(self):
+        """Generate daily content suggestions"""
+        try:
+            content = self.bridge.tools.get("content")
+            if not content:
+                return {"success": False,
+                       "error": "Content Pipeline not loaded"}
+            
+            status = content.generate_content_status_report()
+            return {
+                "success": True,
+                "send_whatsapp": False,
+                "message": status
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _task_revenue_update(self):
+        """Update revenue tracking"""
+        result = self.bridge.get_revenue_report()
+        return {
+            "success": result.get("success", False),
+            "send_whatsapp": False,
+            "message": result.get("report", "Revenue update done")
+        }
+    
+    def _task_store_audit(self):
+        """Weekly full store audit"""
+        result = self.bridge.run_store_audit()
+        return {
+            "success": result.get("success", False),
+            "send_whatsapp": True,
+            "message": result.get("summary", 
+                "Store audit complete. Check report.")
+        }
+    
+    def _task_health_scan(self):
+        """Weekly health claims scan"""
+        result = self.bridge.run_health_scan(max_pages=100)
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": result.get("summary",
+                    "Health scan complete.")
+            }
+        return {
+            "success": False,
+            "send_whatsapp": True,
+            "message": f"❌ Health scan failed: "
+                      f"{result.get('error')}"
+        }
+    
+    def _task_weekly_content(self):
+        """Weekly content batch generation"""
+        result = self.bridge.generate_weekly_content()
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": (
+                    "📝 *WEEKLY CONTENT GENERATED*\n"
+                    "Check data/content/drafts/ for:\n"
+                    "• Blog drafts\n"
+                    "• Social media batch\n"
+                    "• Email sequences\n\n"
+                    "Review → Approve → Publish"
+                )
+            }
+        return {"success": False, 
+               "error": result.get("error")}
+    
+    def _task_customer_analysis(self):
+        """Weekly customer analysis"""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"success": False,
+                       "error": "WooCommerce not loaded"}
+            
+            customers = woo.get_customers()
+            if customers["success"]:
+                total = customers["data"]["total_customers"]
+                countries = customers["data"].get(
+                    "country_breakdown", {}
+                )
+                
+                message = (
+                    f"👥 *WEEKLY CUSTOMER ANALYSIS*\n"
+                    f"Total Customers: {total}\n"
+                    f"Countries: {len(countries)}\n\n"
+                    f"Top Markets:\n"
+                )
+                for country, count in sorted(
+                    countries.items(),
+                    key=lambda x: x[1], reverse=True
+                )[:5]:
+                    message += f"  {country}: {count}\n"
+                
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": message
+                }
+            
+            return {"success": False,
+                   "error": customers.get("error")}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    # ========= DIRECTOR LOOP INTEGRATION =========
+    
+    def check_and_execute(self, whatsapp_sender=None):
+        """
+        Call this method from Director's 60-second loop.
+        
+        Args:
+            whatsapp_sender: Function to send WhatsApp messages
+                           e.g., commander.send_message(text)
+        
+        Returns:
+            List of executed task results
+        """
+        pending = self.get_pending_tasks()
+        results = []
+        
+        for task in pending:
+            print(f"⏰ Running scheduled task: "
+                  f"{task['name']} — {task['description']}")
+            
+            result = self.execute_task(task["name"])
+            results.append({
+                "task": task["name"],
+                "result": result
+            })
+            
+            # Send WhatsApp if needed
+            if (result.get("send_whatsapp") and 
+                    whatsapp_sender and 
+                    result.get("message")):
+                try:
+                    whatsapp_sender(result["message"])
+                    print(f"  📱 WhatsApp sent for: "
+                          f"{task['name']}")
+                except Exception as e:
+                    print(f"  ❌ WhatsApp failed: {e}")
+        
+        return results
+    
+    def get_schedule_summary(self):
+        """WhatsApp-friendly schedule summary"""
+        lines = [
+            "📅 *SCHEDULED TASKS*",
+            "─────────────",
+        ]
+        
+        for name, task in self.schedule["tasks"].items():
+            enabled = "✅" if task["enabled"] else "❌"
+            freq = task["frequency"]
+            time_str = task["time"]
+            day = task.get("day", "")
+            last = task.get("last_run", "Never")
+            
+            if last and last != "Never":
+                last = last[:16]  # Trim to date+time
+            
+            lines.append(
+                f"{enabled} *{name}*"
+            )
+            lines.append(
+                f"   ⏰ {time_str} "
+                f"{'(' + day + ') ' if day else ''}"
+                f"[{freq}]"
+            )
+            lines.append(f"   🕐 Last: {last}")
+        
+        lines.extend([
+            "",
+            "─────────────",
+            "🤖 _Falcon Agency Scheduler_"
+        ])
+        
+        return "\n".join(lines)
+
+
+# ==================== TEST ====================
+
+if __name__ == "__main__":
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+    print("⏰ Testing Extended Schedule")
+    print("=" * 50)
+    
+    # Test without bridge
+    schedule = ExtendedSchedule()
+    
+    # Show all tasks
+    print("\n📋 Configured Tasks:")
+    for name, task in schedule.schedule["tasks"].items():
+        print(f"  {'✅' if task['enabled'] else '❌'} "
+              f"{name}: {task['time']} ({task['frequency']})")
+    
+    # Check pending
+    pending = schedule.get_pending_tasks()
+    print(f"\n⏳ Pending tasks right now: {len(pending)}")
+    for task in pending:
+        print(f"  → {task['name']}: {task['description']}")
+    
+    # Show summary
+    print("\n" + schedule.get_schedule_summary())
+    
+    # Test with bridge
+    try:
+        from core.integration_bridge import IntegrationBridge
+        bridge = IntegrationBridge()
+        schedule_with_bridge = ExtendedSchedule(
+            integration_bridge=bridge
+        )
+        print("\n✅ Schedule + Bridge connected successfully!")
+    except Exception as e:
+        print(f"\n⚠️ Bridge connection: {e}")
+    
+    print("\n✅ Schedule test complete!")

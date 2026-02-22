@@ -68,6 +68,8 @@ from core.sentinel import Sentinel
 from core.whatsapp import WhatsAppNotifier
 from core.commander import FalconCommander
 from core.webhook import FalconWebhook
+from core.director_schedule import ExtendedSchedule
+from core.integration_bridge import IntegrationBridge
 from core.ai_client import call_ai
 from core.woocommerce_connector import WooCommerceConnector
 from core.revenue_tracker import RevenueTracker
@@ -261,6 +263,16 @@ class Director:
         self._strategist = StrategistAgent(self._whatsapp)
         self._media = MediaAgent(self._whatsapp)
         self._backup = BackupAgent(self._whatsapp)
+
+        # ── Extended schedule (safe — if fails, old system continues) ──
+        try:
+            self._bridge = IntegrationBridge()
+            self._extended_schedule = ExtendedSchedule(self._bridge)
+            log.info("Extended schedule loaded (bridge OK)")
+        except Exception as e:
+            self._bridge = None
+            self._extended_schedule = None
+            log.warning("Extended schedule unavailable: %s", e)
 
         # ── Ensure JSON state files ──
         self._ensure_goals_file()
@@ -1528,12 +1540,25 @@ Respond in JSON:
                     self._idle_alert_sent = False
 
             cycle_duration = time.monotonic() - cycle_start
+
+            # ── 4. Extended schedule check ──
+            if self._extended_schedule:
+                try:
+                    ext_results = self._extended_schedule.check_and_execute(
+                        whatsapp_sender=getattr(self._whatsapp, 'send_message', None)
+                    )
+                    for r in ext_results:
+                        if r["result"].get("success"):
+                            log.info("Extended task %s completed", r["task"])
+                except Exception as e:
+                    log.warning("Extended schedule check failed: %s", e)
+
             log.info(
                 "Cycle #%d complete  |  scheduled=%d  |  executed=%d  |  %.1fs",
                 self._cycle_count,
                 len(due_tasks),
                 tasks_completed,
-                cycle_duration,
+                time.monotonic() - cycle_start,
             )
 
         except Exception as exc:

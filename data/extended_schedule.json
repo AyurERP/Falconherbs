@@ -1,0 +1,79 @@
+{
+  "tasks": {
+    "morning_report": {
+      "time": "06:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Send morning WhatsApp report"
+    },
+    "evening_report": {
+      "time": "22:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Send evening WhatsApp report"
+    },
+    "site_health_check": {
+      "time": "06:30",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Quick site uptime + response check"
+    },
+    "order_check": {
+      "time": "08:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Check for new orders"
+    },
+    "content_generation": {
+      "time": "09:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Generate daily content drafts"
+    },
+    "revenue_update": {
+      "time": "20:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Update revenue tracking"
+    },
+    "full_store_audit": {
+      "time": "07:00",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Full WooCommerce store audit"
+    },
+    "health_claims_scan": {
+      "time": "07:00",
+      "day": "wednesday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Full health claims re-scan"
+    },
+    "weekly_content_batch": {
+      "time": "08:00",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Generate full week's content batch"
+    },
+    "customer_analysis": {
+      "time": "09:00",
+      "day": "friday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Analyze customer data and suggest recovery actions"
+    }
+  },
+  "created_at": "2026-02-23T05:10:47.392577"
+}
