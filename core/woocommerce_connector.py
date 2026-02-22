@@ -9,6 +9,9 @@ import json
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class WooCommerceConnector:
     """
@@ -26,7 +29,7 @@ class WooCommerceConnector:
         
         if not self.consumer_key or not self.consumer_secret:
             print("⚠️ WooCommerce API keys not set!")
-            print("   Set WOO_CONSUMER_KEY and WOO_CONSUMER_SECRET in .env")
+            print("   Set FALCONHERBS_WC_API_KEY and FALCONHERBS_WC_API_SECRET in .env")
     
     def _make_request(self, endpoint, params=None):
         """Base API request with authentication"""
