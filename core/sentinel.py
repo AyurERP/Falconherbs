@@ -208,7 +208,7 @@ class Sentinel:
     24/7 Security Watchdog for Falcon Agency.
 
     Instantiate with an ``ApprovalSystem`` so Sentinel can push alerts
-    to the owner's Telegram.  Then call ``start_monitoring(url)`` to
+    to the owner's WhatsApp.  Then call ``start_monitoring(url)`` to
     begin the continuous scan loop, or invoke individual checks ad-hoc.
 
     Example::
@@ -983,7 +983,7 @@ class Sentinel:
               ├── scan_vulnerabilities  →  transport + header findings
               ├── aggregate severity counts
               ├── log full report to SQLite
-              └── if HIGH or CRITICAL → push Telegram alert
+              └── if HIGH or CRITICAL → push WhatsApp alert
 
         Parameters
         ----------
@@ -1076,6 +1076,132 @@ class Sentinel:
                 "error": f"{type(exc).__name__}: {str(exc)[:300]}",
                 "total_findings": 0,
                 "highest_severity": "CRITICAL",
+            }
+
+    # ══════════════════════════════════════════════════════════════════
+    #  6.  scan_health_claims (Govt compliance check)
+    # ══════════════════════════════════════════════════════════════════
+
+    # Wrong health claims that can get you in trouble with govt
+    HEALTH_CLAIM_PATTERNS = [
+        r"\bcures?\b.*\b(cancer|diabetes|heart|tb| hiv|aids|covid)\b",
+        r"\btreats?\b.*\b(cancer|diabetes|heart|tb|hiv|aids|covid)\b",
+        r"\bheals?\b.*\b(cancer|diabetes|heart|tb|hiv|aids|covid)\b",
+        r"\bmagic\b.*\b(cure|treat|heal)\b",
+        r"\bproven\b.*\b(cure|treat|heal)\b",
+        r"\bguaranteed\b.*\b(cure|treat|heal)\b",
+        r"\b100%\b.*\bcure\b",
+        r"\bpermanent\b.*\bcure\b",
+        r"\b彝\s*根\b",  # "magic root" in Chinese
+        r"\b instantánea\b",  # "instant" in Spanish
+    ]
+
+    def scan_health_claims(self, site_url: str) -> Dict[str, Any]:
+        """
+        Scan website for wrong health claims that can attract
+        govt action or legal trouble.
+        
+        Checks for:
+        - Claims about curing diseases (cancer, diabetes, etc)
+        - Magic/proven/guaranteed cure language
+        - False medical promises
+        
+        Returns list of problematic pages/claims.
+        """
+        scan_id = f"HCLAIM-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+        
+        log.info("━" * 64)
+        log.info("HEALTH CLAIM AUDIT  |  id=%s  |  target=%s", scan_id, site_url)
+        log.info("━" * 64)
+        
+        issues = []
+        pages_checked = 0
+        
+        try:
+            # Import requests here to avoid issues
+            import requests
+            from bs4 import BeautifulSoup
+            
+            # Check homepage first
+            pages_to_check = [
+                site_url,
+                f"{site_url}/shop",
+                f"{site_url}/products",
+                f"{site_url}/about",
+            ]
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (compatible; FalconAgency/1.0)'
+            }
+            
+            for page_url in pages_to_check:
+                try:
+                    resp = requests.get(page_url, headers=headers, timeout=15, verify=False)
+                    pages_checked += 1
+                    
+                    if resp.status_code != 200:
+                        continue
+                    
+                    soup = BeautifulSoup(resp.text, 'html.parser')
+                    text = soup.get_text(separator=' ', strip=True).lower()
+                    
+                    # Check each pattern
+                    for pattern in self.HEALTH_CLAIM_PATTERNS:
+                        matches = re.findall(pattern, text, re.IGNORECASE)
+                        if matches:
+                            # Find where in page
+                            for match in matches[:3]:  # Limit per page
+                                issues.append({
+                                    "page": page_url,
+                                    "pattern": pattern[:50],
+                                    "match": str(match)[:100],
+                                    "severity": "HIGH"
+                                })
+                    
+                except Exception as e:
+                    log.warning(f"Error checking {page_url}: {e}")
+                    continue
+            
+            # Also check sitemap if available
+            sitemap_url = f"{site_url}/sitemap.xml"
+            try:
+                resp = requests.get(sitemap_url, headers=headers, timeout=10, verify=False)
+                if resp.status_code == 200:
+                    # Could parse sitemap for more URLs here
+                    log.info("Found sitemap, could scan more pages")
+            except:
+                pass
+            
+            report = {
+                "scan_id": scan_id,
+                "site_url": site_url,
+                "scan_time": _utcnow(),
+                "pages_checked": pages_checked,
+                "total_issues": len(issues),
+                "issues": issues[:20],  # Limit to 20
+                "severity": "HIGH" if issues else "PASS",
+            }
+            
+            log.info(
+                "Health claim audit complete  |  id=%s  |  pages=%d  |  issues=%d",
+                scan_id, pages_checked, len(issues)
+            )
+            log.info("━" * 64)
+            
+            return report
+            
+        except Exception as exc:
+            log.critical(
+                "scan_health_claims crashed: %s", exc, exc_info=True,
+            )
+            return {
+                "scan_id": scan_id,
+                "site_url": site_url,
+                "scan_time": _utcnow(),
+                "error": f"{type(exc).__name__}: {str(exc)[:300]}",
+                "total_issues": 0,
+                "issues": [],
+                "severity": "ERROR",
             }
 
     # ══════════════════════════════════════════════════════════════════
@@ -1275,7 +1401,7 @@ class Sentinel:
             "error": error,
         }
 
-    # ── Telegram alert for scans ──
+    # ── WhatsApp alert for scans ──
 
     def _dispatch_scan_alert(
         self,
@@ -1284,7 +1410,7 @@ class Sentinel:
         findings: List[Dict[str, Any]],
         counts: Dict[str, int],
     ) -> None:
-        """Send a concise Telegram alert for HIGH / CRITICAL findings."""
+        """Send a concise WhatsApp alert for HIGH / CRITICAL findings."""
         try:
             # Build a bullet list of the worst findings
             bullet_lines: List[str] = []
@@ -1296,7 +1422,7 @@ class Sentinel:
                         f"  {icon} [{sev}] {f.get('title', '?')}"
                     )
 
-            # Cap at 15 lines to stay within Telegram limits
+            # Cap at 15 lines to stay within WhatsApp limits
             display = bullet_lines[:15]
             overflow = len(bullet_lines) - 15
 

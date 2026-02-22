@@ -54,7 +54,7 @@ def run_system_check() -> bool:
     # 4. ApprovalSystem
     try:
         approval = ApprovalSystem()
-        log.info("[OK] ApprovalSystem — Telegram bot connected")
+        log.info("[OK] ApprovalSystem — WhatsApp connected")
         checks.append(True)
     except Exception as e:
         log.critical(f"[FAIL] ApprovalSystem — {e}")

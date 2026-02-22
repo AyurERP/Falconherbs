@@ -6,9 +6,11 @@
     "priority": 1,
     "agent": "developer",
     "task": "run_audit",
-    "status": "pending",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:34:58.728322+00:00",
+    "result_summary": "Completed"
   },
   {
     "id": "goal-002",
@@ -17,9 +19,11 @@
     "priority": 2,
     "agent": "developer",
     "task": "check_performance",
-    "status": "pending",
+    "status": "failed",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:35:58.786172+00:00",
+    "result_summary": "No agent matched for this goal description"
   },
   {
     "id": "goal-003",
@@ -28,31 +32,37 @@
     "priority": 3,
     "agent": "developer",
     "task": "audit_plugins",
-    "status": "pending",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:36:58.885736+00:00",
+    "result_summary": "Completed"
   },
   {
     "id": "goal-004",
     "site": "falconherbs.com",
     "description": "Run SEO report against global English target keywords (AU, UAE, USA, UK, India)",
     "priority": 4,
-    "agent": "developer",
-    "task": "run_seo_report",
-    "status": "pending",
+    "agent": "strategist",
+    "task": "seo_audit",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:38:28.608129+00:00",
+    "result_summary": "Completed"
   },
   {
     "id": "goal-005",
     "site": "falconherbs.com",
-    "description": "Audit comments for spam \u00e2\u20ac\u201d 3144 pending review",
+    "description": "Audit comments for spam — 3144 pending review",
     "priority": 5,
     "agent": "developer",
     "task": "audit_comments",
-    "status": "pending",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:39:56.482055+00:00",
+    "result_summary": "Completed"
   },
   {
     "id": "goal-006",
@@ -61,9 +71,11 @@
     "priority": 6,
     "agent": "strategist",
     "task": "run_analysis",
-    "status": "pending",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:41:03.560076+00:00",
+    "result_summary": "Completed"
   },
   {
     "id": "goal-007",
@@ -72,8 +84,10 @@
     "priority": 7,
     "agent": "media",
     "task": "create_content",
-    "status": "pending",
+    "status": "complete",
     "created_at": "2026-02-21T00:00:00",
-    "completed_at": null
+    "completed_at": null,
+    "updated_at": "2026-02-21T12:41:40.122974+00:00",
+    "result_summary": "Completed"
   }
 ]

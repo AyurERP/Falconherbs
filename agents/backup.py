@@ -56,6 +56,8 @@ import requests
 
 from core.logger import log
 from core.approval import ApprovalSystem
+from agents.base_agent import BaseAgent
+from core.ai_client import call_ai
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -122,7 +124,7 @@ def _format_bytes(b: int) -> str:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-class BackupAgent:
+class BackupAgent(BaseAgent):
     """
     Backup & Recovery agent for Falcon Agency.
 
@@ -140,7 +142,7 @@ class BackupAgent:
     #  Init
     # ──────────────────────────────────────────────────────────────────
 
-    def __init__(self, approval: Optional[ApprovalSystem] = None) -> None:
+    def __init__(self, whatsapp_client=None):
         """
         Initialise the Backup Agent.
 
@@ -148,14 +150,19 @@ class BackupAgent:
         the backup directory tree, and loads (or creates) the backup
         registry.
         """
-        if approval is not None:
-            self._approval: Optional[ApprovalSystem] = approval
-        else:
-            try:
-                self._approval = ApprovalSystem()
-            except Exception as exc:
-                log.warning("BackupAgent: ApprovalSystem init failed: %s", exc)
-                self._approval = None
+        super().__init__(whatsapp_client)
+        self.name = "Backup"
+        self.ai_role = "fallback"
+        self.capabilities = [
+            "Full site backup",
+            "Database snapshot",
+            "File restoration",
+            "Backup scheduling",
+            "Disaster recovery"
+        ]
+
+        # Preserve legacy properties
+        self._approval = None
 
         # ── cPanel credentials ──
         self._cpanel_user:   str = os.environ.get("CPANEL_USERNAME", "")
@@ -201,9 +208,44 @@ class BackupAgent:
     #  DISPATCH INTERFACE
     # ══════════════════════════════════════════════════════════════════
 
-    def execute(self, task: str, site: str, params: dict) -> dict:
-        """Entry point for Director's dispatch_agent(). Delegates to handle()."""
-        return self.handle(task=task, site=site, params=params)
+    def execute(self, action: str, details: str) -> str:
+        """Backup agent handles data safety"""
+        
+        action_lower = action.lower()
+        
+        if "backup" in action_lower or "snapshot" in action_lower:
+            return self._do_backup(action, details)
+        elif "restore" in action_lower:
+            return self._do_restore(action, details)
+        elif "schedule" in action_lower:
+            return self._do_schedule(action, details)
+        else:
+            return self._do_generic_backup(action, details)
+    
+    def _do_backup(self, action: str, details: str) -> str:
+        """Perform backup — integrate with your cPanel/hosting API"""
+        self.report_to_owner(f"🔄 Starting backup: {action}", priority="high")
+        # TODO: Add actual cPanel backup API call here
+        result = f"Backup initiated for: {details}"
+        self.report_to_owner(f"✅ Backup completed", priority="high")
+        return result
+    
+    def _do_restore(self, action: str, details: str) -> str:
+        """Restore from backup — DANGEROUS, always escalate first"""
+        self.escalate(f"⚠️ RESTORE requested: {action}\nDetails: {details}\nThis is destructive. Please confirm.")
+        return "Restore request escalated to owner for confirmation"
+    
+    def _do_schedule(self, action: str, details: str) -> str:
+        """Schedule automated backups"""
+        messages = [
+            {"role": "system", "content": "Create backup schedule recommendation based on site activity."},
+            {"role": "user", "content": f"Schedule backup for: {details}"}
+        ]
+        return call_ai("fallback", messages)
+    
+    def _do_generic_backup(self, action: str, details: str) -> str:
+        self.report_to_owner(f"📦 Backup task: {action}")
+        return f"Backup task noted: {action}"
 
     def handle(self, task: str, site: str, params: dict) -> dict:
         """

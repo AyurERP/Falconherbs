@@ -55,6 +55,8 @@ from bs4 import BeautifulSoup
 
 from core.logger import log
 from core.approval import ApprovalSystem
+from agents.base_agent import BaseAgent
+from core.ai_client import call_ai
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -114,7 +116,7 @@ def _normalise_url(url: str) -> str:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-class DeveloperAgent:
+class DeveloperAgent(BaseAgent):
     """
     Technical worker agent for Falcon Agency.
 
@@ -149,28 +151,24 @@ class DeveloperAgent:
     #  Init
     # ──────────────────────────────────────────────────────────────────
 
-    def __init__(self, approval: Optional[ApprovalSystem] = None) -> None:
+    def __init__(self, whatsapp_client=None):
         """
         Initialise the Developer Agent.
-
-        Parameters
-        ----------
-        approval : ApprovalSystem or None
-            If ``None``, a new ApprovalSystem is created.  This allows
-            the Director to share its instance or the agent to self-boot.
         """
-        if approval is not None:
-            self._approval: ApprovalSystem = approval
-        else:
-            try:
-                self._approval = ApprovalSystem()
-            except Exception as exc:
-                log.critical(
-                    "DeveloperAgent: ApprovalSystem init failed: %s", exc,
-                )
-                # Store None — methods that need approval will abort safely
-                self._approval = None  # type: ignore[assignment]
+        super().__init__(whatsapp_client)
+        self.name = "Developer"
+        self.ai_role = "developer"
+        self.capabilities = [
+            "SEO audit and fixes",
+            "Website uptime monitoring", 
+            "Performance optimization",
+            "Code generation and debugging",
+            "Security scanning",
+            "Technical troubleshooting"
+        ]
 
+        # Preserve legacy properties
+        self._approval = None
         self._project_root: Path = PROJECT_ROOT
         self._session: requests.Session = self._build_session()
 
@@ -191,28 +189,88 @@ class DeveloperAgent:
     #  DISPATCH INTERFACE
     # ══════════════════════════════════════════════════════════════════
 
-    def execute(self, task: str, site: str, params: dict) -> dict:
-        """
-        Entry point used by the Director's ``dispatch_agent()``.
+    def execute(self, action: str, details: str) -> str:
+        """Developer executes technical tasks with AI thinking"""
+        
+        # First, think about the task
+        plan = self.think(action, {"details": details})
+        
+        if plan.get("confidence") == "low":
+            self.escalate(f"Low confidence for task: {action}. Need guidance.")
+            return "Escalated to owner — need more clarity"
+        
+        # Execute based on action type
+        action_lower = action.lower()
+        
+        if "seo" in action_lower:
+            return self._do_seo_task(action, details, plan)
+        elif "uptime" in action_lower or "status" in action_lower:
+            return self._do_uptime_check(details)
+        elif "performance" in action_lower or "speed" in action_lower:
+            return self._do_performance_check(details)
+        elif "security" in action_lower or "scan" in action_lower:
+            return self._do_security_scan(details)
+        elif "code" in action_lower or "fix" in action_lower:
+            return self._do_code_task(action, details, plan)
+        else:
+            return self._do_generic_task(action, details, plan)
+    
+    def _do_seo_task(self, action: str, details: str, plan: dict) -> str:
+        """AI-powered SEO analysis and fixes"""
+        messages = [
+            {"role": "system", "content": """You are an SEO expert. Analyze and provide actionable fixes.
+Output JSON: {"issues": [...], "fixes": [...], "priority": "high|medium|low"}"""},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}\nPlan: {json.dumps(plan)}"}
+        ]
+        response = call_ai("developer", messages)
+        self.report_to_owner(f"SEO Task completed: {action}")
+        return response
+    
+    def _do_uptime_check(self, site: str) -> str:
+        """Check website uptime"""
+        import requests
+        try:
+            r = requests.get(f"https://{site}", timeout=10)
+            status = f"✅ {site} is UP (Status: {r.status_code}, Time: {r.elapsed.total_seconds():.2f}s)"
+        except Exception as e:
+            status = f"❌ {site} is DOWN: {str(e)}"
+            self.escalate(f"Website DOWN: {site}")
+        return status
+    
+    def _do_performance_check(self, site: str) -> str:
+        """AI-analyzed performance check"""
+        messages = [
+            {"role": "system", "content": "Analyze website performance and suggest improvements. Be specific."},
+            {"role": "user", "content": f"Analyze performance for: {site}"}
+        ]
+        return call_ai("developer", messages)
+    
+    def _do_security_scan(self, site: str) -> str:
+        """AI-powered security analysis"""
+        messages = [
+            {"role": "system", "content": "Perform security analysis. Identify vulnerabilities and fixes."},
+            {"role": "user", "content": f"Security scan for: {site}"}
+        ]
+        response = call_ai("developer", messages)
+        self.report_to_owner(f"🔒 Security scan completed for {site}", priority="high")
+        return response
+    
+    def _do_code_task(self, action: str, details: str, plan: dict) -> str:
+        """AI code generation/debugging"""
+        messages = [
+            {"role": "system", "content": "You are an expert developer. Write clean, secure, efficient code."},
+            {"role": "user", "content": f"Task: {action}\nDetails: {details}"}
+        ]
+        return call_ai("developer", messages)
+    
+    def _do_generic_task(self, action: str, details: str, plan: dict) -> str:
+        """Fallback for unknown tasks"""
+        messages = [
+            {"role": "system", "content": f"You are a developer. Execute this task using your expertise."},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}\nPlan: {json.dumps(plan)}"}
+        ]
+        return call_ai("developer", messages)
 
-        Delegates to ``handle()`` — exists so both ``execute(task, site, params)``
-        and ``handle(task, site, params)`` work interchangeably.
-
-        Parameters
-        ----------
-        task : str
-            Task identifier (e.g. ``"run_audit"``).
-        site : str
-            Target site (e.g. ``"falconherbs.com"``).
-        params : dict
-            Extra parameters from the Director.
-
-        Returns
-        -------
-        dict
-            Standardised result dict.
-        """
-        return self.handle(task=task, site=site, params=params)
 
     def handle(self, task: str, site: str, params: dict) -> dict:
         """

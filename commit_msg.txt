@@ -1,9 +1,0 @@
-feat: agents/backup.py — backup & recovery agent
-
-- Daily backup pipeline with idempotency check
-- cPanel UAPI database dump with 3-method fallback  
-- SHA-256 verification on every backup
-- FTP offsite upload via stdlib ftplib
-- pre_deploy_snapshot() for Developer agent
-- restore_backup() with mandatory owner approval
-- 30-day retention, 3-backup safety floor

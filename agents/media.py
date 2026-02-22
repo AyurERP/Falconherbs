@@ -50,6 +50,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core.logger import log
 from core.approval import ApprovalSystem
+from agents.base_agent import BaseAgent
+from core.ai_client import call_ai
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -78,14 +80,14 @@ HTTP_TIMEOUT: int = 30  # Claude can take a moment for long content
 DEFAULT_MAX_TOKENS: int = 4000
 SCORE_THRESHOLD: int = 70
 
-# Model selection (cost governance)
-MODEL_SONNET: str = "claude-sonnet-4-6"
-MODEL_HAIKU:  str = "claude-haiku-4-5-20251001"
+# Model selection — Gemini (free tier)
+MODEL_SONNET: str = "gemini-flash-lite-latest"
+MODEL_HAIKU:  str = "gemini-flash-lite-latest"
 
-# Cost tracking (USD per 1K tokens — approximate)
+# Cost tracking — Gemini free tier, cost = 0
 COST_PER_1K: Dict[str, Dict[str, float]] = {
-    MODEL_SONNET: {"input": 0.003, "output": 0.015},
-    MODEL_HAIKU:  {"input": 0.00025, "output": 0.00125},
+    MODEL_SONNET: {"input": 0.0, "output": 0.0},
+    MODEL_HAIKU:  {"input": 0.0, "output": 0.0},
 }
 
 # Medical claims — FORBIDDEN phrases (case-insensitive)
@@ -235,7 +237,7 @@ IDEAS_SYSTEM_PROMPT: str = (
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-class MediaAgent:
+class MediaAgent(BaseAgent):
     """
     Revenue-engine content agent for Falcon Agency.
 
@@ -253,39 +255,41 @@ class MediaAgent:
     #  Init
     # ──────────────────────────────────────────────────────────────────
 
-    def __init__(self, approval: Optional[ApprovalSystem] = None) -> None:
+    def __init__(self, whatsapp_client=None):
         """
         Initialise the Media Agent.
-
-        Sets up the Anthropic client, creates all content queue directories,
-        and loads or creates the content index.
         """
-        # ── Approval system ──
-        if approval is not None:
-            self._approval: Optional[ApprovalSystem] = approval
-        else:
-            try:
-                self._approval = ApprovalSystem()
-            except Exception as exc:
-                log.warning("MediaAgent: ApprovalSystem init failed: %s", exc)
-                self._approval = None
+        super().__init__(whatsapp_client)
+        self.name = "Media"
+        self.ai_role = "media"
+        self.capabilities = [
+            "Social media content",
+            "Graphic design prompts",
+            "Visual content planning",
+            "Brand consistency",
+            "Caption writing",
+            "Hashtag strategy"
+        ]
 
-        # ── Anthropic client ──
+        # Preserve legacy properties
+        self._approval = None
+
+        # ── Gemini client ──
         self._client: Any = None
         self._api_available: bool = False
         try:
-            import anthropic
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            from google import genai
+            api_key = os.environ.get("GEMINI_API_KEY", "")
             if api_key:
-                self._client = anthropic.Anthropic(api_key=api_key)
+                self._client = genai.Client(api_key=api_key)
                 self._api_available = True
-                log.info("MediaAgent: Anthropic client ready")
+                log.info("MediaAgent: Gemini client ready")
             else:
-                log.warning("MediaAgent: ANTHROPIC_API_KEY not set — content generation disabled")
+                log.warning("MediaAgent: GEMINI_API_KEY not set — content generation disabled")
         except ImportError:
-            log.critical("MediaAgent: 'anthropic' package not installed")
+            log.critical("MediaAgent: 'google-genai' package not installed — run: pip install google-genai")
         except Exception as exc:
-            log.critical("MediaAgent: Anthropic init failed: %s", exc)
+            log.critical("MediaAgent: Gemini init failed: %s", exc)
 
         # ── Cost tracking ──
         self._session_spend: float = 0.0
@@ -314,9 +318,67 @@ class MediaAgent:
     #  DISPATCH INTERFACE
     # ══════════════════════════════════════════════════════════════════
 
-    def execute(self, task: str, site: str, params: dict) -> dict:
-        """Entry point for Director's dispatch_agent(). Delegates to handle()."""
-        return self.handle(task=task, site=site, params=params)
+    def execute(self, action: str, details: str) -> str:
+        """Media agent handles creative tasks"""
+        
+        plan = self.think(action, {"details": details})
+        
+        action_lower = action.lower()
+        
+        if "social" in action_lower or "post" in action_lower:
+            return self._do_social_content(action, details)
+        elif "design" in action_lower or "graphic" in action_lower:
+            return self._do_design_prompt(action, details)
+        elif "caption" in action_lower:
+            return self._do_caption(action, details)
+        elif "hashtag" in action_lower:
+            return self._do_hashtags(action, details)
+        else:
+            return self._do_generic_creative(action, details)
+    
+    def _do_social_content(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a social media expert.
+Create engaging, viral-worthy content.
+Output JSON: {"posts": [{"platform": "...", "content": "...", "media_suggestion": "...", "best_time": "..."}], "campaign_theme": "..."}"""},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        response = call_ai("media", messages)
+        self.report_to_owner(f"📱 Social content ready")
+        return response
+    
+    def _do_design_prompt(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a creative director.
+Generate detailed prompts for AI image generation tools.
+Output JSON: {"prompts": [{"tool": "midjourney|dalle|stable", "prompt": "...", "style": "...", "aspect_ratio": "..."}]}"""},
+            {"role": "user", "content": f"Create design for: {action}\nDetails: {details}"}
+        ]
+        response = call_ai("media", messages)
+        self.report_to_owner(f"🎨 Design prompts ready")
+        return response
+    
+    def _do_caption(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": "Write engaging captions that drive engagement. Include CTA."},
+            {"role": "user", "content": f"Caption for: {action}\nContext: {details}"}
+        ]
+        return call_ai("media", messages)
+    
+    def _do_hashtags(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """Generate strategic hashtag sets.
+Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [...]}"""},
+            {"role": "user", "content": f"Hashtags for: {action}\nDetails: {details}"}
+        ]
+        return call_ai("media", messages)
+    
+    def _do_generic_creative(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": "You are a creative expert. Help with any media/creative task."},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        return call_ai("media", messages)
 
     def handle(self, task: str, site: str, params: dict) -> dict:
         """
@@ -1905,81 +1967,65 @@ class MediaAgent:
         temperature: float = 0.7,
     ) -> Optional[str]:
         """
-        Call the Anthropic Claude API with cost tracking.
+        Call the fallback AI using the unified AI Client.
 
-        Logs estimated cost before calling, actual tokens after response.
         Never raises — returns None on any failure.
 
         Parameters
         ----------
         system_prompt : str
-            System context for Claude.
+            System context for the model.
         user_prompt : str
             The user message.
         model : str
-            Model to use (Sonnet for generation, Haiku for scoring).
+            Ignored (uses standard AI_MODELS fallback).
         max_tokens : int
-            Maximum output tokens.
+            Ignored (handles via standard call_ai).
         temperature : float
-            Creativity parameter.
+            Ignored (handles via standard call_ai).
 
         Returns
         -------
         str or None
-            Claude's response text, or None on failure.
+            AI's response text, or None on failure.
         """
-        if not self._client:
-            log.warning("Claude API not available — cannot generate content")
-            return None
-
-        # Estimate cost before call
-        est_input_tokens = len(system_prompt.split()) + len(user_prompt.split())
-        costs = COST_PER_1K.get(model, COST_PER_1K[MODEL_SONNET])
-        est_cost = (est_input_tokens / 1000 * costs["input"]) + (max_tokens / 1000 * costs["output"])
-
-        log.info(
-            "Claude API call  |  model=%s  |  est_input=%d  |  max_output=%d  |  est_cost=$%.4f",
-            model.split("/")[-1] if "/" in model else model[:20],
-            est_input_tokens, max_tokens, est_cost,
-        )
+        from core.ai_client import call_ai
+        
+        log.info("Unified AI fallback call  |  media task")
 
         start = time.monotonic()
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
 
         try:
-            response = self._client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_prompt}],
-            )
-
+            raw = call_ai("fallback", messages)
             duration = time.monotonic() - start
-            content = response.content[0].text.strip()
 
-            # Track actual usage
-            input_tokens = getattr(response.usage, "input_tokens", est_input_tokens)
-            output_tokens = getattr(response.usage, "output_tokens", len(content.split()))
+            if raw.startswith("AI_ERROR:"):
+                log.warning(
+                    "AI fallback error  |  %.1fs  |  %s",
+                    duration, raw,
+                )
+                return None
 
-            actual_cost = (input_tokens / 1000 * costs["input"]) + (output_tokens / 1000 * costs["output"])
-            self._session_spend += actual_cost
+            content = raw.strip()
+
             self._session_calls += 1
 
             log.info(
-                "Claude response  |  in=%d  |  out=%d  |  cost=$%.4f  |  session=$%.4f  |  %.1fs",
-                input_tokens, output_tokens, actual_cost, self._session_spend, duration,
+                "AI fallback response  |  chars=%d  |  %.1fs",
+                len(content), duration,
             )
 
             log.log_action(
-                action="claude_api_call",
+                action="call_ai_fallback",
                 agent="media",
                 status="success",
                 details={
-                    "model": model,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost_usd": round(actual_cost, 6),
-                    "session_total_usd": round(self._session_spend, 4),
+                    "chars": len(content),
                     "duration_s": round(duration, 2),
                 },
             )
@@ -1989,8 +2035,8 @@ class MediaAgent:
         except Exception as exc:
             duration = time.monotonic() - start
             log.warning(
-                "Claude API error  |  model=%s  |  %.1fs  |  %s",
-                model, duration, exc,
+                "Fallback API error  |  %.1fs  |  %s",
+                duration, exc,
             )
             return None
 

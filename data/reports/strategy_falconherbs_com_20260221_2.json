@@ -1,0 +1,332 @@
+{
+  "report_type": "weekly_strategy",
+  "site": "falconherbs.com",
+  "generated_at": "2026-02-21T12:38:20.836264+00:00",
+  "generation_time_s": 21.91,
+  "profile_version": "1.0.0",
+  "keyword_analysis": {
+    "site": "falconherbs.com",
+    "analysed_at": "2026-02-21T12:38:06.112800+00:00",
+    "keyword_scores": {
+      "zioÅ‚a": {
+        "keyword": "zioÅ‚a",
+        "translation": "herbs",
+        "priority": 1,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "herbata zioÅ‚owa": {
+        "keyword": "herbata zioÅ‚owa",
+        "translation": "herbal tea",
+        "priority": 1,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "sklep zioÅ‚owy": {
+        "keyword": "sklep zioÅ‚owy",
+        "translation": "herb shop",
+        "priority": 2,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "zioÅ‚a lecznicze": {
+        "keyword": "zioÅ‚a lecznicze",
+        "translation": "medicinal herbs",
+        "priority": 2,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "naturalne suplementy": {
+        "keyword": "naturalne suplementy",
+        "translation": "natural supplements",
+        "priority": 3,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "zioÅ‚a na odpornoÅ›Ä‡": {
+        "keyword": "zioÅ‚a na odpornoÅ›Ä‡",
+        "translation": "herbs for immunity",
+        "priority": 3,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      },
+      "herbata na trawienie": {
+        "keyword": "herbata na trawienie",
+        "translation": "tea for digestion",
+        "priority": 3,
+        "score": 0,
+        "max_score": 5,
+        "locations": {
+          "title": false,
+          "meta_description": false,
+          "h1": false,
+          "body": false,
+          "url": false
+        }
+      }
+    },
+    "total_keywords": 7,
+    "average_score": 0.0,
+    "gaps": [
+      {
+        "keyword": "zioÅ‚a",
+        "translation": "herbs",
+        "priority": 1,
+        "recommendation": "'zioÅ‚a' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "herbata zioÅ‚owa",
+        "translation": "herbal tea",
+        "priority": 1,
+        "recommendation": "'herbata zioÅ‚owa' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "sklep zioÅ‚owy",
+        "translation": "herb shop",
+        "priority": 2,
+        "recommendation": "'sklep zioÅ‚owy' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "zioÅ‚a lecznicze",
+        "translation": "medicinal herbs",
+        "priority": 2,
+        "recommendation": "'zioÅ‚a lecznicze' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "naturalne suplementy",
+        "translation": "natural supplements",
+        "priority": 3,
+        "recommendation": "'naturalne suplementy' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "zioÅ‚a na odpornoÅ›Ä‡",
+        "translation": "herbs for immunity",
+        "priority": 3,
+        "recommendation": "'zioÅ‚a na odpornoÅ›Ä‡' not found anywhere on homepage. Add it to title, H1, and body content."
+      },
+      {
+        "keyword": "herbata na trawienie",
+        "translation": "tea for digestion",
+        "priority": 3,
+        "recommendation": "'herbata na trawienie' not found anywhere on homepage. Add it to title, H1, and body content."
+      }
+    ],
+    "gap_count": 7,
+    "opportunities": [],
+    "opportunity_count": 0,
+    "recommendations": [
+      "PRIORITY: 4 high-priority keywords have ZERO presence on homepage: zioÅ‚a, herbata zioÅ‚owa, sklep zioÅ‚owy. These must be integrated into page content immediately.",
+      "Average keyword score is 0.0/5. Homepage needs major SEO content overhaul."
+    ]
+  },
+  "traffic_analysis": {
+    "site": "falconherbs.com",
+    "analysed_at": "2026-02-21T12:38:11.145100+00:00",
+    "trend": {
+      "direction": "improving",
+      "average_ms": 2698.8,
+      "target_ms": 1500,
+      "sample_count": 2
+    },
+    "performance_grade": "D",
+    "average_ms": 2698.8,
+    "target_ms": 1500,
+    "samples": [
+      {
+        "file": "profile",
+        "response_time_ms": 3070,
+        "timestamp": "2026-02-20T00:00:00"
+      },
+      {
+        "file": "live_check",
+        "response_time_ms": 2327.5,
+        "timestamp": "2026-02-21T12:38:11.145022+00:00"
+      }
+    ],
+    "recommendations": [
+      "Performance is IMPROVING — response time decreased ~24.2%. Continue monitoring.",
+      "Response time 2698.8ms is poor (target: 1500ms). Priority: enable gzip compression, optimize images, and review heavy plugins.",
+      "Current response time exceeds target by 79.9% (2699ms vs 1500ms target)."
+    ]
+  },
+  "content_analysis": {
+    "site": "falconherbs.com",
+    "url": "https://falconherbs.com",
+    "analysed_at": "2026-02-21T12:38:16.064285+00:00",
+    "content_metrics": {
+      "word_count": 1296,
+      "word_count_target": 300,
+      "word_count_passed": true,
+      "internal_links": 130,
+      "internal_links_target": 10,
+      "internal_links_passed": true,
+      "external_links": 4,
+      "category_links": 80,
+      "has_blog_section": false,
+      "heading_structure": {
+        "h1": 1,
+        "h2": 14,
+        "h3": 15,
+        "h4": 1,
+        "h5": 2
+      },
+      "h1_count": 1,
+      "h2_count": 14,
+      "title_length": 35,
+      "meta_description_length": 19,
+      "images_count": 28,
+      "images_with_alt": 22
+    },
+    "gaps": [
+      "No blog or articles section detected",
+      "6 images missing alt text"
+    ],
+    "gap_count": 2,
+    "content_recommendations": [
+      "Create a blog section with articles about herbal remedies, tea preparation, and natural health topics in English. Blog content targets long-tail keywords and drives organic traffic. Suggested topics: 'Jak parzyć herbatę ziołową', 'Zioła na odporność — poradnik', 'Naturalne suplementy diety'.",
+      "6/28 images lack alt text. Add descriptive alt attributes in English for accessibility and image SEO."
+    ]
+  },
+  "sales_analysis": {
+    "site": "falconherbs.com",
+    "analysed_at": "2026-02-21T12:38:20.827408+00:00",
+    "api_accessible": false,
+    "period": "2026-01-22 to 2026-02-21",
+    "period_days": 30,
+    "sales_summary": {},
+    "top_products": [],
+    "top_by_quantity": [],
+    "recommendations": [
+      "No top-selling products data available. Ensure products are published and visible."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "rec-002",
+      "title": "Fix Keyword Gaps",
+      "description": "7 target keywords have ZERO presence on homepage: zioÅ‚a, herbata zioÅ‚owa, sklep zioÅ‚owy. Add these to title, headings, and body content.",
+      "impact": "high",
+      "effort": "low",
+      "priority_score": 15,
+      "agent": "developer",
+      "task": "content_update",
+      "category": "seo",
+      "rank": 1
+    },
+    {
+      "id": "rec-005",
+      "title": "Set Up Google Search Console",
+      "description": "Verify site ownership in Google Search Console for falconherbs.com. This provides real keyword ranking data, crawl error alerts, and indexing status.",
+      "impact": "high",
+      "effort": "low",
+      "priority_score": 15,
+      "agent": "developer",
+      "task": "general_task",
+      "category": "seo",
+      "rank": 2
+    },
+    {
+      "id": "rec-003",
+      "title": "Critical Performance Fix",
+      "description": "Site response time is 2699ms (grade D). Enable server-side caching, optimise database, and reduce plugin overhead.",
+      "impact": "high",
+      "effort": "medium",
+      "priority_score": 13,
+      "agent": "developer",
+      "task": "fix_code",
+      "category": "performance",
+      "rank": 3
+    },
+    {
+      "id": "rec-007",
+      "title": "Email Marketing Setup",
+      "description": "Configure abandoned cart recovery emails in CartFlows and post-purchase follow-up sequences in Mailchimp. Email is the highest-ROI channel for e-commerce.",
+      "impact": "high",
+      "effort": "medium",
+      "priority_score": 13,
+      "agent": "strategist",
+      "task": "general_task",
+      "category": "marketing",
+      "rank": 4
+    },
+    {
+      "id": "rec-001",
+      "title": "Major SEO Content Overhaul",
+      "description": "Average keyword score is 0.0/5. Homepage needs comprehensive content rewrite with target keywords integrated naturally.",
+      "impact": "high",
+      "effort": "high",
+      "priority_score": 11,
+      "agent": "developer",
+      "task": "content_update",
+      "category": "seo",
+      "rank": 5
+    },
+    {
+      "id": "rec-004",
+      "title": "Launch Blog Section",
+      "description": "No blog detected. Create a blog with English articles about herbal remedies, tea preparation, and natural health. Targets long-tail keywords and drives organic traffic.",
+      "impact": "high",
+      "effort": "high",
+      "priority_score": 11,
+      "agent": "media",
+      "task": "create_content",
+      "category": "content",
+      "rank": 6
+    },
+    {
+      "id": "rec-006",
+      "title": "Install Structured Data (Schema)",
+      "description": "Add Product schema markup to all WooCommerce products. This enables rich snippets (price, availability, reviews) in Google results.",
+      "impact": "medium",
+      "effort": "medium",
+      "priority_score": 10,
+      "agent": "developer",
+      "task": "fix_code",
+      "category": "seo",
+      "rank": 7
+    }
+  ],
+  "recommendation_count": 7
+}

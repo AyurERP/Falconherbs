@@ -68,6 +68,7 @@ from core.sentinel import Sentinel
 from core.whatsapp import WhatsAppNotifier
 from core.commander import FalconCommander
 from core.webhook import FalconWebhook
+from core.ai_client import call_ai
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -215,7 +216,7 @@ class Director:
     #  Initialisation
     # ──────────────────────────────────────────────────────────────────────
 
-    def __init__(self) -> None:
+    def __init__(self, whatsapp_client=None) -> None:
         """
         Initialise the Director.
 
@@ -241,9 +242,20 @@ class Director:
         self._sentinel: Optional[Sentinel]       = self._init_sentinel()
 
         # ── WhatsApp + Commander + Webhook ──
-        self._whatsapp: Optional[WhatsAppNotifier] = self._safe_init("WhatsAppNotifier", WhatsAppNotifier)
+        self._whatsapp: Optional[WhatsAppNotifier] = whatsapp_client or self._safe_init("WhatsAppNotifier", WhatsAppNotifier)
         self._commander: Optional[FalconCommander] = self._init_commander()
         self._webhook: Optional[FalconWebhook]     = self._init_webhook()
+
+        # ── Import and initialize agents ──
+        from agents.developer import DeveloperAgent
+        from agents.strategist import StrategistAgent
+        from agents.media import MediaAgent
+        from agents.backup import BackupAgent
+        
+        self._developer = DeveloperAgent(self._whatsapp)
+        self._strategist = StrategistAgent(self._whatsapp)
+        self._media = MediaAgent(self._whatsapp)
+        self._backup = BackupAgent(self._whatsapp)
 
         # ── Ensure JSON state files ──
         self._ensure_goals_file()
@@ -637,6 +649,95 @@ class Director:
             if any(t in desc for t in triggers):
                 return task_name
         return "general_task"
+
+    def think(self, goal: str, context: dict = None) -> dict:
+        """
+        Director thinks about a goal and creates execution plan.
+        Returns: {"plan": [...steps], "assigned_agents": [...], "estimated_time": "..."}
+        """
+        system_prompt = """You are the Director of Falcon Agency — a strategic mastermind.
+
+Your job:
+1. Break complex goals into clear actionable steps
+2. Decide which agent should handle each step
+3. Identify risks and dependencies
+4. Estimate time for completion
+
+Available Agents:
+- Developer: SEO, uptime, performance, code fixes, technical tasks
+- Strategist: Market analysis, content strategy, competitor research, business planning
+- Media: Graphics, social media content, design, visual assets
+- Backup: Data snapshots, restore, safety backups
+
+Respond in JSON:
+{
+    "understanding": "what you understood from the goal",
+    "plan": [
+        {"step": 1, "action": "...", "agent": "developer|strategist|media|backup", "details": "..."},
+        {"step": 2, "action": "...", "agent": "...", "details": "..."}
+    ],
+    "risks": ["..."],
+    "estimated_time": "X minutes/hours",
+    "needs_approval": true/false
+}
+"""
+
+        context_str = json.dumps(context) if context else "No additional context"
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Goal: {goal}\n\nContext: {context_str}"}
+        ]
+        
+        response = call_ai("director", messages)
+        
+        try:
+            return json.loads(response)
+        except:
+            return {"error": "Failed to parse plan", "raw": response}
+
+    def execute_plan(self, plan: dict) -> list:
+        """
+        Executes each step of the plan by delegating to appropriate agent.
+        Returns list of results.
+        """
+        results = []
+        
+        for step in plan.get("plan", []):
+            agent_name = step.get("agent", "").lower()
+            action = step.get("action", "")
+            details = step.get("details", "")
+            
+            result = {
+                "step": step.get("step"),
+                "action": action,
+                "agent": agent_name,
+                "status": "pending"
+            }
+            
+            try:
+                if agent_name == "developer":
+                    result["output"] = self._developer.execute(action, details)
+                    result["status"] = "completed"
+                elif agent_name == "strategist":
+                    result["output"] = self._strategist.execute(action, details)
+                    result["status"] = "completed"
+                elif agent_name == "media":
+                    result["output"] = self._media.execute(action, details)
+                    result["status"] = "completed"
+                elif agent_name == "backup":
+                    result["output"] = self._backup.execute(action, details)
+                    result["status"] = "completed"
+                else:
+                    result["output"] = f"Unknown agent: {agent_name}"
+                    result["status"] = "failed"
+            except Exception as e:
+                result["output"] = str(e)
+                result["status"] = "failed"
+            
+            results.append(result)
+        
+        return results
 
     # ══════════════════════════════════════════════════════════════════════
     #  2.  TASK SCHEDULING

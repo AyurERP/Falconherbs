@@ -41,6 +41,8 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from core.logger import log
 from core.whatsapp import WhatsAppNotifier
+from core.ai_client import call_ai
+from config.keys import AI_MODELS
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -58,7 +60,7 @@ HTTP_TIMEOUT: int = 30    # Claude can take longer than a web request
 #  SYSTEM PROMPTS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-INTENT_SYSTEM_PROMPT: str = """You are the command interpreter for Falcon Agency, an AI workforce managing herbal product websites (falconherbs.com — Indian herbs, global market: AU, UAE, USA, UK).
+INTENT_SYSTEM_PROMPT: str = """You are the command interpreter for Falcon Agency, an elite AI workforce managing herbal product websites.
 
 The owner sends messages in plain English, Hindi, or Hinglish via WhatsApp. Your job is to classify intent and extract parameters.
 
@@ -66,19 +68,24 @@ Return ONLY valid JSON. No explanation. No markdown. No code fences. Just the JS
 
 Schema:
 {
-  "intent": one of ["status_check", "run_task", "approve_action", "deny_action", "idea_capture", "question", "unknown"],
-  "task": "task name if run_task, else null",
+  "intent": one of ["status_check", "run_task", "plan_task", "approve_action", "deny_action", "idea_capture", "question", "unclear", "unknown"],
+  "task": "task name if run_task or plan_task, else null",
   "site": "site domain if mentioned, else falconherbs.com",
   "params": {},
+  "plan_summary": "only if intent is plan_task - brief plan summary",
+  "clarifying_question": "only if intent is unclear - question to ask owner",
   "reply_needed": true or false,
   "idea_text": "full idea if idea_capture, else null"
 }
 
-Task mapping (use these exact task names for run_task):
-- "run seo report", "seo check", "seo audit" → task: "seo_audit"
-- "security scan", "scan site" → task: "security_scan"
+Task mapping (use these exact task names):
+Simple tasks (use "run_task"):
 - "check uptime", "site up?" → task: "uptime_check"
 - "check performance", "speed test" → task: "performance_check"
+
+Complex tasks (use "plan_task" so the AI can discuss and plan first):
+- "run seo report", "seo check", "seo audit" → task: "seo_audit"
+- "security scan", "scan site" → task: "security_scan"
 - "audit plugins", "plugin check" → task: "plugin_update_check"
 - "audit comments", "spam check" → task: "comment_spam_audit"
 - "sales report", "revenue check" → task: "analyse_sales"
@@ -86,53 +93,44 @@ Task mapping (use these exact task names for run_task):
 - "content check" → task: "analyse_content_gaps"
 - "competitor check" → task: "check_competitors"
 - "full report", "weekly report" → task: "run_analysis"
+- "health claim check", "compliance" → task: "health_claim_audit"
 
 Approve/deny detection:
 - "yes", "approve", "haan", "theek hai", "ok", "go ahead", "kar do" → approve_action
 - "no", "deny", "nahi", "cancel", "reject", "ruko", "mat karo" → deny_action
 
-Idea detection (owner sharing a business idea, product idea, strategy idea):
-- "I was thinking we should...", "idea: ...", "what if we...", "let's try..."
-- Capture the FULL idea text
+Idea detection (owner sharing a business idea):
+- "I was thinking we should...", "idea: ...", "let's try..."
 
-Question detection (owner asking about the business, sites, data):
+Question detection (asking about business/data):
 - "how is traffic?", "kitne orders aaye?", "ranking kaisi hai?"
-- Any question about site performance, strategy, data
 
 Status check:
-- "status", "kya ho raha hai", "update do", "sab theek?", "what's happening"
+- "status", "kya ho raha hai", "update do"
 """
 
-PERSONALITY_PROMPT: str = """You are Director — the trusted, hardworking team leader of Falcon Agency, an AI workforce managing herbal product websites for an Indian business owner.
+PERSONALITY_PROMPT: str = """You are the Lead Intelligence System of Falcon Agency, an elite and highly capable AI workforce managing herbal product websites for the owner.
 
 CRITICAL PERSONALITY RULES:
 
-1. LANGUAGE MATCHING — automatically match the owner's language:
-   - If owner texts in Hinglish → reply in Hinglish (most common mode)
-   - If owner texts formal English → reply in professional English
-   - If owner texts Hindi → reply in Hindi
-   - NEVER force a language change
+1. LANGUAGE MIRRORING (CRITICAL):
+   - You MUST exactly match the owner's language choice.
+   - If the owner writes in English -> reply in pure, professional English.
+   - If the owner writes in Hinglish (mixed Hindi-English) -> reply in natural Hinglish.
+   - If the owner writes in pure Hindi -> reply in pure Hindi.
+   - Never force Hinglish if they are speaking English.
 
-2. HINGLISH STYLE (default mode):
-   - Casual, warm, like a colleague who's worked with you for years
-   - Use: sir (respectful but friendly), natural Hindi words mixed with English
-   - Common phrases: theek hai, chal raha hai, ho gaya, bilkul, sahi hai, abhi, dekh lete hain, bohot accha
-   - Keep it SHORT — WhatsApp hai, essay nahi
-   - 1-3 emojis per message max, natural placement
+2. INTELLIGENCE & TONE:
+   - You are highly intelligent, sharp, and powerful.
+   - Speak clearly and confidently without sounding like a classic robotic bot.
+   - Do NOT use forced words like "sir" in every sentence unless it naturally fits the context.
+   - Never say "I am an AI language model". You are the Falcon Agency Lead AI.
+   - Ask clarifying questions if a complex task needs more details before execution.
 
-3. PERSONALITY:
-   - Always sounds on top of everything ("sab handle ho raha hai sir")
-   - Proactive — mentions things worth knowing
-   - Honest about problems — doesn't hide bad news but frames constructively
-   - Excited about good results
-   - NEVER says "I am an AI" — you are Director, a team member
-   - NEVER uses robotic phrases like "I have processed your request"
-   - NEVER writes long paragraphs — short punchy WhatsApp messages
-
-4. FORMAT:
-   - Max 200 words per response (WhatsApp, not email)
-   - Use line breaks for readability
-   - Numbers with context, not raw data dumps
+3. FORMAT:
+   - Max 150-200 words per response.
+   - Use line breaks for readability.
+   - Limit emojis to 1-2 per message max, and only where they naturally fit.
 
 Respond to the following context and user message naturally."""
 
@@ -169,29 +167,14 @@ class FalconCommander:
     ) -> None:
         """
         Initialise the Commander.
-
-        Loads the Anthropic client from the ``ANTHROPIC_API_KEY``
-        environment variable.
         """
         self._director = director
         self._whatsapp: WhatsAppNotifier = whatsapp
-        self._client: Any = None
-        self._model: str = "claude-3-haiku-20240307"
         self._processing_lock: threading.Lock = threading.Lock()
-
-        # ── Load Anthropic client ──
-        try:
-            import anthropic
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if api_key:
-                self._client = anthropic.Anthropic(api_key=api_key)
-                log.info("FalconCommander: Anthropic client ready  |  model=%s", self._model)
-            else:
-                log.warning("FalconCommander: ANTHROPIC_API_KEY not set — AI features disabled")
-        except ImportError:
-            log.critical("FalconCommander: 'anthropic' package not installed")
-        except Exception as exc:
-            log.critical("FalconCommander: Anthropic init failed: %s", exc)
+        self.pending_plans: dict[str, dict] = {}
+        
+        from core.approval import ApprovalSystem
+        self._approval = ApprovalSystem()
 
         # Ensure data directory exists
         try:
@@ -200,6 +183,9 @@ class FalconCommander:
             pass
 
         log.info("FalconCommander initialised")
+
+
+
 
     # ══════════════════════════════════════════════════════════════════
     #  MAIN HANDLER
@@ -231,6 +217,13 @@ class FalconCommander:
         )
 
         try:
+            # Check for direct agent addressing
+            if text.strip().startswith("@"):
+                return self._handle_direct_agent(text, message_id)
+
+            lower_text = text.lower().strip()
+
+            # Step 3: no pending plan → normal intent classification
             # ── Step 1: Classify intent ──
             intent_data = self._classify_intent(text)
 
@@ -243,10 +236,12 @@ class FalconCommander:
             site = intent_data.get("site", "falconherbs.com")
             params = intent_data.get("params", {})
             idea_text = intent_data.get("idea_text")
+            plan_summary = intent_data.get("plan_summary")
+            clarifying_question = intent_data.get("clarifying_question")
 
             log.info(
                 "Intent classified  |  intent=%s  |  task=%s  |  site=%s",
-                intent, task, site,
+                intent, task, site
             )
 
             log.log_action(
@@ -261,11 +256,37 @@ class FalconCommander:
                 },
             )
 
+            if intent == "unclear" and clarifying_question:
+                self._whatsapp.send_message(f"🤔 {clarifying_question}")
+                return
+            elif intent == "plan_task" and task:
+                plan_text = plan_summary if plan_summary else f"I will need to run {task} on {site}."
+                self._whatsapp.send_message(f"📋 *Plan Proposed*\n\n{plan_text}")
+                
+                def _trigger_approval():
+                    try:
+                        ok = self._approval.request_approval(
+                            action=f"Execute {task} on {site}?",
+                            details={"task": task, "site": site}
+                        )
+                        if ok:
+                            self._handle_run_task(text, task, site, params)
+                        else:
+                            self._whatsapp.send_message("❌ Cancelled. Plan discarded.")
+                    except Exception as e:
+                        self._whatsapp.send_message(f"❌ Task planning failed: {task}\nError: {str(e)[:200]}")
+                        
+                # request_approval is blocking (poll_for_reply loops with timeout),
+                # so we run it in a daemon thread (async wrapper behaviour) to prevent blocking webhook responses.
+                threading.Thread(target=_trigger_approval, daemon=True).start()
+                return
+
             # ── Step 2: Route based on intent ──
             if intent == "status_check":
                 self._handle_status_check(text)
 
-            elif intent == "run_task":
+            elif intent in ["run_task", "plan_task"]:
+                # If plan_task slipped through as simple somehow, just run it
                 self._handle_run_task(text, task, site, params)
 
             elif intent == "approve_action":
@@ -298,6 +319,74 @@ class FalconCommander:
                 )
             except Exception:
                 pass
+
+    # ══════════════════════════════════════════════════════════════════
+    #  DIRECT AGENT ROUTING
+    # ══════════════════════════════════════════════════════════════════
+
+    def _handle_direct_agent(self, text: str, message_id: str) -> None:
+        """
+        Handle direct agent communication: @developer, @strategist, @media, @backup
+        Example: "@developer check website speed"
+        """
+        from core.director import Director
+        
+        parts = text.strip().split(" ", 1)
+        agent_tag = parts[0].lower()  # @developer
+        query = parts[1] if len(parts) > 1 else "status"
+        
+        # Initialize director to access agents
+        director = Director(self._whatsapp)
+        
+        agent_map = {
+            "@developer": director._developer,
+            "@dev": director._developer,
+            "@strategist": director._strategist,
+            "@strategy": director._strategist,
+            "@media": director._media,
+            "@backup": director._backup,
+            "@director": None,
+            "@dir": None
+        }
+        
+        agent = agent_map.get(agent_tag)
+        
+        if agent_tag in ["@director", "@dir"]:
+            # Direct to Director brain
+            self._whatsapp.send_message(f"🎯 Director se baat kar raha hun...")
+            plan = director.think(query)
+            self._whatsapp.send_message(f"📋 Director's Response:\n{json.dumps(plan, indent=2)}")
+            return
+        
+        if agent is None:
+            self._whatsapp.send_message(
+                f"❓ Unknown agent: {agent_tag}\n\n"
+                f"Available agents:\n"
+                f"• @developer / @dev\n"
+                f"• @strategist / @strategy\n"
+                f"• @media\n"
+                f"• @backup\n"
+                f"• @director / @dir"
+            )
+            return
+        
+        # Send to specific agent
+        self._whatsapp.send_message(f"🔄 {agent.name} se baat kar raha hun...")
+        
+        try:
+            # Agent thinks about the query
+            thought = agent.think(query)
+            
+            # If it needs action, execute
+            if any(k in query.lower() for k in ["execute", "run", "do"]):
+                result = agent.execute(query, "")
+                self._whatsapp.send_message(f"✅ {agent.name} Result:\n{result[:1500]}")
+            else:
+                # Just thinking/analysis
+                self._whatsapp.send_message(f"💭 {agent.name}'s Analysis:\n{json.dumps(thought, indent=2)}")
+        
+        except Exception as e:
+            self._whatsapp.send_message(f"❌ {agent.name} Error: {str(e)[:500]}")
 
     # ══════════════════════════════════════════════════════════════════
     #  INTENT HANDLERS
@@ -386,6 +475,58 @@ class FalconCommander:
                 f"Error: {str(exc)[:100]}\n"
                 "Log mein dekh ke fix karta hun."
             )
+
+
+    def _handle_plan_task(
+        self,
+        original_text: str,
+        task: Optional[str],
+        site: str,
+        params: dict,
+    ) -> None:
+        """Discuss a complex task and seek approval before running it."""
+        if not task:
+            self._whatsapp.send_message("Kaunsa complex task aapko discuss karna hai? 🤔")
+            return
+
+        try:
+            reply = self._generate_reply(
+                original_text,
+                f"The owner wants to run a complex task: '{task}' on site '{site}'. "
+                f"Instead of running it immediately, generate a short, smart plan on how you "
+                f"will execute this task. Explain the steps briefly and explicitly ask for the owner's "
+                f"approval ('Should I go ahead?', 'Kya main shuru karu?') to proceed. "
+                f"Keep it powerful, clear, and perfectly match their language."
+            )
+            
+            self._whatsapp.send_message(reply)
+            
+            request_id = f"plan_{task}_{site}_{int(time.time())}"
+            self._whatsapp.send_approval_request(
+                action=f"Execute {task} on {site}?",
+                details={"Task": task, "Site": site},
+                request_id=request_id,
+            )
+
+            def _wait_and_run():
+                reply_val = self._whatsapp.poll_for_reply(request_id, timeout=3600)
+                if reply_val == "YES":
+                    try:
+                        self._whatsapp.send_message(f"✅ Awesome, starting {task} now!")
+                    except Exception:
+                        pass
+                    self._handle_run_task(original_text, task, site, params)
+                elif reply_val == "NO":
+                    try:
+                        self._whatsapp.send_message(f"❌ Cancelled {task}. Let me know if you want to adjust the plan.")
+                    except Exception:
+                        pass
+
+            threading.Thread(target=_wait_and_run, daemon=True).start()
+
+        except Exception as exc:
+            log.critical("Plan task failed: %s", exc, exc_info=True)
+            self._whatsapp.send_message(f"⚠️ Planning mein issue aaya.\nError: {str(exc)[:100]}")
 
     def _handle_approve(self) -> None:
         """Route an approval to the pending request."""
@@ -484,38 +625,41 @@ class FalconCommander:
 
     def _classify_intent(self, text: str) -> Optional[dict]:
         """
-        Use Claude to classify the owner's message intent.
-
-        Returns parsed JSON dict or None on failure.
-        Falls back to keyword-based classification if Claude is unavailable.
+        Use AI to classify the owner's message intent.
+        
+        Uses the multi-model AI Client, then falls back to keyword-based.
         """
-        # ── Try Claude first ──
-        if self._client is not None:
+        from core.ai_client import call_ai
+        
+        messages = [
+            {"role": "system", "content": INTENT_SYSTEM_PROMPT},
+            {"role": "user", "content": text}
+        ]
+        
+        raw = call_ai("commander", messages)
+        
+        if raw.startswith("AI_ERROR:"):
+            log.warning("AI classification failed: %s", raw)
+        else:
             try:
-                response = self._client.messages.create(
-                    model=self._model,
-                    max_tokens=300,
-                    system=INTENT_SYSTEM_PROMPT,
-                    messages=[{"role": "user", "content": text}],
-                )
-
-                raw = response.content[0].text.strip()
-
                 # Clean any markdown fences
                 if raw.startswith("```"):
                     raw = raw.split("\n", 1)[-1]
                 if raw.endswith("```"):
                     raw = raw.rsplit("```", 1)[0]
                 raw = raw.strip()
-
+                if raw.startswith("json\n"):
+                    raw = raw[5:].strip()
+                
                 parsed = json.loads(raw)
+                log.info("Intent classified via new AI client")
                 return parsed
-
+                
             except json.JSONDecodeError as exc:
-                log.warning("Claude returned invalid JSON: %s  |  raw=%s", exc, raw[:200])
+                log.warning("AI returned invalid JSON: %s  |  raw=%s", exc, raw[:200])
             except Exception as exc:
-                log.warning("Claude intent classification failed: %s", exc)
-
+                log.warning("AI parsing failed: %s", exc)
+        
         # ── Fallback: keyword-based classification ──
         return self._keyword_classify(text)
 
@@ -544,12 +688,14 @@ class FalconCommander:
 
         # Tasks
         task_map = {
-            "seo": "seo_audit",
-            "security": "security_scan",
-            "scan": "security_scan",
             "uptime": "uptime_check",
             "performance": "performance_check",
             "speed": "performance_check",
+        }
+        complex_task_map = {
+            "seo": "seo_audit",
+            "security": "security_scan",
+            "scan": "security_scan",
             "plugin": "plugin_update_check",
             "spam": "comment_spam_audit",
             "comment": "comment_spam_audit",
@@ -559,10 +705,21 @@ class FalconCommander:
             "content": "analyse_content_gaps",
             "competitor": "check_competitors",
             "report": "run_analysis",
+            "health claim": "health_claim_audit",
+            "wrong claim": "health_claim_audit",
+            "compliance": "health_claim_audit",
+            "govt": "health_claim_audit",
+            "legal": "health_claim_audit",
         }
+        
         for keyword, task in task_map.items():
             if keyword in lower:
                 return {"intent": "run_task", "task": task, "site": "falconherbs.com",
+                        "params": {}, "reply_needed": True, "idea_text": None}
+                        
+        for keyword, task in complex_task_map.items():
+            if keyword in lower:
+                return {"intent": "plan_task", "task": task, "site": "falconherbs.com",
                         "params": {}, "reply_needed": True, "idea_text": None}
 
         # Idea
@@ -580,53 +737,66 @@ class FalconCommander:
 
     def _generate_reply(self, owner_message: str, context: str) -> str:
         """
-        Generate a natural-language reply using Claude with the
-        personality prompt.
-
-        Falls back to returning the raw context if Claude is unavailable.
-
-        Parameters
-        ----------
-        owner_message : str
-            What the owner said.
-        context : str
-            System context and data for Claude to work with.
-
-        Returns
-        -------
-        str
-            A natural, Hinglish-flavoured WhatsApp reply.
+        Generate a natural-language reply using AI with personality prompt.
+        
+        Tries NVIDIA NIM first, then Gemini, then falls back to static reply.
         """
-        if self._client is not None:
+        prompt = (
+            f"Owner's message: \"{owner_message}\"\n\n"
+            f"Context for your reply:\n{context}"
+        )
+        
+        # ── Try NVIDIA NIM first ──
+        if self._nvidia_client is not None:
             try:
-                response = self._client.messages.create(
+                response = self._nvidia_client.chat.completions.create(
                     model=self._model,
-                    max_tokens=500,
-                    system=PERSONALITY_PROMPT,
                     messages=[
-                        {
-                            "role": "user",
-                            "content": (
-                                f"Owner's message: \"{owner_message}\"\n\n"
-                                f"Context for your reply:\n{context}"
-                            ),
-                        },
+                        {"role": "system", "content": PERSONALITY_PROMPT},
+                        {"role": "user", "content": prompt}
                     ],
+                    temperature=0.7,
+                    max_tokens=300,
                 )
-
-                reply = response.content[0].text.strip()
+                msg = response.choices[0].message
+                # Handle both content and reasoning (Kimi uses reasoning field)
+                reply = (msg.content or msg.reasoning or "").strip()
+                
+                log.log_action(
+                    action="reply_generated",
+                    agent="commander",
+                    status="success",
+                    details={"chars": len(reply), "provider": "nvidia-kimi"},
+                )
+                return reply
+                
+            except Exception as exc:
+                log.warning("NVIDIA NIM reply generation failed: %s", exc)
+        
+        # ── Try Gemini as fallback ──
+        if self._gemini_client is not None:
+            try:
+                from google.genai import types
+                response = self._gemini_client.models.generate_content(
+                    model=self._gemini_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=PERSONALITY_PROMPT,
+                    ),
+                )
+                reply = response.text.strip()
 
                 log.log_action(
                     action="reply_generated",
                     agent="commander",
                     status="success",
-                    details={"chars": len(reply)},
+                    details={"chars": len(reply), "provider": "gemini"},
                 )
 
                 return reply
 
             except Exception as exc:
-                log.warning("Claude reply generation failed: %s", exc)
+                log.warning("Gemini reply generation failed: %s", exc)
 
         # Fallback: return a trimmed version of the context
         return context[:500] if context else "Processing ho raha hai sir, thodi der mein update dunga. 👍"
@@ -808,6 +978,7 @@ class FalconCommander:
         return value
 
     def __repr__(self) -> str:
-        ai = "✅" if self._client else "❌"
+        nvidia = "✅" if self._nvidia_client else "❌"
+        gemini = "✅" if self._gemini_client else "❌"
         director = "✅" if self._director else "❌"
-        return f"<FalconCommander  ai={ai}  director={director}>"
+        return f"<FalconCommander  nvidia={nvidia}  gemini={gemini}  director={director}>"

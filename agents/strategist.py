@@ -25,7 +25,7 @@ Execution Model
                                                         ▼
                                             generate_weekly_report()
                                              ├── save to data/reports/
-                                             └── send summary via Telegram
+                                             └── send summary via WhatsApp
 
 Safety Guarantees
 ─────────────────
@@ -36,8 +36,8 @@ Safety Guarantees
     • All HTTP requests: 10s timeout ceiling
     • All reports persisted to data/reports/ before returning
 
-Primary Market : Poland (pl)
-Primary Site   : falconherbs.com (WooCommerce, herbal products)
+Primary Market : Global — AU, UAE, USA, UK, India (en)
+Primary Site   : falconherbs.com (WooCommerce, Indian herbal products)
 """
 
 from __future__ import annotations
@@ -56,6 +56,8 @@ from bs4 import BeautifulSoup
 
 from core.logger import log
 from core.approval import ApprovalSystem
+from agents.base_agent import BaseAgent
+from core.ai_client import call_ai
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -152,48 +154,49 @@ def _grade_performance(avg_ms: float) -> str:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-class StrategistAgent:
+class StrategistAgent(BaseAgent):
     """
     Analytical intelligence agent for Falcon Agency.
 
     Capabilities (all read-only):
         • On-page keyword coverage analysis
-        • SERP position checking on google.pl
+        • SERP position checking on google.com (global / India locale)
         • WooCommerce sales summary via REST API
         • Performance trend analysis from stored scans
         • Competitor domain signal checking
         • Content gap identification
         • Prioritised growth recommendations
-        • Weekly strategy report with Telegram delivery
+        • Weekly strategy report with WhatsApp delivery
 
     Parameters
     ----------
     approval : ApprovalSystem
-        Used for sending reports and summaries to the owner via Telegram.
+        Used for sending reports and summaries to the owner via WhatsApp.
     """
 
     # ──────────────────────────────────────────────────────────────────
     #  Init
     # ──────────────────────────────────────────────────────────────────
 
-    def __init__(self, approval: Optional[ApprovalSystem] = None) -> None:
+    def __init__(self, whatsapp_client=None):
         """
         Initialise the Strategist Agent.
-
-        Parameters
-        ----------
-        approval : ApprovalSystem or None
-            If ``None``, a new instance is created automatically.
         """
-        if approval is not None:
-            self._approval: ApprovalSystem = approval
-        else:
-            try:
-                self._approval = ApprovalSystem()
-            except Exception as exc:
-                log.critical("StrategistAgent: ApprovalSystem init failed: %s", exc)
-                self._approval = None  # type: ignore[assignment]
+        super().__init__(whatsapp_client)
+        self.name = "Strategist"
+        self.ai_role = "director"  # Uses DeepSeek for strategic thinking
+        self.capabilities = [
+            "Market analysis",
+            "Competitor research", 
+            "Content strategy",
+            "Business planning",
+            "Trend analysis",
+            "Growth recommendations",
+            "Health claims compliance audit"
+        ]
 
+        # Preserve legacy properties
+        self._approval = None
         self._session: requests.Session = self._build_session()
 
         # Ensure reports directory exists
@@ -219,28 +222,76 @@ class StrategistAgent:
     #  DISPATCH INTERFACE
     # ══════════════════════════════════════════════════════════════════
 
-    def execute(self, task: str, site: str, params: dict) -> dict:
-        """
-        Entry point called by Director's ``dispatch_agent()``.
-
-        Delegates to ``handle()``.  Both ``execute()`` and ``handle()``
-        return identical results.
-
-        Parameters
-        ----------
-        task : str
-            Task identifier.
-        site : str
-            Target site.
-        params : dict
-            Extra parameters from the Director.
-
-        Returns
-        -------
-        dict
-            Standardised result dict.
-        """
-        return self.handle(task=task, site=site, params=params)
+    def execute(self, action: str, details: str) -> str:
+        """Strategist executes business/strategy tasks"""
+        
+        plan = self.think(action, {"details": details})
+        
+        if plan.get("confidence") == "low":
+            self.escalate(f"Need more info for: {action}")
+            return "Escalated — need clarity"
+        
+        action_lower = action.lower()
+        
+        if "market" in action_lower or "competitor" in action_lower:
+            return self._do_market_analysis(action, details)
+        elif "content" in action_lower or "strategy" in action_lower:
+            return self._do_content_strategy(action, details)
+        elif "health" in action_lower or "compliance" in action_lower:
+            return self._do_compliance_audit(action, details)
+        elif "trend" in action_lower:
+            return self._do_trend_analysis(action, details)
+        else:
+            return self._do_generic_strategy(action, details)
+    
+    def _do_market_analysis(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a market analyst expert. 
+Provide deep market insights with actionable recommendations.
+Output JSON: {"market_overview": "...", "competitors": [...], "opportunities": [...], "threats": [...], "recommendations": [...]}"""},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        response = call_ai("director", messages)
+        self.report_to_owner(f"📊 Market analysis completed")
+        return response
+    
+    def _do_content_strategy(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a content strategist.
+Create comprehensive content plans that drive engagement and conversions.
+Output JSON: {"content_pillars": [...], "topics": [...], "schedule": {...}, "kpis": [...]}"""},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        response = call_ai("director", messages)
+        self.report_to_owner(f"📝 Content strategy ready")
+        return response
+    
+    def _do_compliance_audit(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a health claims compliance expert.
+Audit content for regulatory compliance (FDA, FTC, etc).
+Output JSON: {"violations": [...], "risk_level": "high|medium|low", "fixes": [...], "safe_alternatives": [...]}"""},
+            {"role": "user", "content": f"Audit this: {action}\nDetails: {details}"}
+        ]
+        response = call_ai("director", messages)
+        self.report_to_owner(f"⚖️ Compliance audit done", priority="high")
+        return response
+    
+    def _do_trend_analysis(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": """You are a trend analyst.
+Identify emerging trends and their business implications.
+Output JSON: {"trends": [...], "relevance": "...", "action_items": [...]}"""},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        return call_ai("director", messages)
+    
+    def _do_generic_strategy(self, action: str, details: str) -> str:
+        messages = [
+            {"role": "system", "content": "You are a business strategist. Provide expert strategic advice."},
+            {"role": "user", "content": f"Action: {action}\nDetails: {details}"}
+        ]
+        return call_ai("director", messages)
 
     def handle(self, task: str, site: str, params: dict) -> dict:
         """
@@ -280,7 +331,7 @@ class StrategistAgent:
 
             elif task == "check_serp":
                 keywords = self._extract_keywords(profile, params)
-                market = profile.get("seo", {}).get("market", "Poland")
+                market = profile.get("seo", {}).get("market", "India")
                 data = self.check_serp_positions(keywords, market)
 
             elif task == "analyse_sales":
@@ -291,13 +342,13 @@ class StrategistAgent:
 
             elif task == "check_competitors":
                 keywords = self._extract_keywords(profile, params)
-                market = profile.get("seo", {}).get("market", "Poland")
+                market = profile.get("seo", {}).get("market", "India")
                 data = self.check_competitors(keywords, market)
 
             elif task == "analyse_content_gaps":
                 data = self.analyse_content_gaps(site, profile)
 
-            elif task == "get_recommendations":
+            elif task in ("get_recommendations", "generate_recommendations"):
                 # Run a lightweight set of analyses to feed the recommendation engine
                 all_findings = params.get("all_findings", {})
                 if not all_findings:
@@ -428,7 +479,7 @@ class StrategistAgent:
                 score += 1
 
             # Check URL
-            # Polish keywords contain special chars, so check transliterated versions too
+            # Check keyword variations including partial matches
             kw_url_safe = kw_lower.replace(" ", "-").replace("ł", "l").replace("ó", "o").replace("ą", "a").replace("ę", "e").replace("ś", "s").replace("ć", "c").replace("ż", "z").replace("ź", "z").replace("ń", "n")
             in_url = kw_lower in url_lower or kw_url_safe in url_lower
             locations["url"] = in_url
@@ -543,7 +594,7 @@ class StrategistAgent:
         """
         Check where falconherbs.com ranks for target keywords on Google.
 
-        Queries google.pl with Polish locale parameters and scans the
+        Queries google.com with India/global locale parameters and scans the
         first 3 pages (30 results) for the target domain.
 
         Polite to Google:
@@ -556,7 +607,7 @@ class StrategistAgent:
         keywords : list
             List of keyword strings or keyword dicts from the profile.
         market : str
-            Target market (e.g. ``"Poland"``).
+            Target market (e.g. ``"India"``).
 
         Returns
         -------
@@ -644,11 +695,11 @@ class StrategistAgent:
             ``"error"`` on failure.
         """
         try:
-            # Build Google search URL for Polish market
+            # Build Google search URL for global/India market
             params = {
                 "q": keyword,
-                "hl": "pl",
-                "gl": "pl",
+                "hl": "en",
+                "gl": "in",
                 "num": "10",
             }
 
@@ -659,12 +710,12 @@ class StrategistAgent:
 
                 try:
                     resp = requests.get(
-                        "https://www.google.pl/search",
+                        "https://www.google.com/search",
                         params=params,
                         headers={
                             "User-Agent": BROWSER_UA,
                             "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
-                            "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.5",
+                            "Accept-Language": "en-IN,en;q=0.9,hi;q=0.5",
                         },
                         timeout=HTTP_TIMEOUT,
                         allow_redirects=True,
@@ -807,13 +858,13 @@ class StrategistAgent:
                     total_customers = int(report.get("total_customers", 0))
 
                     sales_summary = {
-                        "total_revenue_pln": total_sales,
+                        "total_revenue_inr": total_sales,
                         "total_orders": total_orders,
-                        "average_order_value_pln": avg_order_value,
+                        "average_order_value_inr": avg_order_value,
                         "total_items_sold": total_items,
                         "total_customers": total_customers,
                         "total_refunds": float(report.get("total_refunds", 0)),
-                        "net_revenue_pln": float(report.get("net_sales", total_sales)),
+                        "net_revenue_inr": float(report.get("net_sales", total_sales)),
                         "period_days": 30,
                     }
 
@@ -825,7 +876,7 @@ class StrategistAgent:
                         )
                     elif avg_order_value < 50:
                         recommendations.append(
-                            f"Average order value is {avg_order_value:.2f} PLN. "
+                            f"Average order value is ₹{avg_order_value:.2f}. "
                             "Consider product bundles, minimum order thresholds, or cross-selling to increase AOV."
                         )
 
@@ -935,7 +986,7 @@ class StrategistAgent:
             details={
                 "site": site,
                 "api_accessible": api_accessible,
-                "revenue": sales_summary.get("total_revenue_pln", 0),
+                "revenue": sales_summary.get("total_revenue_inr", 0),
                 "orders": sales_summary.get("total_orders", 0),
             },
         )
@@ -1177,11 +1228,11 @@ class StrategistAgent:
 
             try:
                 resp = requests.get(
-                    "https://www.google.pl/search",
-                    params={"q": keyword, "hl": "pl", "gl": "pl", "num": "10"},
+                    "https://www.google.com/search",
+                    params={"q": keyword, "hl": "en", "gl": "in", "num": "10"},
                     headers={
                         "User-Agent": BROWSER_UA,
-                        "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.5",
+                        "Accept-Language": "en-IN,en;q=0.9,hi;q=0.5",
                     },
                     timeout=HTTP_TIMEOUT,
                     allow_redirects=True,
@@ -1209,7 +1260,7 @@ class StrategistAgent:
 
                     if not domain or "." not in domain:
                         continue
-                    if domain in ("google.com", "google.pl", "youtube.com",
+                    if domain in ("google.com", "youtube.com",
                                   "facebook.com", "twitter.com", "wikipedia.org",
                                   "webcache.googleusercontent.com"):
                         continue
@@ -1448,7 +1499,7 @@ class StrategistAgent:
             content_recommendations.append(
                 f"Add more descriptive content to the homepage. Currently {word_count} words — "
                 f"target at least {_MIN_HOMEPAGE_WORDS}. Include product descriptions, "
-                "brand story, and herbal expertise content in Polish."
+                "brand story, and herbal expertise content in English targeting global markets."
             )
 
         if len(internal_links) < _MIN_INTERNAL_LINKS:
@@ -1469,7 +1520,7 @@ class StrategistAgent:
             gaps.append("No blog or articles section detected")
             content_recommendations.append(
                 "Create a blog section with articles about herbal remedies, tea preparation, "
-                "and natural health topics in Polish. Blog content targets long-tail keywords "
+                "and natural health topics in English. Blog content targets long-tail keywords "
                 "and drives organic traffic. Suggested topics: 'Jak parzyć herbatę ziołową', "
                 "'Zioła na odporność — poradnik', 'Naturalne suplementy diety'."
             )
@@ -1497,7 +1548,7 @@ class StrategistAgent:
             gaps.append(f"{missing_alt} images missing alt text")
             content_recommendations.append(
                 f"{missing_alt}/{total_images} images lack alt text. "
-                "Add descriptive alt attributes in Polish for accessibility and image SEO."
+                "Add descriptive alt attributes in English for accessibility and image SEO."
             )
 
         if not gaps:
@@ -1541,7 +1592,7 @@ class StrategistAgent:
 
         Orchestrates all analysis methods, assembles findings into
         a unified report, saves to disk, and sends a human-readable
-        summary via Telegram.
+        summary via WhatsApp.
 
         Parameters
         ----------
@@ -1625,7 +1676,7 @@ class StrategistAgent:
         report_path = self._save_report(site, report)
         report["report_path"] = report_path
 
-        # ── Format and send Telegram summary ──
+        # ── Format and send WhatsApp summary ──
         summary_text = self._format_telegram_summary(report)
         report["summary_text"] = summary_text
 
@@ -1789,7 +1840,7 @@ class StrategistAgent:
             if not metrics.get("has_blog_section", True):
                 _add(
                     "Launch Blog Section",
-                    "No blog detected. Create a blog with Polish-language articles about herbal "
+                    "No blog detected. Create a blog with English articles about herbal "
                     "remedies, tea preparation, and natural health. Targets long-tail keywords "
                     "and drives organic traffic.",
                     impact="high", effort="high", agent="media",
@@ -1820,7 +1871,7 @@ class StrategistAgent:
         if not sales_data.get("error") and sales_data.get("api_accessible"):
             summary = sales_data.get("sales_summary", {})
             orders = summary.get("total_orders", 0)
-            aov = summary.get("average_order_value_pln", 0)
+            aov = summary.get("average_order_value_inr", 0)
 
             if orders == 0:
                 _add(
@@ -1834,7 +1885,7 @@ class StrategistAgent:
             if aov > 0 and aov < 50:
                 _add(
                     "Increase Average Order Value",
-                    f"AOV is {aov:.2f} PLN. Implement product bundles, 'frequently bought together', "
+                    f"AOV is ₹{aov:.2f}. Implement product bundles, 'frequently bought together', "
                     "and minimum free shipping threshold to increase basket size.",
                     impact="medium", effort="medium", agent="strategist",
                     task="analyse_sales", category="revenue",
@@ -2213,11 +2264,11 @@ class StrategistAgent:
             log.critical("Cannot save report: %s", exc)
             return f"SAVE_FAILED: {exc}"
 
-    # ── Telegram summary formatter ──
+    # ── WhatsApp summary formatter ──
 
     def _format_telegram_summary(self, report: dict) -> str:
         """
-        Format a human-readable Telegram summary of the weekly report.
+        Format a human-readable WhatsApp summary of the weekly report.
 
         Parameters
         ----------
@@ -2227,7 +2278,7 @@ class StrategistAgent:
         Returns
         -------
         str
-            Plain-text summary suitable for Telegram.
+            Plain-text summary suitable for WhatsApp.
         """
         site = report.get("site", "unknown")
         generated = report.get("generated_at", "?")
@@ -2279,9 +2330,9 @@ class StrategistAgent:
             summary = sales.get("sales_summary", {})
             lines.append("")
             lines.append("💰 SALES (30 days)")
-            lines.append(f"  Revenue: {summary.get('total_revenue_pln', 0):.2f} PLN")
+            lines.append(f"  Revenue: ₹{summary.get('total_revenue_inr', 0):.2f}")
             lines.append(f"  Orders: {summary.get('total_orders', 0)}")
-            lines.append(f"  AOV: {summary.get('average_order_value_pln', 0):.2f} PLN")
+            lines.append(f"  AOV: ₹{summary.get('average_order_value_inr', 0):.2f}")
         elif sales.get("status") == "skipped":
             lines.append("")
             lines.append("💰 SALES: ⚠️ API not configured")
@@ -2303,18 +2354,18 @@ class StrategistAgent:
 
         return "\n".join(lines)
 
-    # ── Telegram send ──
+    # ── WhatsApp send ──
 
     def _send_telegram_summary(self, summary: str) -> None:
-        """Send summary via Telegram. Never raises."""
+        """Send summary via WhatsApp. Never raises."""
         if self._approval is None:
-            log.warning("Cannot send Telegram summary — ApprovalSystem unavailable")
+            log.warning("Cannot send WhatsApp summary — ApprovalSystem unavailable")
             return
         try:
             self._approval.send_alert(summary)
-            log.info("Strategy summary sent via Telegram")
+            log.info("Strategy summary sent via WhatsApp")
         except Exception as exc:
-            log.warning("Telegram summary send failed: %s", exc)
+            log.warning("WhatsApp summary send failed: %s", exc)
 
     # ── Result builder ──
 
