@@ -738,68 +738,29 @@ class FalconCommander:
     def _generate_reply(self, owner_message: str, context: str) -> str:
         """
         Generate a natural-language reply using AI with personality prompt.
-        
-        Tries NVIDIA NIM first, then Gemini, then falls back to static reply.
         """
         prompt = (
             f"Owner's message: \"{owner_message}\"\n\n"
             f"Context for your reply:\n{context}"
         )
         
-        # ── Try NVIDIA NIM first ──
-        if self._nvidia_client is not None:
-            try:
-                response = self._nvidia_client.chat.completions.create(
-                    model=self._model,
-                    messages=[
-                        {"role": "system", "content": PERSONALITY_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=300,
-                )
-                msg = response.choices[0].message
-                # Handle both content and reasoning (Kimi uses reasoning field)
-                reply = (msg.content or msg.reasoning or "").strip()
-                
-                log.log_action(
-                    action="reply_generated",
-                    agent="commander",
-                    status="success",
-                    details={"chars": len(reply), "provider": "nvidia-kimi"},
-                )
-                return reply
-                
-            except Exception as exc:
-                log.warning("NVIDIA NIM reply generation failed: %s", exc)
+        messages = [
+            {"role": "system", "content": PERSONALITY_PROMPT},
+            {"role": "user", "content": prompt}
+        ]
         
-        # ── Try Gemini as fallback ──
-        if self._gemini_client is not None:
-            try:
-                from google.genai import types
-                response = self._gemini_client.models.generate_content(
-                    model=self._gemini_model,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=PERSONALITY_PROMPT,
-                    ),
-                )
-                reply = response.text.strip()
-
-                log.log_action(
-                    action="reply_generated",
-                    agent="commander",
-                    status="success",
-                    details={"chars": len(reply), "provider": "gemini"},
-                )
-
-                return reply
-
-            except Exception as exc:
-                log.warning("Gemini reply generation failed: %s", exc)
-
-        # Fallback: return a trimmed version of the context
-        return context[:500] if context else "Processing ho raha hai sir, thodi der mein update dunga. 👍"
+        try:
+            reply = call_ai("commander", messages)
+            log.log_action(
+                action="reply_generated",
+                agent="commander",
+                status="success",
+                details={"chars": len(reply), "provider": "call_ai"},
+            )
+            return reply
+        except Exception as exc:
+            log.warning("AI reply generation failed: %s", exc)
+            return context[:500] if context else "Processing ho raha hai sir, thodi der mein update dunga. 👍"
 
     # ══════════════════════════════════════════════════════════════════
     #  STATUS HELPERS
@@ -978,7 +939,5 @@ class FalconCommander:
         return value
 
     def __repr__(self) -> str:
-        nvidia = "✅" if self._nvidia_client else "❌"
-        gemini = "✅" if self._gemini_client else "❌"
         director = "✅" if self._director else "❌"
-        return f"<FalconCommander  nvidia={nvidia}  gemini={gemini}  director={director}>"
+        return f"<FalconCommander  unified_ai=✅  director={director}>"
