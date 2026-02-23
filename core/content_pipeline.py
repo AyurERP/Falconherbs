@@ -143,17 +143,16 @@ class ContentPipeline:
             "theek kar deta hai":
                 "mein support karta hai",
             "theek ho gaya":
-                "mein helps karta hai",
-            "ilaj":
-                "Ayurvedic care",
+                "mein madad karta hai",
             "theek ho gya":
-                "mein support karta hai",
-            "dawai":
-                "formulation",
-            "cure":
-                "support",
-            "treatment":
-                "natural wellness support",
+                "mein madad karta hai",
+            "dawai band":
+                "natural wellness ke liye",
+            # NOTE: "cure", "treatment", "ilaj" are intentionally
+            # NOT in safe_alternatives — too short/generic, would
+            # corrupt legitimate phrases like "secure", "Ayurvedic
+            # treatment", "ilaj-e-tibbi". Specific combos above
+            # (e.g. "cures diabetes") cover the real violations.
             # High-risk mapping from health_scanner
             "anti-cancer":
                 "rich in antioxidants",
@@ -175,14 +174,6 @@ class ContentPipeline:
                 "time-honored",
             "instant relief":
                 "fast-acting support",
-            "boosts immunity":
-                "supports healthy immune function",
-            "fights infection":
-                "supports the body's natural defenses",
-            "detoxifies":
-                "supports the body's natural cleansing",
-            "purifies blood":
-                "traditionally used for blood purification in Ayurveda",
         }
     
     def safety_check(self, content):
@@ -213,8 +204,15 @@ class ContentPipeline:
                     "severity": "HIGH"
                 })
         
-        # Auto-replace known unsafe phrases
-        for unsafe, safe in self.safe_alternatives.items():
+        # Auto-replace known unsafe phrases.
+        # Sort longest phrase first so specific multi-word phrases
+        # (e.g. "cures diabetes") are checked before shorter
+        # substrings (e.g. "cures") that would corrupt them.
+        for unsafe, safe in sorted(
+            self.safe_alternatives.items(),
+            key=lambda x: len(x[0]),
+            reverse=True,
+        ):
             pattern = re.compile(re.escape(unsafe), re.IGNORECASE)
             if pattern.search(cleaned):
                 cleaned = pattern.sub(safe, cleaned)
