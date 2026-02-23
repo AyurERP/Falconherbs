@@ -349,15 +349,34 @@ Output JSON: {"posts": [{"platform": "...", "content": "...", "media_suggestion"
         return response
     
     def _do_design_prompt(self, action: str, details: str) -> str:
+        """Generate design prompt and actually create the image"""
         messages = [
             {"role": "system", "content": """You are a creative director.
-Generate detailed prompts for AI image generation tools.
-Output JSON: {"prompts": [{"tool": "midjourney|dalle|stable", "prompt": "...", "style": "...", "aspect_ratio": "..."}]}"""},
+Generate a high-quality descriptive prompt for an AI image generator.
+Output JSON: {"prompt": "...", "style": "product|blog_banner|social|lifestyle"}"""},
             {"role": "user", "content": f"Create design for: {action}\nDetails: {details}"}
         ]
-        response = call_ai("media", messages)
+        response_json = call_ai("media", messages)
+        try:
+            import json
+            data = json.loads(response_json)
+            prompt = data.get("prompt")
+            style = data.get("style", "product")
+            
+            if prompt:
+                from core.image_generator import image_generator
+                result = image_generator.generate(prompt, style=style)
+                if result["success"]:
+                    msg = f"🎨 Image generated: {result['filename']}\nPrompt: {prompt}"
+                    self.report_to_owner(msg)
+                    return msg
+                else:
+                    return f"❌ Image generation failed: {result['error']}"
+        except Exception as e:
+            log.error(f"MediaAgent design failed: {e}")
+            
         self.report_to_owner(f"🎨 Design prompts ready")
-        return response
+        return response_json
     
     def _do_caption(self, action: str, details: str) -> str:
         messages = [

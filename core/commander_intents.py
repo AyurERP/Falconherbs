@@ -357,6 +357,17 @@ class ExtendedIntentClassifier:
                 "description": "Verify backup integrity"
             },
             
+            "image_generate": {
+                "patterns": [
+                    r"\bimage\s+(?:generate|bana|create|make)\b",
+                    r"\bphoto\s+(?:bana|khinch|click)\b",
+                    r"\bdesign\s+(?:karo|banao)\b",
+                    r"\bpicture\s+(?:search|find|bana)\b",
+                ],
+                "handler": "handle_image_generate",
+                "description": "Generate an AI image"
+            },
+            
             # ===== WORDPRESS PUBLISHING (B1) =====
             "list_drafts": {
                 "patterns": [
@@ -1129,6 +1140,20 @@ class IntentResponseHandler:
         except Exception as e:
             return {
                 "response": f"❌ Integrity check failed: {e}",
+                "success": False
+            }
+            
+    def handle_image_generate(self, intent):
+        """Generate an image using MediaAgent"""
+        try:
+            from agents.media import MediaAgent
+            media = MediaAgent()
+            details = intent.get("extracted_data", {}).get("query", "product illustration")
+            result = media.execute("design", details)
+            return {"response": result, "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Image generation failed: {e}",
                 "success": False
             }
     

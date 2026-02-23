@@ -79,6 +79,48 @@ class IntegrationBridge:
             )
         except Exception as e:
             self.status["content"] = f"failed: {e}"
+        
+        # ── Tier 2 Modules ──
+        
+        # WordPress Publisher
+        try:
+            from core.wordpress_publisher import WordPressPublisher
+            self.tools["wp"] = WordPressPublisher()
+            self.status["wp"] = "loaded"
+        except Exception as e:
+            self.status["wp"] = f"failed: {e}"
+            
+        # Image Generator
+        try:
+            from core.image_generator import ImageGenerator
+            self.tools["image"] = ImageGenerator()
+            self.status["image"] = "loaded"
+        except Exception as e:
+            self.status["image"] = f"failed: {e}"
+            
+        # Email System
+        try:
+            from core.email_system import EmailSystem
+            self.tools["email"] = EmailSystem()
+            self.status["email"] = "loaded"
+        except Exception as e:
+            self.status["email"] = f"failed: {e}"
+            
+        # Auto Backup
+        try:
+            from core.auto_backup import AutoBackup
+            self.tools["backup"] = AutoBackup()
+            self.status["backup"] = "loaded"
+        except Exception as e:
+            self.status["backup"] = f"failed: {e}"
+            
+        # GSC Connector (B4)
+        try:
+            from core.gsc_connector import gsc_connector
+            self.tools["gsc"] = gsc_connector
+            self.status["gsc"] = "loaded"
+        except Exception as e:
+            self.status["gsc"] = f"failed: {e}"
     
     def get_status(self):
         """Check which tools are available"""
@@ -210,6 +252,38 @@ class IntegrationBridge:
                 "success": True,
                 "result": pipeline.safety_check(text)
             }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+            
+    def run_backup(self):
+        """Safe wrapper for daily backup"""
+        try:
+            backup = self.tools.get("backup")
+            if not backup:
+                return {
+                    "success": False,
+                    "error": "Backup tool not loaded"
+                }
+            return backup.create_daily_backup()
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+            
+    def run_gsc_check(self):
+        """Safe wrapper for GSC health check"""
+        try:
+            gsc = self.tools.get("gsc")
+            if not gsc:
+                return {
+                    "success": False,
+                    "error": "GSC not loaded"
+                }
+            return gsc.run_health_check()
         except Exception as e:
             return {
                 "success": False,

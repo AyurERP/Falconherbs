@@ -109,6 +109,13 @@ class ExtendedSchedule:
                     "description": "Analyze customer data and "
                                    "suggest recovery actions"
                 },
+                "daily_backup": {
+                    "time": "03:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Automatic daily data backup"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -204,6 +211,7 @@ class ExtendedSchedule:
             "health_claims_scan": self._task_health_scan,
             "weekly_content_batch": self._task_weekly_content,
             "customer_analysis": self._task_customer_analysis,
+            "daily_backup": self._task_daily_backup,
         }
         
         handler = handlers.get(task_name)
@@ -234,6 +242,10 @@ class ExtendedSchedule:
             "send_whatsapp": True,
             "message": report
         }
+    
+    def _task_daily_backup(self):
+        """Execute and return daily backup result"""
+        return self.bridge.run_backup()
     
     def _task_evening_report(self):
         """Generate and return evening report"""
