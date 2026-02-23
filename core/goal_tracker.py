@@ -159,6 +159,68 @@ class GoalTracker:
             "on_track": (total_revenue / target_revenue * 100) >= (days_elapsed / 30 * 100) if target_revenue and days_elapsed else True
         }
     
+    def auto_sync_progress(self, site: str = DEFAULT_SITE):
+        """Pull REAL metrics from WooCommerce + content pipeline.
+        Called by Director schedule instead of manual logging."""
+        from pathlib import Path
+        today = datetime.now().strftime("%Y%m%d")
+        today_iso = datetime.now().date().isoformat()
+
+        # Real revenue from RevenueTracker
+        revenue = 0
+        try:
+            from core.revenue_tracker import RevenueTracker
+            tracker = RevenueTracker()
+            summary = tracker.get_monthly_summary()
+            revenue = summary.get("revenue", 0)
+        except Exception:
+            pass
+
+        # Real content counts from filesystem
+        drafts_dir = Path("data/content/drafts")
+        blogs_today = len(list(
+            drafts_dir.glob(f"blog_{today}_*.json")
+        ))
+        social_today = len(list(
+            drafts_dir.glob(f"social_batch_{today}_*.json")
+        ))
+        emails_today = len(list(
+            drafts_dir.glob(f"email_*_{today}.json")
+        ))
+
+        # Real orders from WooCommerce (if available)
+        orders = 0
+        try:
+            from core.woocommerce_connector import (
+                WooCommerceConnector
+            )
+            woo = WooCommerceConnector()
+            order_data = woo.get_orders(days_back=1, save=False)
+            if order_data.get("success"):
+                orders = order_data["data"]["total_orders"]
+        except Exception:
+            pass
+
+        # Log real metrics
+        self.log_daily_progress({
+            "revenue": revenue,
+            "orders": orders,
+            "blog_posts": blogs_today,
+            "social_posts": social_today,
+            "emails": emails_today,
+            "source": "auto_sync",
+            "synced_at": datetime.now().isoformat()
+        }, site=site)
+
+        return {
+            "success": True,
+            "date": today_iso,
+            "revenue": revenue,
+            "orders": orders,
+            "blogs": blogs_today,
+            "social": social_today
+        }
+
     def generate_daily_report(self, site: str = None) -> str:
         """Generate WhatsApp-friendly daily report (all sites or specific)."""
         sites = [site] if site else self.get_all_sites()

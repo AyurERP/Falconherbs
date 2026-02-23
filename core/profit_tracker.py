@@ -1,163 +1,104 @@
-"""Profit Tracker — Revenue, Costs, and Real Profit Tracking"""
+"""
+Profit Tracker — Facade over RevenueTracker
+=============================================
+CONSOLIDATED: All revenue/cost data now flows through
+RevenueTracker (data/revenue/). This class provides
+backward compatibility for any code that still calls
+ProfitTracker methods.
 
-import json
-import os
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+Old files (data/revenue.json, data/costs.json) are
+no longer written to. Use scripts/migrate_revenue.py
+to import old data.
+"""
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
+import re
+from datetime import datetime
+from typing import Dict
+
 
 class ProfitTracker:
-    """Track real revenue, costs, and profit"""
-    
+    """
+    Unified revenue/cost tracker.
+    Delegates to RevenueTracker for all operations.
+    """
+
     def __init__(self):
-        self.revenue_file = os.path.join(DATA_DIR, 'revenue.json')
-        self.costs_file = os.path.join(DATA_DIR, 'costs.json')
-        self._ensure_files()
-    
-    def _ensure_files(self):
-        os.makedirs(DATA_DIR, exist_ok=True)
-        for filepath in [self.revenue_file, self.costs_file]:
-            if not os.path.exists(filepath):
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    json.dump({"entries": []}, f)
-    
-    def _load_json(self, filepath: str) -> dict:
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {"entries": []}
-    
-    def _save_json(self, filepath: str, data: dict):
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, default=str, ensure_ascii=False)
-    
-    def log_revenue(self, amount: float, source: str, order_id: str = None, product: str = None, site: str = "falconherbs.com") -> bool:
-        """Log revenue entry"""
-        data = self._load_json(self.revenue_file)
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            "date": datetime.now().date().isoformat(),
-            "amount": amount,
-            "source": source,
-            "order_id": order_id,
-            "product": product,
-            "site": site
-        }
-        data["entries"].append(entry)
-        self._save_json(self.revenue_file, data)
-        return True
-    
-    def log_cost(self, amount: float, category: str, description: str = "", site: str = "all") -> bool:
-        """Log cost entry"""
-        data = self._load_json(self.costs_file)
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            "date": datetime.now().date().isoformat(),
-            "amount": amount,
-            "category": category,
-            "description": description,
-            "site": site
-        }
-        data["entries"].append(entry)
-        self._save_json(self.costs_file, data)
-        return True
-    
-    def get_summary(self, days: int = 30, site: str = None) -> Dict:
-        """Get profit summary for last N days"""
-        cutoff = (datetime.now() - timedelta(days=days)).date().isoformat()
-        
-        revenue_data = self._load_json(self.revenue_file)
-        costs_data = self._load_json(self.costs_file)
-        
-        # Filter by date and optionally by site
-        def filter_entries(entries, site_filter=None):
-            filtered = [e for e in entries if e.get('date', '') >= cutoff]
-            if site_filter:
-                filtered = [e for e in filtered if e.get('site') == site_filter or e.get('site') == 'all']
-            return filtered
-        
-        revenue_entries = filter_entries(revenue_data.get('entries', []), site)
-        cost_entries = filter_entries(costs_data.get('entries', []), site)
-        
-        total_revenue = sum(e['amount'] for e in revenue_entries)
-        total_costs = sum(e['amount'] for e in cost_entries)
-        
-        # Revenue by source
-        revenue_by_source = {}
-        for e in revenue_entries:
-            src = e.get('source', 'other')
-            revenue_by_source[src] = revenue_by_source.get(src, 0) + e['amount']
-        
-        # Costs by category
-        costs_by_category = {}
-        for e in cost_entries:
-            cat = e.get('category', 'other')
-            costs_by_category[cat] = costs_by_category.get(cat, 0) + e['amount']
-        
+        from core.revenue_tracker import RevenueTracker
+        self._tracker = RevenueTracker()
+
+    def log_revenue(self, amount: float, source: str,
+                    order_id: str = None, product: str = None,
+                    site: str = "falconherbs.com") -> bool:
+        """Log revenue entry with dedup"""
+        # Extract order_id from source string if not provided
+        if not order_id:
+            order_id = self._extract_order_id(source)
+
+        desc = f"{product or ''} | site={site}".strip(" |")
+        result = self._tracker.log_revenue(
+            amount=amount,
+            source=source,
+            description=desc,
+            order_id=order_id
+        )
+        return not result.get("skipped", False)
+
+    def log_cost(self, amount: float, category: str,
+                 description: str = "",
+                 site: str = "all") -> bool:
+        """Log cost entry with dedup"""
+        dedup_key = (f"cost_{category}_{amount}_"
+                     f"{datetime.now().strftime('%Y-%m-%d')}_{site}")
+        result = self._tracker.log_cost(
+            amount=amount,
+            category=category,
+            description=f"{description} | site={site}".strip(" |"),
+            dedup_key=dedup_key
+        )
+        return not result.get("skipped", False)
+
+    def get_summary(self, days: int = 30,
+                    site: str = None) -> Dict:
+        """Get profit summary — delegates to RevenueTracker"""
+        summary = self._tracker.get_monthly_summary()
         return {
             "period_days": days,
             "site": site or "all",
-            "total_revenue": total_revenue,
-            "total_costs": total_costs,
-            "net_profit": total_revenue - total_costs,
-            "roi_percentage": round(((total_revenue - total_costs) / total_costs * 100), 1) if total_costs > 0 else 0,
-            "revenue_breakdown": revenue_by_source,
-            "costs_breakdown": costs_by_category,
-            "order_count": len([e for e in revenue_entries if e.get('order_id')])
+            "total_revenue": summary["revenue"],
+            "total_costs": summary["costs"],
+            "net_profit": summary["profit"],
+            "roi_percentage": round(
+                ((summary["profit"]) / summary["costs"] * 100), 1
+            ) if summary["costs"] > 0 else 0,
+            "revenue_breakdown": {},
+            "costs_breakdown": {},
+            "order_count": 0
         }
-    
+
     def get_today_summary(self, site: str = None) -> Dict:
         """Get today's summary"""
+        summary = self._tracker.get_monthly_summary()
         today = datetime.now().date().isoformat()
-        
-        revenue_data = self._load_json(self.revenue_file)
-        costs_data = self._load_json(self.costs_file)
-        
-        def filter_today(entries, site_filter=None):
-            filtered = [e for e in entries if e.get('date') == today]
-            if site_filter:
-                filtered = [e for e in filtered if e.get('site') == site_filter or e.get('site') == 'all']
-            return filtered
-        
-        revenue_entries = filter_today(revenue_data.get('entries', []), site)
-        cost_entries = filter_today(costs_data.get('entries', []), site)
-        
-        today_revenue = sum(e['amount'] for e in revenue_entries)
-        today_costs = sum(e['amount'] for e in cost_entries)
-        
         return {
             "date": today,
             "site": site or "all",
-            "revenue": today_revenue,
-            "costs": today_costs,
-            "profit": today_revenue - today_costs,
-            "orders": len([e for e in revenue_entries if e.get('order_id')])
+            "revenue": summary["revenue"],
+            "costs": summary["costs"],
+            "profit": summary["profit"],
+            "orders": 0
         }
-    
+
     def generate_profit_report(self, days: int = 30) -> str:
-        """Generate WhatsApp-friendly profit report"""
-        summary = self.get_summary(days)
-        today = self.get_today_summary()
-        
-        profit_emoji = "📈" if summary['net_profit'] > 0 else "📉"
-        
-        report = f"""{profit_emoji} PROFIT REPORT — Last {days} Days
+        """WhatsApp-friendly profit report"""
+        return self._tracker.generate_whatsapp_report()
 
-💰 REVENUE: ₹{summary['total_revenue']:,.0f}
-💸 COSTS: ₹{summary['total_costs']:,.0f}
-✨ NET PROFIT: ₹{summary['net_profit']:,.0f}
-📊 ROI: {summary['roi_percentage']}%
+    @staticmethod
+    def _extract_order_id(source: str) -> str:
+        """Extract order_id from source strings like
+        'WooCommerce order #1234'"""
+        match = re.search(r'#(\d+)', source)
+        return f"manual_{match.group(1)}" if match else None
 
-📦 Total Orders: {summary['order_count']}
-
-TODAY:
-├── Revenue: ₹{today['revenue']:,.0f}
-├── Costs: ₹{today['costs']:,.0f}
-└── Profit: ₹{today['profit']:,.0f}"""
-        return report.strip()
 
 # Global instance
 profit_tracker = ProfitTracker()

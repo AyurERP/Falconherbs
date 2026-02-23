@@ -399,6 +399,9 @@ class ExtendedIntentClassifier:
                     r"\bwordpress\s+(?:pe|par|publish|post)\b",
                     r"\bwp\s+(?:publish|post)\b",
                     r"\bdaal\s+(?:do|de)\s+(?:blog|post|website)\b",
+                    r"\bpublish\s+live\s+karo\b",
+                    r"\blive\s+publish\b",
+                    r"\bpublish\s+live\b",
                 ],
                 "handler": "handle_publish_blog",
                 "description": "Publish blog to WordPress"
@@ -413,6 +416,32 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_reject_draft",
                 "description": "Reject and delete a draft"
+            },
+            
+            # ===== CONTENT WORKFLOW (Phase 2) =====
+            "content_queue": {
+                "patterns": [
+                    r"\bdrafts?\s+dikhao\b",
+                    r"\bcontent\s+queue\b",
+                    r"\bqueue\s+status\b",
+                    r"\bdrafts?\s+show\b",
+                    r"\bqueue\s+dikhao\b",
+                    r"\bpending\s+queue\b",
+                ],
+                "handler": "handle_content_queue",
+                "description": "Show content queue status"
+            },
+            
+            "retry_drafts": {
+                "patterns": [
+                    r"\bretry\s+drafts?\b",
+                    r"\bdrafts?\s+fix\b",
+                    r"\bregenerate\s+content\b",
+                    r"\bretry\s+content\b",
+                    r"\bfix\s+drafts?\b",
+                ],
+                "handler": "handle_retry_drafts",
+                "description": "Retry failed prompt-only drafts"
             },
         }
     
@@ -1190,15 +1219,64 @@ class IntentResponseHandler:
             }
     
     def handle_publish_blog(self, intent):
-        """Publish draft to WordPress"""
+        """Approve and publish latest draft via ContentWorkflow.
+        Detects 'live' keyword for direct publish vs draft."""
         try:
-            from core.wordpress_publisher import wp_publisher
-            draft_name = intent.get("extracted_data", {}).get("topic")
-            result = wp_publisher.publish_draft(draft_name, as_draft=False)
-            if result["success"]:
-                return {"response": result["message"], "success": True}
+            workflow = self.bridge.tools.get("workflow")
+            if not workflow:
+                return {
+                    "response": "❌ Content Workflow not loaded.",
+                    "success": False
+                }
+            
+            # Detect live vs draft from original message
+            msg = intent.get(
+                "original_text",
+                intent.get("extracted_data", {}).get(
+                    "query", ""
+                )
+            ).lower()
+            is_live = any(
+                w in msg for w in [
+                    "live publish", "publish live",
+                    "live karo"
+                ]
+            )
+            as_draft = not is_live
+            
+            result = workflow.approve_and_publish(
+                as_draft=as_draft
+            )
+            if result.get("success"):
+                url = result.get("url", "")
+                if as_draft:
+                    msg_text = (
+                        "✅ Published as WordPress DRAFT"
+                    )
+                    if url:
+                        msg_text += (
+                            "\n🔗 Review at: {}".format(url)
+                        )
+                    msg_text += (
+                        "\n\n📝 Say 'publish live karo' "
+                        "to make it public."
+                    )
+                else:
+                    msg_text = (
+                        "🚀 Published LIVE!"
+                    )
+                    if url:
+                        msg_text += (
+                            "\n🔗 View at: {}".format(url)
+                        )
+                return {
+                    "response": result.get(
+                        "message", msg_text),
+                    "success": True
+                }
             return {
-                "response": f"❌ Publish failed: {result['error']}",
+                "response": "❌ Publish failed: {}".format(
+                    result.get("error", "unknown")),
                 "success": False
             }
         except Exception as e:
@@ -1222,6 +1300,63 @@ class IntentResponseHandler:
         except Exception as e:
             return {
                 "response": f"❌ Reject error: {e}",
+                "success": False
+            }
+    
+    # ===== CONTENT WORKFLOW HANDLERS (Phase 2) =====
+    
+    def handle_content_queue(self, intent):
+        """Show content queue status"""
+        try:
+            workflow = self.bridge.tools.get("workflow")
+            if not workflow:
+                return {
+                    "response": "❌ Content Workflow not loaded.",
+                    "success": False
+                }
+            return {
+                "response": workflow.get_queue_status(),
+                "success": True
+            }
+        except Exception as e:
+            return {
+                "response": f"❌ Queue check failed: {e}",
+                "success": False
+            }
+    
+    def handle_retry_drafts(self, intent):
+        """Retry all prompt-only drafts with AI client"""
+        try:
+            result = self.bridge.retry_prompt_only_drafts()
+            if result.get("success"):
+                retried = result.get("retried", 0)
+                if retried > 0:
+                    return {
+                        "response": (
+                            "✅ *DRAFTS RETRIED*\n"
+                            "🔄 {} draft(s) regenerated "
+                            "with AI.\n"
+                            "Check 'drafts dikhao' for "
+                            "updated status.".format(retried)
+                        ),
+                        "success": True
+                    }
+                return {
+                    "response": (
+                        "ℹ️ No prompt-only drafts found "
+                        "to retry. All drafts already "
+                        "have content."
+                    ),
+                    "success": True
+                }
+            return {
+                "response": "❌ Retry failed: {}".format(
+                    result.get("error", "unknown")),
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "response": f"❌ Retry error: {e}",
                 "success": False
             }
 

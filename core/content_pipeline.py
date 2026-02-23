@@ -129,6 +129,27 @@ class ContentPipeline:
                 "supports healthy metabolism",
             "weight loss": 
                 "supports healthy weight management",
+            # Merged from health_scanner.safe_replacements
+            "anti-cancer":
+                "rich in antioxidants",
+            "lowers blood pressure":
+                "may support healthy blood pressure "
+                "already within normal range",
+            "cures diabetes":
+                "traditionally used in Ayurveda for "
+                "metabolic wellness",
+            "no side effects":
+                "generally well-tolerated when used "
+                "as directed",
+            "clinically proven":
+                "supported by traditional Ayurvedic use",
+            "100% safe":
+                "made with carefully selected natural "
+                "ingredients",
+            "miracle":
+                "time-honored",
+            "instant relief":
+                "fast-acting support",
         }
     
     def safety_check(self, content):

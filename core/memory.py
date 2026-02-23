@@ -51,6 +51,20 @@ class ConversationMemory:
                 CREATE INDEX IF NOT EXISTS idx_messages_user 
                 ON messages(user_id, timestamp DESC)
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS topics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    topic TEXT NOT NULL,
+                    frequency INTEGER DEFAULT 1,
+                    last_mentioned TEXT,
+                    related_intents TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_topics_user
+                ON topics(user_id, frequency DESC)
+            """)
             conn.commit()
             conn.close()
     
@@ -181,6 +195,121 @@ class ConversationMemory:
                 return row[0] if row else 0
             finally:
                 conn.close()
+
+    # ── Topic Tracking (Phase 3) ──────────────────────
+
+    _STOPWORDS = {
+        "the", "is", "in", "at", "to", "a", "an",
+        "and", "or", "of", "for", "on", "it", "by",
+        "ka", "ke", "ki", "hai", "ho", "se", "me",
+        "ko", "ye", "wo", "kya", "karo", "karo",
+        "do", "de", "le", "na", "hi", "bhi",
+        "aur", "ya", "toh", "sir", "please",
+        "can", "you", "how", "what", "this", "that",
+        "with", "from", "about", "are", "was", "but",
+    }
+
+    def track_topic(
+        self, user_id: str, message: str,
+        intent: Optional[str] = None
+    ) -> None:
+        """Extract keywords from message and track
+        in topics table."""
+        words = message.lower().split()
+        keywords = [
+            w for w in words
+            if len(w) >= 3 and w not in self._STOPWORDS
+        ]
+        if not keywords:
+            return
+
+        now = datetime.now().isoformat()
+        with self._lock:
+            conn = self._conn()
+            try:
+                for kw in keywords:
+                    row = conn.execute(
+                        "SELECT id, frequency, "
+                        "related_intents FROM topics "
+                        "WHERE user_id = ? AND topic = ?",
+                        (user_id, kw)
+                    ).fetchone()
+                    if row:
+                        freq = row[1] + 1
+                        intents = row[2] or ""
+                        if intent and intent not in intents:
+                            intents = (
+                                f"{intents},{intent}"
+                                if intents else intent
+                            )
+                        conn.execute(
+                            "UPDATE topics SET "
+                            "frequency = ?, "
+                            "last_mentioned = ?, "
+                            "related_intents = ? "
+                            "WHERE id = ?",
+                            (freq, now, intents, row[0])
+                        )
+                    else:
+                        conn.execute(
+                            "INSERT INTO topics "
+                            "(user_id, topic, frequency, "
+                            "last_mentioned, "
+                            "related_intents) "
+                            "VALUES (?, ?, 1, ?, ?)",
+                            (user_id, kw, now,
+                             intent or "")
+                        )
+                conn.commit()
+            finally:
+                conn.close()
+
+    def get_user_preferences(
+        self, user_id: str
+    ) -> List[Dict]:
+        """Top 10 topics by frequency."""
+        with self._lock:
+            conn = self._conn()
+            try:
+                rows = conn.execute(
+                    "SELECT topic, frequency, "
+                    "last_mentioned FROM topics "
+                    "WHERE user_id = ? "
+                    "ORDER BY frequency DESC LIMIT 10",
+                    (user_id,)
+                ).fetchall()
+                return [
+                    {
+                        "topic": r[0],
+                        "frequency": r[1],
+                        "last_mentioned": r[2],
+                    }
+                    for r in rows
+                ]
+            finally:
+                conn.close()
+
+    def build_rich_context(
+        self, user_id: str, recent_messages: int = 5
+    ) -> str:
+        """Build rich context string for AI prompts."""
+        prefs = self.get_user_preferences(user_id)
+        history = self.get_history_text(
+            user_id, recent_messages
+        )
+
+        parts = []
+        if prefs:
+            topics = ", ".join(
+                p["topic"] for p in prefs[:5]
+            )
+            parts.append(
+                f"User frequently asks about: {topics}."
+            )
+        parts.append(
+            f"Recent conversation:\n{history}"
+        )
+        return "\n".join(parts)
 
 
 # Global instance

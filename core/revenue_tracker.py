@@ -34,17 +34,29 @@ class RevenueTracker:
                 with open(filepath, "w") as f:
                     json.dump(default, f, indent=2)
     
-    def log_revenue(self, amount, source, description="", 
-                    currency="INR"):
-        """Log a revenue entry"""
+    def log_revenue(self, amount, source, description="",
+                    currency="INR", order_id=None):
+        """Log a revenue entry with dedup by order_id"""
         data = self._load(self.revenue_file)
+
+        # Dedup: skip if order_id already exists
+        if order_id:
+            existing_ids = {
+                e.get("order_id") for e in data["entries"]
+                if e.get("order_id")
+            }
+            if order_id in existing_ids:
+                return {"skipped": True, "reason": "duplicate",
+                        "order_id": order_id}
+
         entry = {
             "date": datetime.now().isoformat(),
             "amount": float(amount),
             "source": source,
             "description": description,
             "currency": currency,
-            "month": datetime.now().strftime("%Y-%m")
+            "month": datetime.now().strftime("%Y-%m"),
+            "order_id": order_id
         }
         data["entries"].append(entry)
         data["total"] = sum(e["amount"] for e in data["entries"])
@@ -52,16 +64,32 @@ class RevenueTracker:
         return entry
     
     def log_cost(self, amount, category, description="",
-                 currency="INR"):
-        """Log a cost entry"""
+                 currency="INR", dedup_key=None):
+        """Log a cost entry with dedup by key"""
         data = self._load(self.costs_file)
+
+        # Auto-generate dedup key if not provided
+        if not dedup_key:
+            dedup_key = (f"cost_{category}_{amount}_"
+                        f"{datetime.now().strftime('%Y-%m-%d')}")
+
+        # Dedup: skip if same key already logged today
+        existing_keys = {
+            e.get("dedup_key") for e in data["entries"]
+            if e.get("dedup_key")
+        }
+        if dedup_key in existing_keys:
+            return {"skipped": True, "reason": "duplicate",
+                    "dedup_key": dedup_key}
+
         entry = {
             "date": datetime.now().isoformat(),
             "amount": float(amount),
             "category": category,
             "description": description,
             "currency": currency,
-            "month": datetime.now().strftime("%Y-%m")
+            "month": datetime.now().strftime("%Y-%m"),
+            "dedup_key": dedup_key
         }
         data["entries"].append(entry)
         data["total"] = sum(e["amount"] for e in data["entries"])

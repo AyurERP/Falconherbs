@@ -1,0 +1,19 @@
+{
+  "type": "blog_post",
+  "status": "prompt_only",
+  "created_at": "2026-02-23T04:48:52.047864",
+  "topic": "Ayurvedic Morning Routine: Start Your Day the Ancient Way",
+  "target_keyword": "ayurvedic morning routine",
+  "secondary_keywords": [],
+  "product_mentioned": null,
+  "word_count_target": 1500,
+  "prompt": "Write a comprehensive, SEO-optimized blog post \nfor an authentic Ayurvedic herbal products brand called \n\"Falcon Herbs\" (falconherbs.com).\n\nTOPIC: Ayurvedic Morning Routine: Start Your Day the Ancient Way\nPRIMARY KEYWORD: ayurvedic morning routine\n\nTARGET WORD COUNT: 1500 words\n\nTARGET AUDIENCE:\n- Health-conscious adults in USA, UK, Australia, Europe\n- Interested in natural wellness and Ayurveda\n- Educated, willing to pay premium for quality\n- May be new to Ayurveda or experienced practitioners\n\nARTICLE STRUCTURE:\n1. HOOK (2-3 sentences) — Engaging opening that addresses \n   reader's pain point or curiosity\n2. INTRODUCTION — Why this topic matters, brief Ayurvedic \n   context\n3. MAIN CONTENT — 3-5 detailed sections with H2/H3 headings\n   - Include practical, actionable information\n   - Reference traditional Ayurvedic texts/practices \n     where relevant\n   - Add \"How to use\" or \"How to incorporate\" sections\n4. EXPERT INSIGHTS — Ayurvedic perspective \n   (Vata/Pitta/Kapha if relevant)\n5. CONCLUSION — Summary + gentle call-to-action\n6. FAQ SECTION — 3-4 common questions (great for SEO)\n\n\n\nTONE & STYLE:\n- Authoritative but approachable\n- Educational, not salesy\n- Warm, like a knowledgeable friend\n- Premium brand voice\n- Use \"you\" and \"your\" (direct address)\n\nSEO REQUIREMENTS:\n- Primary keyword in: Title, first 100 words, \n  one H2, conclusion\n- Keyword density: 1-2% (natural, not forced)\n- Include LSI/related terms naturally\n- Short paragraphs (2-3 sentences max)\n- Use bullet points and numbered lists\n- Suggest 3 internal link opportunities: [INTERNAL_LINK]\n\nCRITICAL HEALTH & LEGAL RULES — MUST FOLLOW:\n❌ NEVER use: \"cures\", \"treats disease\", \"prevents disease\",\n   \"clinically proven\", \"FDA approved\", \"guaranteed results\",\n   \"no side effects\", \"miracle\", \"100% effective\"\n❌ NEVER mention specific diseases as something the product \n   cures/treats\n❌ NEVER make drug-like claims\n\n✅ USE instead: \"traditionally used for\", \"may support\",\n   \"Ayurvedic tradition suggests\", \"historically valued for\",\n   \"supports healthy [function]\", \"promotes natural [benefit]\"\n✅ Frame benefits as traditional Ayurvedic wisdom\n✅ Always recommend consulting healthcare providers\n✅ Use structure/function claims only\n\nINCLUDE AT THE END:\n\"*Disclaimer: * These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. Consult your healthcare provider before use.\"\n\nFORMAT:\n- Return as clean HTML with proper heading tags\n- Use <h1> for title, <h2> for sections, <h3> for subsections\n- Include <meta_title> tag (max 60 chars)\n- Include <meta_description> tag (max 155 chars)\n- Include suggested <slug> (URL-friendly)\n",
+  "content": null,
+  "safety_check": null,
+  "seo_meta": {
+    "title": null,
+    "description": null,
+    "slug": null
+  },
+  "note": "No AI client connected. Use the prompt above with your AI model to generate content."
+}

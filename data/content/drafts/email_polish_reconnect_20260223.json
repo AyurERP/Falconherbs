@@ -1,0 +1,14 @@
+{
+  "name": "Polish Customer Special Reconnection",
+  "description": "Special email for the Polish customer we lost",
+  "emails": [
+    {
+      "subject_options": [
+        "A personal apology from Falcon Herbs 🙏",
+        "We owe you an explanation and a gift"
+      ],
+      "purpose": "Reconnect with lost Polish customer",
+      "prompt": "Write a deeply personal \nreconnection email for a specific situation:\n\nCONTEXT:\n- We had a Polish customer who placed a large order \n  (approx ₹20,000 / ~$240)\n- Our website was hacked and we lost his order data\n- We could not fulfill his order properly\n- We feel terrible about this\n- We want to make it right\n\nTONE: Genuinely apologetic, personal, humble\nLENGTH: 200-250 words\n\nSTRUCTURE:\n1. Personal apology — \"We owe you an apology\"\n2. Honest explanation — site security incident\n3. What we've done since \n   (improved security, rebuilt systems)\n4. We want to make it right:\n   - Full refund if not already done\n   - Free replacement order\n   - 30% lifetime discount\n5. \"Please reach out so we can fix this\"\n6. Multiple contact methods \n   (email, WhatsApp, website form)\n\nTHIS IS NOT A MARKETING EMAIL.\nThis is a genuine human apology.\nNo sales pitch, no upsell.\nJust making things right.\n\nSign off personally, not as a brand."
+    }
+  ]
+}

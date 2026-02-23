@@ -1,0 +1,1367 @@
+{
+  "generated_at": "2026-02-23T04:48:52.051687",
+  "total_weeks": 12,
+  "content_targets": {
+    "blogs_per_week": 2,
+    "social_per_day": 1,
+    "product_descriptions_per_week": 5
+  },
+  "weeks": [
+    {
+      "week_number": 1,
+      "start_date": "2026-02-23",
+      "end_date": "2026-03-01",
+      "season": "Late Winter",
+      "dosha_focus": "Kapha building",
+      "theme": "Detox preparation",
+      "blog_posts": [
+        {
+          "topic": "Complete Guide to Ashwagandha",
+          "keyword": "ashwagandha benefits",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-02-24",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Morning Routine for Beginners",
+          "keyword": "ayurvedic morning routine",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-02-27",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-02-23",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-02-24",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-02-25",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-02-26",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-02-27",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-02-28",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-01",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Detox preparation",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 2,
+      "start_date": "2026-03-02",
+      "end_date": "2026-03-08",
+      "season": "Spring",
+      "dosha_focus": "Kapha",
+      "theme": "Allergy season herbs",
+      "blog_posts": [
+        {
+          "topic": "Understanding Your Dosha Type",
+          "keyword": "dosha type quiz ayurveda",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-03-03",
+          "status": "planned"
+        },
+        {
+          "topic": "Top 10 Ayurvedic Herbs Everyone Should Know",
+          "keyword": "best ayurvedic herbs",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-03-06",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-03-02",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-03",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-04",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-05",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-06",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-07",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-08",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 3,
+      "start_date": "2026-03-09",
+      "end_date": "2026-03-15",
+      "season": "Spring",
+      "dosha_focus": "Kapha",
+      "theme": "Metabolism support",
+      "blog_posts": [
+        {
+          "topic": "Turmeric: The Golden Spice of Ayurveda",
+          "keyword": "turmeric benefits ayurveda",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-03-10",
+          "status": "planned"
+        },
+        {
+          "topic": "Triphala: The Three Fruit Formula",
+          "keyword": "triphala benefits",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-03-13",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-03-09",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-10",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-11",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-12",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-13",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-14",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-15",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Metabolism support",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 4,
+      "start_date": "2026-03-16",
+      "end_date": "2026-03-22",
+      "season": "Spring",
+      "dosha_focus": "Kapha",
+      "theme": "Fresh start routines",
+      "blog_posts": [
+        {
+          "topic": "Brahmi for Mental Clarity",
+          "keyword": "brahmi herb benefits",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-03-17",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Herbs for Natural Energy",
+          "keyword": "natural energy herbs ayurveda",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-03-20",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-03-16",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-17",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-18",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-19",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-20",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-21",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-22",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Fresh start routines",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 5,
+      "start_date": "2026-03-23",
+      "end_date": "2026-03-29",
+      "season": "Spring",
+      "dosha_focus": "Kapha",
+      "theme": "Spring cleanse",
+      "blog_posts": [
+        {
+          "topic": "How to Choose Quality Herbal Supplements",
+          "keyword": "how to choose herbal supplements",
+          "type": "blog",
+          "priority": "HIGH",
+          "scheduled_date": "2026-03-24",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurveda vs Modern Medicine: Complementary",
+          "keyword": "ayurveda and modern medicine",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-03-27",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-03-23",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-24",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-25",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-26",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-27",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-28",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-29",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Spring cleanse",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 6,
+      "start_date": "2026-03-30",
+      "end_date": "2026-04-05",
+      "season": "Spring",
+      "dosha_focus": "Kapha",
+      "theme": "Allergy season herbs",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Spring cleanse",
+          "keyword": "spring cleanse",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-03-31",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Allergy season herbs",
+          "keyword": "allergy season herbs",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-03",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-03-30",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-03-31",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-01",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-02",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-03",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-04",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-05",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Allergy season herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 7,
+      "start_date": "2026-04-06",
+      "end_date": "2026-04-12",
+      "season": "Spring",
+      "dosha_focus": "Kapha-Pitta",
+      "theme": "Skin care herbs",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Earth Day natural living",
+          "keyword": "earth day natural living",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-07",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Digestive wellness",
+          "keyword": "digestive wellness",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-10",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-04-06",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-07",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-08",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-09",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-10",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-11",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-12",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Skin care herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 8,
+      "start_date": "2026-04-13",
+      "end_date": "2026-04-19",
+      "season": "Spring",
+      "dosha_focus": "Kapha-Pitta",
+      "theme": "Spring energy",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Earth Day natural living",
+          "keyword": "earth day natural living",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-14",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Digestive wellness",
+          "keyword": "digestive wellness",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-17",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-04-13",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-14",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-15",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-16",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-17",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-18",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-19",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Spring energy",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 9,
+      "start_date": "2026-04-20",
+      "end_date": "2026-04-26",
+      "season": "Spring",
+      "dosha_focus": "Kapha-Pitta",
+      "theme": "Earth Day natural living",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Earth Day natural living",
+          "keyword": "earth day natural living",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-21",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Digestive wellness",
+          "keyword": "digestive wellness",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-24",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-04-20",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-21",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-22",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-23",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-24",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-25",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-26",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Earth Day natural living",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 10,
+      "start_date": "2026-04-27",
+      "end_date": "2026-05-03",
+      "season": "Spring",
+      "dosha_focus": "Kapha-Pitta",
+      "theme": "Digestive wellness",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Earth Day natural living",
+          "keyword": "earth day natural living",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-04-28",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Digestive wellness",
+          "keyword": "digestive wellness",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-05-01",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-04-27",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-28",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-29",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-04-30",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-01",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-02",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-03",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Digestive wellness",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 11,
+      "start_date": "2026-05-04",
+      "end_date": "2026-05-10",
+      "season": "Late Spring",
+      "dosha_focus": "Pitta rising",
+      "theme": "Mother's Day gifts",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Cooling herbs introduction",
+          "keyword": "cooling herbs introduction",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-05-05",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Stress management",
+          "keyword": "stress management",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-05-08",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-05-04",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-05",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-06",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-07",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-08",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-09",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-10",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Mother's Day gifts",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    },
+    {
+      "week_number": 12,
+      "start_date": "2026-05-11",
+      "end_date": "2026-05-17",
+      "season": "Late Spring",
+      "dosha_focus": "Pitta rising",
+      "theme": "Mental clarity herbs",
+      "blog_posts": [
+        {
+          "topic": "Ayurvedic Guide: Cooling herbs introduction",
+          "keyword": "cooling herbs introduction",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-05-12",
+          "status": "planned"
+        },
+        {
+          "topic": "Ayurvedic Guide: Stress management",
+          "keyword": "stress management",
+          "type": "blog",
+          "priority": "MEDIUM",
+          "scheduled_date": "2026-05-15",
+          "status": "planned"
+        }
+      ],
+      "social_posts": [
+        {
+          "date": "2026-05-11",
+          "day": "Monday",
+          "content_type": "educational",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-12",
+          "day": "Tuesday",
+          "content_type": "product_highlight",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-13",
+          "day": "Wednesday",
+          "content_type": "tip",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-14",
+          "day": "Thursday",
+          "content_type": "educational",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-15",
+          "day": "Friday",
+          "content_type": "behind_scenes",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-16",
+          "day": "Saturday",
+          "content_type": "myth_buster",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        },
+        {
+          "date": "2026-05-17",
+          "day": "Sunday",
+          "content_type": "seasonal",
+          "theme": "Mental clarity herbs",
+          "platforms": [
+            "instagram",
+            "facebook",
+            "pinterest"
+          ],
+          "status": "planned"
+        }
+      ],
+      "product_tasks": []
+    }
+  ]
+}

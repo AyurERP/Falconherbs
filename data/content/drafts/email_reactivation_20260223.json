@@ -1,0 +1,24 @@
+{
+  "name": "Customer Reactivation Sequence",
+  "description": "For customers who haven't ordered in 6+ months",
+  "emails": [
+    {
+      "subject_options": [
+        "We've missed you at Falcon Herbs 🌿",
+        "Your Ayurvedic wellness journey continues...",
+        "A special welcome back gift inside"
+      ],
+      "purpose": "Reconnection — warm, personal",
+      "prompt": "Write an email for Falcon Herbs \nto reconnect with a past customer who hasn't ordered \nin 6+ months.\n\nTONE: Warm, personal, NOT desperate\nLENGTH: 150-200 words\n\nSTRUCTURE:\n1. Personal greeting\n2. \"We noticed it's been a while\"\n3. Brief update on what's new \n   (new products, improved quality)\n4. Special offer: 15% comeback discount \n   (code: WELCOME_BACK)\n5. Gentle CTA: \"Explore what's new\"\n\nINCLUDE:\n- Reference to Ayurvedic seasonal relevance\n- Sense of exclusivity (\"as a valued customer\")\n- Easy unsubscribe mention\n\nDO NOT:\n- Sound desperate or guilt-trippy\n- Make health claims\n- Be too long\n\nBrand: Falcon Herbs — Authentic Ayurvedic Wellness\nWebsite: falconherbs.com"
+    },
+    {
+      "subject_options": [
+        "Your 15% discount expires soon",
+        "3 bestsellers our customers love",
+        "Quick question about your wellness routine"
+      ],
+      "purpose": "Follow-up — value + urgency",
+      "prompt": "Write a follow-up email \n(sent 5 days after first email) for Falcon Herbs.\n\nTONE: Helpful, value-focused\nLENGTH: 120-150 words\n\nSTRUCTURE:\n1. \"In case you missed our last email\"\n2. Highlight 3 bestselling products \n   (leave [PRODUCT_1], [PRODUCT_2], [PRODUCT_3] \n   placeholders)\n3. Remind: 15% discount still active\n4. Social proof: \"Trusted by customers in X countries\"\n5. CTA: \"Shop now before offer expires\"\n\nKeep it SHORT and scannable.\nBrand: Falcon Herbs"
+    }
+  ]
+}

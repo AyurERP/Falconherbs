@@ -249,6 +249,7 @@ class FalconCommander:
         """
         # Store user message in memory
         memory.add_message(user_id, "user", text)
+        memory.track_topic(user_id, text)
 
         log.info(
             "Commander processing  |  msg_id=%s  |  text='%s'",
@@ -683,8 +684,22 @@ class FalconCommander:
         """
         from core.ai_client import call_ai
         
+        # Build rich context for better classification
+        try:
+            context = memory.build_rich_context("owner")
+        except Exception:
+            context = ""
+        
+        system_content = INTENT_SYSTEM_PROMPT
+        if context:
+            system_content = (
+                f"{INTENT_SYSTEM_PROMPT}\n\n"
+                f"=== USER CONTEXT ===\n{context}\n"
+                f"===================="
+            )
+        
         messages = [
-            {"role": "system", "content": INTENT_SYSTEM_PROMPT},
+            {"role": "system", "content": system_content},
             {"role": "user", "content": text}
         ]
         

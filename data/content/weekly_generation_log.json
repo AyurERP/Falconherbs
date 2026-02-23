@@ -1,0 +1,1724 @@
+{
+  "generated_at": "2026-02-23T04:48:52.046552",
+  "outputs": {
+    "blogs": [
+      {
+        "success": true,
+        "draft": {
+          "type": "blog_post",
+          "status": "prompt_only",
+          "created_at": "2026-02-23T04:48:52.046704",
+          "topic": "Complete Guide to Ashwagandha: Benefits, Usage, and Ayurvedic Wisdom",
+          "target_keyword": "ashwagandha benefits",
+          "secondary_keywords": [],
+          "product_mentioned": "Ashwagandha",
+          "word_count_target": 1500,
+          "prompt": "Write a comprehensive, SEO-optimized blog post \nfor an authentic Ayurvedic herbal products brand called \n\"Falcon Herbs\" (falconherbs.com).\n\nTOPIC: Complete Guide to Ashwagandha: Benefits, Usage, and Ayurvedic Wisdom\nPRIMARY KEYWORD: ashwagandha benefits\n\nTARGET WORD COUNT: 1500 words\n\nTARGET AUDIENCE:\n- Health-conscious adults in USA, UK, Australia, Europe\n- Interested in natural wellness and Ayurveda\n- Educated, willing to pay premium for quality\n- May be new to Ayurveda or experienced practitioners\n\nARTICLE STRUCTURE:\n1. HOOK (2-3 sentences) — Engaging opening that addresses \n   reader's pain point or curiosity\n2. INTRODUCTION — Why this topic matters, brief Ayurvedic \n   context\n3. MAIN CONTENT — 3-5 detailed sections with H2/H3 headings\n   - Include practical, actionable information\n   - Reference traditional Ayurvedic texts/practices \n     where relevant\n   - Add \"How to use\" or \"How to incorporate\" sections\n4. EXPERT INSIGHTS — Ayurvedic perspective \n   (Vata/Pitta/Kapha if relevant)\n5. CONCLUSION — Summary + gentle call-to-action\n6. FAQ SECTION — 3-4 common questions (great for SEO)\n\n\nPRODUCT MENTION RULES:\n- Mention \"Ashwagandha\" by Falcon Herbs naturally \n  1-2 times maximum\n- Place in middle or end of article, NEVER in first \n  2 paragraphs\n- Frame as: \"Products like [name] from Falcon Herbs \n  offer authentic Ayurvedic formulations...\"\n- Include link placeholder: [PRODUCT_LINK]\n- Do NOT make the article feel like a product ad\n\n\nTONE & STYLE:\n- Authoritative but approachable\n- Educational, not salesy\n- Warm, like a knowledgeable friend\n- Premium brand voice\n- Use \"you\" and \"your\" (direct address)\n\nSEO REQUIREMENTS:\n- Primary keyword in: Title, first 100 words, \n  one H2, conclusion\n- Keyword density: 1-2% (natural, not forced)\n- Include LSI/related terms naturally\n- Short paragraphs (2-3 sentences max)\n- Use bullet points and numbered lists\n- Suggest 3 internal link opportunities: [INTERNAL_LINK]\n\nCRITICAL HEALTH & LEGAL RULES — MUST FOLLOW:\n❌ NEVER use: \"cures\", \"treats disease\", \"prevents disease\",\n   \"clinically proven\", \"FDA approved\", \"guaranteed results\",\n   \"no side effects\", \"miracle\", \"100% effective\"\n❌ NEVER mention specific diseases as something the product \n   cures/treats\n❌ NEVER make drug-like claims\n\n✅ USE instead: \"traditionally used for\", \"may support\",\n   \"Ayurvedic tradition suggests\", \"historically valued for\",\n   \"supports healthy [function]\", \"promotes natural [benefit]\"\n✅ Frame benefits as traditional Ayurvedic wisdom\n✅ Always recommend consulting healthcare providers\n✅ Use structure/function claims only\n\nINCLUDE AT THE END:\n\"*Disclaimer: * These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. Consult your healthcare provider before use.\"\n\nFORMAT:\n- Return as clean HTML with proper heading tags\n- Use <h1> for title, <h2> for sections, <h3> for subsections\n- Include <meta_title> tag (max 60 chars)\n- Include <meta_description> tag (max 155 chars)\n- Include suggested <slug> (URL-friendly)\n",
+          "content": null,
+          "safety_check": null,
+          "seo_meta": {
+            "title": null,
+            "description": null,
+            "slug": null
+          },
+          "note": "No AI client connected. Use the prompt above with your AI model to generate content."
+        },
+        "file": "data\\content\\drafts\\blog_20260223_complete-guide-to-ashwagandha-benefits-usage-and-a.json"
+      },
+      {
+        "success": true,
+        "draft": {
+          "type": "blog_post",
+          "status": "prompt_only",
+          "created_at": "2026-02-23T04:48:52.047864",
+          "topic": "Ayurvedic Morning Routine: Start Your Day the Ancient Way",
+          "target_keyword": "ayurvedic morning routine",
+          "secondary_keywords": [],
+          "product_mentioned": null,
+          "word_count_target": 1500,
+          "prompt": "Write a comprehensive, SEO-optimized blog post \nfor an authentic Ayurvedic herbal products brand called \n\"Falcon Herbs\" (falconherbs.com).\n\nTOPIC: Ayurvedic Morning Routine: Start Your Day the Ancient Way\nPRIMARY KEYWORD: ayurvedic morning routine\n\nTARGET WORD COUNT: 1500 words\n\nTARGET AUDIENCE:\n- Health-conscious adults in USA, UK, Australia, Europe\n- Interested in natural wellness and Ayurveda\n- Educated, willing to pay premium for quality\n- May be new to Ayurveda or experienced practitioners\n\nARTICLE STRUCTURE:\n1. HOOK (2-3 sentences) — Engaging opening that addresses \n   reader's pain point or curiosity\n2. INTRODUCTION — Why this topic matters, brief Ayurvedic \n   context\n3. MAIN CONTENT — 3-5 detailed sections with H2/H3 headings\n   - Include practical, actionable information\n   - Reference traditional Ayurvedic texts/practices \n     where relevant\n   - Add \"How to use\" or \"How to incorporate\" sections\n4. EXPERT INSIGHTS — Ayurvedic perspective \n   (Vata/Pitta/Kapha if relevant)\n5. CONCLUSION — Summary + gentle call-to-action\n6. FAQ SECTION — 3-4 common questions (great for SEO)\n\n\n\nTONE & STYLE:\n- Authoritative but approachable\n- Educational, not salesy\n- Warm, like a knowledgeable friend\n- Premium brand voice\n- Use \"you\" and \"your\" (direct address)\n\nSEO REQUIREMENTS:\n- Primary keyword in: Title, first 100 words, \n  one H2, conclusion\n- Keyword density: 1-2% (natural, not forced)\n- Include LSI/related terms naturally\n- Short paragraphs (2-3 sentences max)\n- Use bullet points and numbered lists\n- Suggest 3 internal link opportunities: [INTERNAL_LINK]\n\nCRITICAL HEALTH & LEGAL RULES — MUST FOLLOW:\n❌ NEVER use: \"cures\", \"treats disease\", \"prevents disease\",\n   \"clinically proven\", \"FDA approved\", \"guaranteed results\",\n   \"no side effects\", \"miracle\", \"100% effective\"\n❌ NEVER mention specific diseases as something the product \n   cures/treats\n❌ NEVER make drug-like claims\n\n✅ USE instead: \"traditionally used for\", \"may support\",\n   \"Ayurvedic tradition suggests\", \"historically valued for\",\n   \"supports healthy [function]\", \"promotes natural [benefit]\"\n✅ Frame benefits as traditional Ayurvedic wisdom\n✅ Always recommend consulting healthcare providers\n✅ Use structure/function claims only\n\nINCLUDE AT THE END:\n\"*Disclaimer: * These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. Consult your healthcare provider before use.\"\n\nFORMAT:\n- Return as clean HTML with proper heading tags\n- Use <h1> for title, <h2> for sections, <h3> for subsections\n- Include <meta_title> tag (max 60 chars)\n- Include <meta_description> tag (max 155 chars)\n- Include suggested <slug> (URL-friendly)\n",
+          "content": null,
+          "safety_check": null,
+          "seo_meta": {
+            "title": null,
+            "description": null,
+            "slug": null
+          },
+          "note": "No AI client connected. Use the prompt above with your AI model to generate content."
+        },
+        "file": "data\\content\\drafts\\blog_20260223_ayurvedic-morning-routine-start-your-day-the-ancie.json"
+      }
+    ],
+    "social": {
+      "success": true,
+      "batch": {
+        "type": "social_batch",
+        "created_at": "2026-02-23T04:48:52.048514",
+        "total_posts": 21,
+        "posts": [
+          {
+            "topic": "Benefits of drinking warm water with herbs in morning",
+            "platform": "instagram",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Benefits of drinking warm water with herbs in morning\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Benefits of drinking warm water with herbs in morning",
+            "platform": "facebook",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Benefits of drinking warm water with herbs in morning\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Benefits of drinking warm water with herbs in morning",
+            "platform": "pinterest",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Benefits of drinking warm water with herbs in morning\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Ashwagandha: The King of Ayurvedic Herbs",
+            "platform": "instagram",
+            "content_type": "educational",
+            "product": "Ashwagandha",
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Ashwagandha: The King of Ayurvedic Herbs\nCONTENT TYPE: educational — Teach something about Ayurveda/herbs\nPLATFORM: instagram\n\nSubtly mention: Ashwagandha by Falcon Herbs\nDon't make it feel like an ad.\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Ashwagandha: The King of Ayurvedic Herbs",
+            "platform": "facebook",
+            "content_type": "educational",
+            "product": "Ashwagandha",
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Ashwagandha: The King of Ayurvedic Herbs\nCONTENT TYPE: educational — Teach something about Ayurveda/herbs\nPLATFORM: facebook\n\nSubtly mention: Ashwagandha by Falcon Herbs\nDon't make it feel like an ad.\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Ashwagandha: The King of Ayurvedic Herbs",
+            "platform": "pinterest",
+            "content_type": "educational",
+            "product": "Ashwagandha",
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Ashwagandha: The King of Ayurvedic Herbs\nCONTENT TYPE: educational — Teach something about Ayurveda/herbs\nPLATFORM: pinterest\n\nSubtly mention: Ashwagandha by Falcon Herbs\nDon't make it feel like an ad.\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Why authentic sourcing matters for herbal products",
+            "platform": "instagram",
+            "content_type": "behind_scenes",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Why authentic sourcing matters for herbal products\nCONTENT TYPE: behind_scenes — Show authenticity, sourcing, process\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Why authentic sourcing matters for herbal products",
+            "platform": "facebook",
+            "content_type": "behind_scenes",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Why authentic sourcing matters for herbal products\nCONTENT TYPE: behind_scenes — Show authenticity, sourcing, process\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Why authentic sourcing matters for herbal products",
+            "platform": "pinterest",
+            "content_type": "behind_scenes",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Why authentic sourcing matters for herbal products\nCONTENT TYPE: behind_scenes — Show authenticity, sourcing, process\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Common myths about Ayurveda debunked",
+            "platform": "instagram",
+            "content_type": "myth_buster",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Common myths about Ayurveda debunked\nCONTENT TYPE: myth_buster — Debunk a common myth about herbs\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Common myths about Ayurveda debunked",
+            "platform": "facebook",
+            "content_type": "myth_buster",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Common myths about Ayurveda debunked\nCONTENT TYPE: myth_buster — Debunk a common myth about herbs\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Common myths about Ayurveda debunked",
+            "platform": "pinterest",
+            "content_type": "myth_buster",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Common myths about Ayurveda debunked\nCONTENT TYPE: myth_buster — Debunk a common myth about herbs\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Seasonal herbs for current weather",
+            "platform": "instagram",
+            "content_type": "seasonal",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Seasonal herbs for current weather\nCONTENT TYPE: seasonal — Connect to current season/festival\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Seasonal herbs for current weather",
+            "platform": "facebook",
+            "content_type": "seasonal",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Seasonal herbs for current weather\nCONTENT TYPE: seasonal — Connect to current season/festival\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Seasonal herbs for current weather",
+            "platform": "pinterest",
+            "content_type": "seasonal",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Seasonal herbs for current weather\nCONTENT TYPE: seasonal — Connect to current season/festival\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Quick Ayurvedic self-care ritual for busy people",
+            "platform": "instagram",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Quick Ayurvedic self-care ritual for busy people\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Quick Ayurvedic self-care ritual for busy people",
+            "platform": "facebook",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Quick Ayurvedic self-care ritual for busy people\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Quick Ayurvedic self-care ritual for busy people",
+            "platform": "pinterest",
+            "content_type": "tip",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Quick Ayurvedic self-care ritual for busy people\nCONTENT TYPE: tip — Quick actionable wellness tip\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Meet our bestselling product",
+            "platform": "instagram",
+            "content_type": "product_highlight",
+            "product": null,
+            "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Meet our bestselling product\nCONTENT TYPE: product_highlight — Showcase a specific product\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Meet our bestselling product",
+            "platform": "facebook",
+            "content_type": "product_highlight",
+            "product": null,
+            "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Meet our bestselling product\nCONTENT TYPE: product_highlight — Showcase a specific product\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          },
+          {
+            "topic": "Meet our bestselling product",
+            "platform": "pinterest",
+            "content_type": "product_highlight",
+            "product": null,
+            "prompt": "Create a PINTEREST post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Meet our bestselling product\nCONTENT TYPE: product_highlight — Showcase a specific product\nPLATFORM: pinterest\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 10\n- Style: SEO-rich description, keyword-focused, informative\n- CTA options: Click to learn more, Shop now, Read the full guide\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+            "content": null,
+            "status": "prompt_only"
+          }
+        ]
+      },
+      "file": "data\\content\\drafts\\social_batch_20260223_0448.json"
+    },
+    "emails": {
+      "reactivation": {
+        "success": true,
+        "sequence": {
+          "name": "Customer Reactivation Sequence",
+          "description": "For customers who haven't ordered in 6+ months",
+          "emails": [
+            {
+              "subject_options": [
+                "We've missed you at Falcon Herbs 🌿",
+                "Your Ayurvedic wellness journey continues...",
+                "A special welcome back gift inside"
+              ],
+              "purpose": "Reconnection — warm, personal",
+              "prompt": "Write an email for Falcon Herbs \nto reconnect with a past customer who hasn't ordered \nin 6+ months.\n\nTONE: Warm, personal, NOT desperate\nLENGTH: 150-200 words\n\nSTRUCTURE:\n1. Personal greeting\n2. \"We noticed it's been a while\"\n3. Brief update on what's new \n   (new products, improved quality)\n4. Special offer: 15% comeback discount \n   (code: WELCOME_BACK)\n5. Gentle CTA: \"Explore what's new\"\n\nINCLUDE:\n- Reference to Ayurvedic seasonal relevance\n- Sense of exclusivity (\"as a valued customer\")\n- Easy unsubscribe mention\n\nDO NOT:\n- Sound desperate or guilt-trippy\n- Make health claims\n- Be too long\n\nBrand: Falcon Herbs — Authentic Ayurvedic Wellness\nWebsite: falconherbs.com"
+            },
+            {
+              "subject_options": [
+                "Your 15% discount expires soon",
+                "3 bestsellers our customers love",
+                "Quick question about your wellness routine"
+              ],
+              "purpose": "Follow-up — value + urgency",
+              "prompt": "Write a follow-up email \n(sent 5 days after first email) for Falcon Herbs.\n\nTONE: Helpful, value-focused\nLENGTH: 120-150 words\n\nSTRUCTURE:\n1. \"In case you missed our last email\"\n2. Highlight 3 bestselling products \n   (leave [PRODUCT_1], [PRODUCT_2], [PRODUCT_3] \n   placeholders)\n3. Remind: 15% discount still active\n4. Social proof: \"Trusted by customers in X countries\"\n5. CTA: \"Shop now before offer expires\"\n\nKeep it SHORT and scannable.\nBrand: Falcon Herbs"
+            }
+          ]
+        },
+        "file": "data\\content\\drafts\\email_reactivation_20260223.json"
+      },
+      "welcome": {
+        "success": true,
+        "sequence": {
+          "name": "New Customer Welcome Sequence",
+          "description": "For new subscribers/first-time buyers",
+          "emails": [
+            {
+              "subject_options": [
+                "Welcome to Falcon Herbs 🌿 Your Ayurvedic journey begins",
+                "Thank you! Here's what to expect from us"
+              ],
+              "purpose": "Welcome + brand introduction",
+              "prompt": "Write a welcome email for \nnew Falcon Herbs subscriber/customer.\n\nTONE: Warm, exciting, educational\nLENGTH: 200-250 words\n\nSTRUCTURE:\n1. Warm welcome\n2. Who we are (2-3 sentences — authentic Ayurveda \n   from India)\n3. What to expect (educational content, \n   wellness tips, exclusive offers)\n4. Starter guide: \"New to Ayurveda? \n   Start with [STARTER_PRODUCT]\"\n5. First-order discount: 10% off \n   (code: NAMASTE10)\n6. Invite to follow on social media\n7. Sign off from \"The Falcon Herbs Family\"\n\nBrand: Falcon Herbs — Authentic Ayurvedic Wellness\nInclude disclaimer about health claims."
+            },
+            {
+              "subject_options": [
+                "Your Dosha Guide — Discover Your Ayurvedic Type",
+                "The #1 thing to know about Ayurvedic herbs"
+              ],
+              "purpose": "Education + engagement",
+              "prompt": "Write educational email #2 \n(sent 3 days after welcome) for Falcon Herbs.\n\nTONE: Educational, fascinating\nLENGTH: 200-300 words\n\nTOPIC: Brief introduction to Doshas \n(Vata, Pitta, Kapha)\n\nSTRUCTURE:\n1. \"Ayurveda believes everyone is unique\"\n2. Quick overview of 3 doshas (2-3 lines each)\n3. \"Which one are you?\"\n4. Link to blog: [DOSHA_BLOG_LINK]\n5. Product suggestions by dosha type \n   (placeholders)\n6. CTA: \"Explore products for your dosha\"\n\nMake it fascinating, not textbook-y.\nInclude health disclaimer."
+            },
+            {
+              "subject_options": [
+                "How our herbs travel from India to your doorstep",
+                "The Falcon Herbs quality promise"
+              ],
+              "purpose": "Trust building — quality story",
+              "prompt": "Write trust-building email #3 \n(sent 7 days after welcome) for Falcon Herbs.\n\nTONE: Authentic, behind-the-scenes\nLENGTH: 150-200 words\n\nTOPIC: Quality and sourcing story\n\nSTRUCTURE:\n1. \"Ever wondered where your herbs come from?\"\n2. Brief sourcing story (India, traditional methods)\n3. Quality standards we follow\n4. Why authentic sourcing matters\n5. Customer testimonial placeholder \n   [TESTIMONIAL]\n6. CTA: \"Experience the Falcon Herbs difference\"\n\nMake them feel good about choosing premium.\nThis email builds TRUST, not sales."
+            }
+          ]
+        },
+        "file": "data\\content\\drafts\\email_welcome_20260223.json"
+      },
+      "polish_reconnect": {
+        "success": true,
+        "sequence": {
+          "name": "Polish Customer Special Reconnection",
+          "description": "Special email for the Polish customer we lost",
+          "emails": [
+            {
+              "subject_options": [
+                "A personal apology from Falcon Herbs 🙏",
+                "We owe you an explanation and a gift"
+              ],
+              "purpose": "Reconnect with lost Polish customer",
+              "prompt": "Write a deeply personal \nreconnection email for a specific situation:\n\nCONTEXT:\n- We had a Polish customer who placed a large order \n  (approx ₹20,000 / ~$240)\n- Our website was hacked and we lost his order data\n- We could not fulfill his order properly\n- We feel terrible about this\n- We want to make it right\n\nTONE: Genuinely apologetic, personal, humble\nLENGTH: 200-250 words\n\nSTRUCTURE:\n1. Personal apology — \"We owe you an apology\"\n2. Honest explanation — site security incident\n3. What we've done since \n   (improved security, rebuilt systems)\n4. We want to make it right:\n   - Full refund if not already done\n   - Free replacement order\n   - 30% lifetime discount\n5. \"Please reach out so we can fix this\"\n6. Multiple contact methods \n   (email, WhatsApp, website form)\n\nTHIS IS NOT A MARKETING EMAIL.\nThis is a genuine human apology.\nNo sales pitch, no upsell.\nJust making things right.\n\nSign off personally, not as a brand."
+            }
+          ]
+        },
+        "file": "data\\content\\drafts\\email_polish_reconnect_20260223.json"
+      }
+    },
+    "reconnect_page": {
+      "success": true,
+      "page": {
+        "type": "reconnect_page",
+        "url_slug": "reconnect",
+        "meta_title": "Reconnect with Falcon Herbs — We Want to Make Things Right",
+        "meta_description": "Were you a Falcon Herbs customer before 2023? We experienced a technical issue. Please reconnect so we can make things right.",
+        "content": "\n<h1>Were You Our Customer? Let's Reconnect 🙏</h1>\n\n<p>In [YEAR], our website experienced a security incident \nthat resulted in the loss of some customer data, including \norder records and contact information.</p>\n\n<p><strong>If you placed an order with Falcon Herbs that \nwas not fulfilled, or if you experienced any issues due to \nthis incident, we sincerely apologize.</strong></p>\n\n<h2>What Happened</h2>\n<p>Our website was compromised, and despite our best efforts, \nsome customer records were lost. We have since completely \nrebuilt our systems with enterprise-grade security to ensure \nthis never happens again.</p>\n\n<h2>How We Want to Make It Right</h2>\n<ul>\n<li>✦ Full refund for any unfulfilled orders</li>\n<li>✦ Free replacement shipment of your original order</li>\n<li>✦ 30% lifetime discount on all future purchases</li>\n<li>✦ Priority customer support</li>\n</ul>\n\n<h2>Please Reach Out</h2>\n<p>If you were affected, please contact us through \nany of these channels:</p>\n<ul>\n<li>📧 Email: [YOUR_EMAIL]</li>\n<li>📱 WhatsApp: [YOUR_WHATSAPP]</li>\n<li>📝 Or fill out the form below</li>\n</ul>\n\n[CONTACT_FORM]\n\n<p><em>We believe in doing the right thing. \nYour trust matters more than any transaction.</em></p>\n\n<p>With sincere apologies,<br>\n<strong>The Falcon Herbs Team</strong><br>\nAuthentic Ayurvedic Wellness</p>\n",
+        "seo_notes": [
+          "This page should be indexed by Google",
+          "If the Polish customer Googles 'Falcon Herbs' he might find this",
+          "Shows integrity and builds trust with ALL visitors",
+          "Add to main navigation or footer as 'Reconnect' or 'Customer Support'",
+          "Also helps with brand trust signals for Google E-E-A-T"
+        ]
+      },
+      "file": "data\\content\\drafts\\reconnect_page.json"
+    },
+    "calendar": {
+      "success": true,
+      "calendar": {
+        "generated_at": "2026-02-23T04:48:52.051687",
+        "total_weeks": 12,
+        "content_targets": {
+          "blogs_per_week": 2,
+          "social_per_day": 1,
+          "product_descriptions_per_week": 5
+        },
+        "weeks": [
+          {
+            "week_number": 1,
+            "start_date": "2026-02-23",
+            "end_date": "2026-03-01",
+            "season": "Late Winter",
+            "dosha_focus": "Kapha building",
+            "theme": "Detox preparation",
+            "blog_posts": [
+              {
+                "topic": "Complete Guide to Ashwagandha",
+                "keyword": "ashwagandha benefits",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-02-24",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Morning Routine for Beginners",
+                "keyword": "ayurvedic morning routine",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-02-27",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-02-23",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-02-24",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-02-25",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-02-26",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-02-27",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-02-28",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-01",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Detox preparation",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 2,
+            "start_date": "2026-03-02",
+            "end_date": "2026-03-08",
+            "season": "Spring",
+            "dosha_focus": "Kapha",
+            "theme": "Allergy season herbs",
+            "blog_posts": [
+              {
+                "topic": "Understanding Your Dosha Type",
+                "keyword": "dosha type quiz ayurveda",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-03-03",
+                "status": "planned"
+              },
+              {
+                "topic": "Top 10 Ayurvedic Herbs Everyone Should Know",
+                "keyword": "best ayurvedic herbs",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-03-06",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-03-02",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-03",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-04",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-05",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-06",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-07",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-08",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 3,
+            "start_date": "2026-03-09",
+            "end_date": "2026-03-15",
+            "season": "Spring",
+            "dosha_focus": "Kapha",
+            "theme": "Metabolism support",
+            "blog_posts": [
+              {
+                "topic": "Turmeric: The Golden Spice of Ayurveda",
+                "keyword": "turmeric benefits ayurveda",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-03-10",
+                "status": "planned"
+              },
+              {
+                "topic": "Triphala: The Three Fruit Formula",
+                "keyword": "triphala benefits",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-03-13",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-03-09",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-10",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-11",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-12",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-13",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-14",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-15",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Metabolism support",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 4,
+            "start_date": "2026-03-16",
+            "end_date": "2026-03-22",
+            "season": "Spring",
+            "dosha_focus": "Kapha",
+            "theme": "Fresh start routines",
+            "blog_posts": [
+              {
+                "topic": "Brahmi for Mental Clarity",
+                "keyword": "brahmi herb benefits",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-03-17",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Herbs for Natural Energy",
+                "keyword": "natural energy herbs ayurveda",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-03-20",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-03-16",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-17",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-18",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-19",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-20",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-21",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-22",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Fresh start routines",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 5,
+            "start_date": "2026-03-23",
+            "end_date": "2026-03-29",
+            "season": "Spring",
+            "dosha_focus": "Kapha",
+            "theme": "Spring cleanse",
+            "blog_posts": [
+              {
+                "topic": "How to Choose Quality Herbal Supplements",
+                "keyword": "how to choose herbal supplements",
+                "type": "blog",
+                "priority": "HIGH",
+                "scheduled_date": "2026-03-24",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurveda vs Modern Medicine: Complementary",
+                "keyword": "ayurveda and modern medicine",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-03-27",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-03-23",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-24",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-25",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-26",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-27",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-28",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-29",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Spring cleanse",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 6,
+            "start_date": "2026-03-30",
+            "end_date": "2026-04-05",
+            "season": "Spring",
+            "dosha_focus": "Kapha",
+            "theme": "Allergy season herbs",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Spring cleanse",
+                "keyword": "spring cleanse",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-03-31",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Allergy season herbs",
+                "keyword": "allergy season herbs",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-03",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-03-30",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-03-31",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-01",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-02",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-03",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-04",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-05",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Allergy season herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 7,
+            "start_date": "2026-04-06",
+            "end_date": "2026-04-12",
+            "season": "Spring",
+            "dosha_focus": "Kapha-Pitta",
+            "theme": "Skin care herbs",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Earth Day natural living",
+                "keyword": "earth day natural living",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-07",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Digestive wellness",
+                "keyword": "digestive wellness",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-10",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-04-06",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-07",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-08",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-09",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-10",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-11",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-12",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Skin care herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 8,
+            "start_date": "2026-04-13",
+            "end_date": "2026-04-19",
+            "season": "Spring",
+            "dosha_focus": "Kapha-Pitta",
+            "theme": "Spring energy",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Earth Day natural living",
+                "keyword": "earth day natural living",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-14",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Digestive wellness",
+                "keyword": "digestive wellness",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-17",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-04-13",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-14",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-15",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-16",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-17",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-18",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-19",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Spring energy",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 9,
+            "start_date": "2026-04-20",
+            "end_date": "2026-04-26",
+            "season": "Spring",
+            "dosha_focus": "Kapha-Pitta",
+            "theme": "Earth Day natural living",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Earth Day natural living",
+                "keyword": "earth day natural living",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-21",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Digestive wellness",
+                "keyword": "digestive wellness",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-24",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-04-20",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-21",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-22",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-23",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-24",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-25",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-26",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Earth Day natural living",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 10,
+            "start_date": "2026-04-27",
+            "end_date": "2026-05-03",
+            "season": "Spring",
+            "dosha_focus": "Kapha-Pitta",
+            "theme": "Digestive wellness",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Earth Day natural living",
+                "keyword": "earth day natural living",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-04-28",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Digestive wellness",
+                "keyword": "digestive wellness",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-05-01",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-04-27",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-28",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-29",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-04-30",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-01",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-02",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-03",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Digestive wellness",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 11,
+            "start_date": "2026-05-04",
+            "end_date": "2026-05-10",
+            "season": "Late Spring",
+            "dosha_focus": "Pitta rising",
+            "theme": "Mother's Day gifts",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Cooling herbs introduction",
+                "keyword": "cooling herbs introduction",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-05-05",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Stress management",
+                "keyword": "stress management",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-05-08",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-05-04",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-05",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-06",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-07",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-08",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-09",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-10",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Mother's Day gifts",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          },
+          {
+            "week_number": 12,
+            "start_date": "2026-05-11",
+            "end_date": "2026-05-17",
+            "season": "Late Spring",
+            "dosha_focus": "Pitta rising",
+            "theme": "Mental clarity herbs",
+            "blog_posts": [
+              {
+                "topic": "Ayurvedic Guide: Cooling herbs introduction",
+                "keyword": "cooling herbs introduction",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-05-12",
+                "status": "planned"
+              },
+              {
+                "topic": "Ayurvedic Guide: Stress management",
+                "keyword": "stress management",
+                "type": "blog",
+                "priority": "MEDIUM",
+                "scheduled_date": "2026-05-15",
+                "status": "planned"
+              }
+            ],
+            "social_posts": [
+              {
+                "date": "2026-05-11",
+                "day": "Monday",
+                "content_type": "educational",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-12",
+                "day": "Tuesday",
+                "content_type": "product_highlight",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-13",
+                "day": "Wednesday",
+                "content_type": "tip",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-14",
+                "day": "Thursday",
+                "content_type": "educational",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-15",
+                "day": "Friday",
+                "content_type": "behind_scenes",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-16",
+                "day": "Saturday",
+                "content_type": "myth_buster",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              },
+              {
+                "date": "2026-05-17",
+                "day": "Sunday",
+                "content_type": "seasonal",
+                "theme": "Mental clarity herbs",
+                "platforms": [
+                  "instagram",
+                  "facebook",
+                  "pinterest"
+                ],
+                "status": "planned"
+              }
+            ],
+            "product_tasks": []
+          }
+        ]
+      },
+      "file": "data\\content\\calendar\\calendar_20260223.json"
+    }
+  }
+}

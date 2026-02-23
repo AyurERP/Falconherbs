@@ -121,6 +121,16 @@ class IntegrationBridge:
             self.status["gsc"] = "loaded"
         except Exception as e:
             self.status["gsc"] = f"failed: {e}"
+        
+        # Content Workflow (Phase 2)
+        try:
+            from core.content_workflow import ContentWorkflow
+            self.workflow = ContentWorkflow(self)
+            self.tools["workflow"] = self.workflow
+            self.status["workflow"] = "loaded"
+        except Exception as e:
+            self.workflow = None
+            self.status["workflow"] = f"failed: {e}"
     
     def get_status(self):
         """Check which tools are available"""
@@ -290,82 +300,414 @@ class IntegrationBridge:
                 "error": str(e)
             }
     
+    def retry_prompt_only_drafts(self):
+        """Retry all prompt_only drafts with AI client"""
+        try:
+            pipeline = self.tools.get("content")
+            if not pipeline or not pipeline.ai_client:
+                return {
+                    "success": False,
+                    "error": "Content Pipeline or AI not loaded"
+                }
+
+            retried = 0
+            drafts_dir = Path("data/content/drafts")
+            for draft_file in drafts_dir.glob("*.json"):
+                if draft_file.name == "__init__.py":
+                    continue
+                try:
+                    with open(draft_file, encoding="utf-8") as f:
+                        data = json.load(f)
+                    if data.get("status") != "prompt_only":
+                        continue
+                    if not data.get("prompt"):
+                        continue
+
+                    response = pipeline.ai_client.generate(
+                        data["prompt"]
+                    )
+                    if response:
+                        data["content"] = response
+                        safety = pipeline.safety_check(response)
+                        data["safety_check"] = safety
+                        data["status"] = (
+                            "needs_review"
+                            if not safety["is_safe"]
+                            else "generated"
+                        )
+                        if not safety["is_safe"]:
+                            data["content"] = safety[
+                                "cleaned_content"
+                            ]
+                        data["retried_at"] = (
+                            datetime.now().isoformat()
+                        )
+
+                        with open(draft_file, "w",
+                                  encoding="utf-8") as f:
+                            json.dump(data, f, indent=2,
+                                      ensure_ascii=False)
+                        retried += 1
+                except Exception:
+                    continue
+
+            return {"success": True, "retried": retried}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_content_queue_status(self):
+        """Get content queue summary"""
+        try:
+            workflow = self.tools.get("workflow")
+            if workflow:
+                return workflow.get_queue_status()
+            return "Content Workflow not loaded"
+        except Exception as e:
+            return f"Error: {e}"
+
     # ========= MORNING REPORT =========
-    
+
     def generate_morning_report(self):
-        """Combined morning report for WhatsApp"""
-        
+        """Combined morning report with LIVE WooCommerce data"""
+
         lines = [
-            "🦅 *FALCON AGENCY — MORNING REPORT*",
-            f"📅 {datetime.now().strftime('%A, %d %b %Y')}",
-            "═" * 30,
+            "\U0001F985 *FALCON AGENCY \u2014 MORNING REPORT*",
+            "\U0001F4C5 {}".format(
+                datetime.now().strftime('%A, %d %b %Y')
+            ),
+            "\u2550" * 30,
         ]
-        
-        # Revenue
+
+        # LIVE orders from WooCommerce
+        woo = self.tools.get("woocommerce")
+        if woo:
+            try:
+                today_orders = woo.get_orders(
+                    days_back=1, save=False
+                )
+                if today_orders.get("success"):
+                    data = today_orders["data"]
+                    lines.append(
+                        "\n\U0001F4E6 *ORDERS (Last 24h):*"
+                    )
+                    lines.append(
+                        "   Orders: {}".format(
+                            data['total_orders']
+                        )
+                    )
+                    lines.append(
+                        "   Revenue: \u20B9{:,.0f}".format(
+                            data['revenue']['total']
+                        )
+                    )
+            except Exception:
+                pass
+
+        # Monthly revenue from tracker
         rev = self.get_revenue_report()
         if rev.get("success"):
-            lines.append("\n💰 *REVENUE:*")
+            lines.append("\n\U0001F4B0 *MONTHLY REVENUE:*")
             lines.append(rev["report"])
-        
+
+        # Content queue
+        queue_status = self.get_content_queue_status()
+        if isinstance(queue_status, str) and \
+                "Error" not in queue_status:
+            lines.append("\n{}".format(queue_status))
+
         # Content Status
         content_status = self.get_content_status()
         if isinstance(content_status, str) and \
                 "Error" not in content_status:
-            lines.append(f"\n{content_status}")
-        
+            lines.append("\n{}".format(content_status))
+
         # Tool Status
         status = self.get_status()
-        all_ok = status["all_loaded"]
-        lines.append(f"\n🔧 *SYSTEM STATUS:* "
-                     f"{'✅ All OK' if all_ok else '⚠️ Issues'}")
-        
-        for tool, state in status["tools"].items():
-            icon = "✅" if state == "loaded" else "❌"
-            lines.append(f"   {icon} {tool}: {state}")
-        
+        all_ok = all(
+            "loaded" in str(v) for v in status["tools"].values()
+        )
+        lines.append(
+            "\n\U0001F527 *SYSTEM:* {}".format(
+                "\u2705 All OK" if all_ok else "\u26A0\uFE0F Issues"
+            )
+        )
+
+        failed = [
+            t for t, s in status["tools"].items()
+            if "loaded" not in str(s)
+        ]
+        if failed:
+            for t in failed:
+                lines.append(
+                    "   \u274C {}: {}".format(
+                        t, status["tools"][t]
+                    )
+                )
+
         lines.extend([
             "",
-            "═" * 30,
-            "🤖 _Falcon Agency — Automated Report_"
+            "\u2550" * 30,
+            "\U0001F916 _Falcon Agency \u2014 Automated Report_"
         ])
-        
+
         return "\n".join(lines)
     
     # ========= EVENING REPORT =========
-    
+
     def generate_evening_report(self):
-        """Combined evening report for WhatsApp"""
-        
+        """Combined evening report with LIVE data"""
+
         lines = [
-            "🦅 *FALCON AGENCY — EVENING REPORT*",
-            f"📅 {datetime.now().strftime('%A, %d %b %Y')}",
-            "═" * 30,
+            "\U0001F985 *FALCON AGENCY \u2014 EVENING REPORT*",
+            "\U0001F4C5 {}".format(
+                datetime.now().strftime('%A, %d %b %Y')
+            ),
+            "\u2550" * 30,
         ]
-        
-        # Revenue
+
+        # LIVE today's orders
+        woo = self.tools.get("woocommerce")
+        if woo:
+            try:
+                today_orders = woo.get_orders(
+                    days_back=1, save=False
+                )
+                if today_orders.get("success"):
+                    data = today_orders["data"]
+                    lines.append(
+                        "\n\U0001F4E6 *TODAY'S ORDERS:* {}".format(
+                            data['total_orders']
+                        )
+                    )
+                    lines.append(
+                        "   Revenue: \u20B9{:,.0f}".format(
+                            data['revenue']['total']
+                        )
+                    )
+                    if data['total_orders'] == 0:
+                        lines.append(
+                            "   \u26A0\uFE0F No orders today"
+                        )
+            except Exception:
+                pass
+
+        # Monthly revenue
         rev = self.get_revenue_report()
         if rev.get("success"):
-            lines.append("\n💰 *TODAY'S REVENUE:*")
+            lines.append("\n\U0001F4B0 *MONTHLY SUMMARY:*")
             lines.append(rev["report"])
-        
-        # Content
-        content_status = self.get_content_status()
-        if isinstance(content_status, str):
-            lines.append(f"\n{content_status}")
-        
-        # Tomorrow's plan
+
+        # Content produced today
+        try:
+            from pathlib import Path
+            today = datetime.now().strftime("%Y%m%d")
+            drafts = Path("data/content/drafts")
+            blogs = len(list(drafts.glob(
+                "blog_{}_*.json".format(today)
+            )))
+            social = len(list(drafts.glob(
+                "social_batch_{}_*.json".format(today)
+            )))
+            lines.append(
+                "\n\U0001F4DD *CONTENT TODAY:*"
+            )
+            lines.append(
+                "   Blogs: {} | Social: {}".format(
+                    blogs, social
+                )
+            )
+        except Exception:
+            pass
+
+        # Goal progress
+        try:
+            from core.goal_tracker import goal_tracker
+            progress = goal_tracker.get_progress_summary()
+            rev_pct = progress["revenue"]["percentage"]
+            lines.append(
+                "\n\U0001F3AF *GOAL PROGRESS:* {}%".format(
+                    rev_pct
+                )
+            )
+            lines.append(
+                "   Day {}/30".format(
+                    progress["period"]["days_elapsed"]
+                )
+            )
+        except Exception:
+            pass
+
         lines.extend([
-            "\n📋 *TOMORROW'S PLAN:*",
-            "   📝 Generate content drafts",
-            "   📱 Social media posts",
-            "   🔍 Monitor site health",
-            "   📊 Track ad performance",
             "",
-            "═" * 30,
-            "💤 _Goodnight! System monitoring continues..._",
-            "🤖 _Falcon Agency_"
+            "\u2550" * 30,
+            "\U0001F634 _System monitoring continues..._",
+            "\U0001F916 _Falcon Agency_"
         ])
-        
+
+        return "\n".join(lines)
+
+    def generate_daily_digest(self):
+        """Unified daily digest — pulls ALL data sources
+        into one comprehensive WhatsApp report.
+        Replaces separate morning/evening reports."""
+
+        lines = [
+            "\U0001F985 *FALCON AGENCY \u2014 DAILY DIGEST*",
+            "\U0001F4C5 {}".format(
+                datetime.now().strftime('%A, %d %b %Y')
+            ),
+            "\u2550" * 30,
+        ]
+
+        # 1. LIVE Revenue — orders today
+        woo = self.tools.get("woocommerce")
+        if woo:
+            try:
+                orders = woo.get_orders(
+                    days_back=1, save=False
+                )
+                if orders.get("success"):
+                    d = orders["data"]
+                    lines.append(
+                        "\n\U0001F4B0 *ORDERS TODAY:* {} "
+                        "| \u20B9{:,.0f}".format(
+                            d['total_orders'],
+                            d['revenue']['total']
+                        )
+                    )
+            except Exception:
+                pass
+
+        # 2. Monthly revenue summary
+        rev = self.get_revenue_report()
+        if rev.get("success"):
+            summary = rev.get("data", {})
+            lines.append(
+                "\U0001F4CA *MONTH:* \u20B9{:,.0f} / "
+                "\u20B9{:,.0f} ({}%)".format(
+                    summary.get("revenue", 0),
+                    summary.get("target", 0),
+                    summary.get("progress_pct", 0)
+                )
+            )
+
+        # 3. Content queue status
+        queue_status = self.get_content_queue_status()
+        if isinstance(queue_status, str) and \
+                "Error" not in queue_status and \
+                "not loaded" not in queue_status:
+            lines.append("\n{}".format(queue_status))
+
+        # 4. Content stats (drafts)
+        try:
+            from pathlib import Path as _P
+            today = datetime.now().strftime("%Y%m%d")
+            drafts = _P("data/content/drafts")
+            if drafts.exists():
+                total_drafts = len([
+                    f for f in drafts.glob("*.json")
+                    if f.name != "__init__.py"
+                ])
+                today_drafts = len(list(
+                    drafts.glob(
+                        "*{}_*.json".format(today)
+                    )
+                ))
+                lines.append(
+                    "\U0001F4DD *CONTENT:* {} today "
+                    "| {} total drafts".format(
+                        today_drafts, total_drafts
+                    )
+                )
+        except Exception:
+            pass
+
+        # 5. Goal progress
+        try:
+            from core.goal_tracker import goal_tracker
+            progress = (
+                goal_tracker.get_progress_summary()
+            )
+            rev_pct = progress["revenue"]["percentage"]
+            lines.append(
+                "\n\U0001F3AF *GOAL PROGRESS:* "
+                "{}%".format(rev_pct)
+            )
+            lines.append(
+                "   Day {}/30".format(
+                    progress["period"]["days_elapsed"]
+                )
+            )
+        except Exception:
+            pass
+
+        # 6. Security / Health status
+        try:
+            scan_file = Path(
+                "data/content/product_rewrites/"
+                "last_scan.json"
+            )
+            if scan_file.exists():
+                import json as _json
+                scan = _json.loads(
+                    scan_file.read_text(encoding="utf-8")
+                )
+                flagged = scan.get("flagged", 0)
+                total = scan.get("total", 0)
+                lines.append(
+                    "\U0001F6E1\uFE0F *HEALTH:* "
+                    "{}/{} products flagged".format(
+                        flagged, total
+                    )
+                )
+        except Exception:
+            pass
+
+        # 7. System health
+        status = self.get_status()
+        tools_ok = sum(
+            1 for v in status["tools"].values()
+            if "loaded" in str(v)
+        )
+        tools_total = len(status["tools"])
+        lines.append(
+            "\U0001F527 *SYSTEM:* {}/{} tools OK".format(
+                tools_ok, tools_total
+            )
+        )
+
+        # 8. Task success rates
+        try:
+            stats_file = Path("data/task_stats.json")
+            if stats_file.exists():
+                import json as _json
+                stats = _json.loads(
+                    stats_file.read_text()
+                )
+                total_runs = sum(
+                    s.get("total_runs", 0)
+                    for s in stats.values()
+                )
+                avg_rate = sum(
+                    s.get("success_rate", 0)
+                    for s in stats.values()
+                ) / max(len(stats), 1)
+                lines.append(
+                    "\u2699\uFE0F *TASKS:* {} runs "
+                    "| {:.0f}% success".format(
+                        total_runs, avg_rate
+                    )
+                )
+        except Exception:
+            pass
+
+        lines.extend([
+            "",
+            "\u2550" * 30,
+            "\U0001F916 _Falcon Agency \u2014 "
+            "Unified Daily Digest_"
+        ])
+
         return "\n".join(lines)
 
 

@@ -32,3 +32,17 @@ webhook.txt
 whatsapp.txt
 response A.txt
 Response B.txt
+
+# Sensitive data - never commit
+data/woocommerce/
+data/revenue/
+data/backups/
+data/goals/
+data/customer_winback/
+data/health_audit/
+data/monthly_goals.json
+data/daily_progress.json
+data/costs.json.bak
+data/revenue.json.bak
+nul
+scripts/migrate_revenue.py

@@ -116,6 +116,15 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Automatic daily data backup"
                 },
+                "weekly_seo_digest": {
+                    "time": "09:30",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Weekly SEO + content "
+                                   "+ revenue digest"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -212,6 +221,7 @@ class ExtendedSchedule:
             "weekly_content_batch": self._task_weekly_content,
             "customer_analysis": self._task_customer_analysis,
             "daily_backup": self._task_daily_backup,
+            "weekly_seo_digest": self._task_weekly_seo_digest,
         }
         
         handler = handlers.get(task_name)
@@ -221,11 +231,22 @@ class ExtendedSchedule:
                 "error": f"No handler for task: {task_name}"
             }
         
+        import time as _time
+        start = _time.time()
         try:
             result = handler()
+            elapsed = int((_time.time() - start) * 1000)
+            success = result.get("success", True)
+            self._record_task_result(
+                task_name, success, elapsed
+            )
             self.mark_completed(task_name)
             return result
         except Exception as e:
+            elapsed = int((_time.time() - start) * 1000)
+            self._record_task_result(
+                task_name, False, elapsed
+            )
             return {
                 "success": False,
                 "error": f"Task {task_name} failed: {e}",
@@ -335,30 +356,78 @@ class ExtendedSchedule:
             return {"success": False, "error": str(e)}
     
     def _task_daily_content(self):
-        """Generate daily content suggestions"""
+        """Generate daily content via ContentWorkflow.
+        Picks next topic, generates AI content, queues
+        for approval."""
         try:
-            content = self.bridge.tools.get("content")
-            if not content:
-                return {"success": False,
-                       "error": "Content Pipeline not loaded"}
-            
-            status = content.generate_content_status_report()
-            return {
-                "success": True,
-                "send_whatsapp": False,
-                "message": status
-            }
+            from core.content_workflow import ContentWorkflow
+            workflow = self.bridge.tools.get("workflow")
+            if not workflow:
+                workflow = ContentWorkflow(self.bridge)
+
+            # Pick next unused topic
+            topic, keyword, product = workflow.pick_next_topic()
+
+            # Generate and queue via full pipeline
+            result = workflow.generate_and_queue(
+                topic=topic,
+                keyword=keyword,
+                product=product
+            )
+
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": result.get("message",
+                        "Content generated: {}".format(topic))
+                }
+            else:
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "Content generation skipped: "
+                               "{}".format(
+                                   result.get("error", "unknown")
+                               )
+                }
         except Exception as e:
             return {"success": False, "error": str(e)}
     
     def _task_revenue_update(self):
-        """Update revenue tracking"""
-        result = self.bridge.get_revenue_report()
-        return {
-            "success": result.get("success", False),
-            "send_whatsapp": False,
-            "message": result.get("report", "Revenue update done")
-        }
+        """Update revenue from LIVE WooCommerce + auto-sync
+        daily progress"""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            tracker = self.bridge.tools.get("revenue")
+
+            # Sync live orders into revenue tracker
+            imported = 0
+            if woo and tracker:
+                orders = woo.get_orders(days_back=7, save=False)
+                if orders.get("success"):
+                    sync = tracker.sync_from_woocommerce(orders)
+                    imported = sync.get("imported", 0)
+
+            # Auto-sync daily progress from real data
+            try:
+                from core.goal_tracker import goal_tracker
+                goal_tracker.auto_sync_progress()
+            except Exception:
+                pass
+
+            return {
+                "success": True,
+                "send_whatsapp": imported > 0,
+                "message": (
+                    "\U0001F4B0 Revenue synced: "
+                    "{} new entries".format(imported)
+                    if imported > 0
+                    else "Revenue up to date"
+                )
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
     
     def _task_store_audit(self):
         """Weekly full store audit"""
@@ -519,6 +588,216 @@ class ExtendedSchedule:
         ])
         
         return "\n".join(lines)
+    
+    # ========= SMART SCHEDULING (Phase 4) =========
+    
+    def _record_task_result(
+        self, task_name, success, duration_ms=0
+    ):
+        """Record task execution stats to
+        data/task_stats.json for analytics."""
+        try:
+            stats_file = Path("data/task_stats.json")
+            stats_file.parent.mkdir(
+                parents=True, exist_ok=True
+            )
+
+            if stats_file.exists():
+                with open(stats_file,
+                          encoding="utf-8") as f:
+                    stats = json.load(f)
+            else:
+                stats = {}
+
+            if task_name not in stats:
+                stats[task_name] = {
+                    "total_runs": 0,
+                    "successes": 0,
+                    "failures": 0,
+                    "avg_duration_ms": 0,
+                    "last_run": None,
+                    "last_status": None,
+                }
+
+            entry = stats[task_name]
+            entry["total_runs"] += 1
+            if success:
+                entry["successes"] += 1
+            else:
+                entry["failures"] += 1
+
+            # Rolling average duration
+            prev_avg = entry["avg_duration_ms"]
+            prev_runs = entry["total_runs"] - 1
+            if prev_runs > 0:
+                entry["avg_duration_ms"] = round(
+                    (prev_avg * prev_runs + duration_ms)
+                    / entry["total_runs"]
+                )
+            else:
+                entry["avg_duration_ms"] = duration_ms
+
+            entry["last_run"] = (
+                datetime.now().isoformat()
+            )
+            entry["last_status"] = (
+                "success" if success else "failed"
+            )
+
+            # Compute success_rate
+            entry["success_rate"] = round(
+                entry["successes"]
+                / max(entry["total_runs"], 1) * 100
+            )
+
+            with open(stats_file, "w",
+                      encoding="utf-8") as f:
+                json.dump(stats, f, indent=2)
+        except Exception:
+            pass
+    
+    def _task_weekly_seo_digest(self):
+        """Weekly SEO + content + revenue digest.
+        Only runs on Mondays."""
+        try:
+            # Only on Monday
+            if datetime.now().weekday() != 0:
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "SEO digest: not Monday",
+                }
+
+            lines = [
+                "\U0001F4CA *WEEKLY SEO DIGEST*",
+                "\U0001F4C5 {}".format(
+                    datetime.now().strftime(
+                        '%d %b %Y'
+                    )
+                ),
+                "\u2500" * 25,
+            ]
+
+            # 1. Content stats
+            try:
+                drafts_dir = Path(
+                    "data/content/drafts"
+                )
+                if drafts_dir.exists():
+                    all_drafts = [
+                        f for f in
+                        drafts_dir.glob("*.json")
+                        if f.name != "__init__.py"
+                    ]
+                    status_counts = {}
+                    for d in all_drafts:
+                        try:
+                            data = json.loads(
+                                d.read_text(
+                                    encoding="utf-8"
+                                )
+                            )
+                            s = data.get(
+                                "status", "unknown"
+                            )
+                            status_counts[s] = (
+                                status_counts.get(s, 0)
+                                + 1
+                            )
+                        except Exception:
+                            continue
+                    lines.append(
+                        "\n\U0001F4DD *CONTENT:*"
+                    )
+                    for s, c in sorted(
+                        status_counts.items()
+                    ):
+                        lines.append(
+                            "   {} : {}".format(s, c)
+                        )
+            except Exception:
+                pass
+
+            # 2. Product health
+            try:
+                scan_file = Path(
+                    "data/content/product_rewrites/"
+                    "last_scan.json"
+                )
+                if scan_file.exists():
+                    data = json.loads(
+                        scan_file.read_text(
+                            encoding="utf-8"
+                        )
+                    )
+                    lines.append(
+                        "\n\U0001F6E1\uFE0F *PRODUCT "
+                        "HEALTH:*"
+                    )
+                    lines.append(
+                        "   Scanned: {}".format(
+                            data.get("total", 0)
+                        )
+                    )
+                    lines.append(
+                        "   Flagged: {}".format(
+                            data.get("flagged", 0)
+                        )
+                    )
+            except Exception:
+                pass
+
+            # 3. Goal progress
+            try:
+                from core.goal_tracker import (
+                    goal_tracker
+                )
+                progress = (
+                    goal_tracker.get_progress_summary()
+                )
+                rev_pct = progress[
+                    "revenue"
+                ]["percentage"]
+                lines.append(
+                    "\n\U0001F3AF *GOALS:* {}%"
+                    " revenue target".format(rev_pct)
+                )
+            except Exception:
+                pass
+
+            # 4. Revenue this week
+            try:
+                rev = self.bridge.tools.get("revenue")
+                if rev:
+                    summary = (
+                        rev.get_monthly_summary()
+                    )
+                    lines.append(
+                        "\n\U0001F4B0 *REVENUE:* "
+                        "\u20B9{:,.0f} this month".format(
+                            summary.get("revenue", 0)
+                        )
+                    )
+            except Exception:
+                pass
+
+            lines.extend([
+                "",
+                "\u2500" * 25,
+                "\U0001F916 _Falcon Agency "
+                "\u2014 Weekly Digest_",
+            ])
+
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": "\n".join(lines),
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+            }
 
 
 # ==================== TEST ====================

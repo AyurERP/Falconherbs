@@ -1,0 +1,30 @@
+{
+  "name": "New Customer Welcome Sequence",
+  "description": "For new subscribers/first-time buyers",
+  "emails": [
+    {
+      "subject_options": [
+        "Welcome to Falcon Herbs 🌿 Your Ayurvedic journey begins",
+        "Thank you! Here's what to expect from us"
+      ],
+      "purpose": "Welcome + brand introduction",
+      "prompt": "Write a welcome email for \nnew Falcon Herbs subscriber/customer.\n\nTONE: Warm, exciting, educational\nLENGTH: 200-250 words\n\nSTRUCTURE:\n1. Warm welcome\n2. Who we are (2-3 sentences — authentic Ayurveda \n   from India)\n3. What to expect (educational content, \n   wellness tips, exclusive offers)\n4. Starter guide: \"New to Ayurveda? \n   Start with [STARTER_PRODUCT]\"\n5. First-order discount: 10% off \n   (code: NAMASTE10)\n6. Invite to follow on social media\n7. Sign off from \"The Falcon Herbs Family\"\n\nBrand: Falcon Herbs — Authentic Ayurvedic Wellness\nInclude disclaimer about health claims."
+    },
+    {
+      "subject_options": [
+        "Your Dosha Guide — Discover Your Ayurvedic Type",
+        "The #1 thing to know about Ayurvedic herbs"
+      ],
+      "purpose": "Education + engagement",
+      "prompt": "Write educational email #2 \n(sent 3 days after welcome) for Falcon Herbs.\n\nTONE: Educational, fascinating\nLENGTH: 200-300 words\n\nTOPIC: Brief introduction to Doshas \n(Vata, Pitta, Kapha)\n\nSTRUCTURE:\n1. \"Ayurveda believes everyone is unique\"\n2. Quick overview of 3 doshas (2-3 lines each)\n3. \"Which one are you?\"\n4. Link to blog: [DOSHA_BLOG_LINK]\n5. Product suggestions by dosha type \n   (placeholders)\n6. CTA: \"Explore products for your dosha\"\n\nMake it fascinating, not textbook-y.\nInclude health disclaimer."
+    },
+    {
+      "subject_options": [
+        "How our herbs travel from India to your doorstep",
+        "The Falcon Herbs quality promise"
+      ],
+      "purpose": "Trust building — quality story",
+      "prompt": "Write trust-building email #3 \n(sent 7 days after welcome) for Falcon Herbs.\n\nTONE: Authentic, behind-the-scenes\nLENGTH: 150-200 words\n\nTOPIC: Quality and sourcing story\n\nSTRUCTURE:\n1. \"Ever wondered where your herbs come from?\"\n2. Brief sourcing story (India, traditional methods)\n3. Quality standards we follow\n4. Why authentic sourcing matters\n5. Customer testimonial placeholder \n   [TESTIMONIAL]\n6. CTA: \"Experience the Falcon Herbs difference\"\n\nMake them feel good about choosing premium.\nThis email builds TRUST, not sales."
+    }
+  ]
+}

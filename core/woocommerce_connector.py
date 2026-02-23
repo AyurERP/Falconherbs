@@ -53,6 +53,58 @@ class WooCommerceConnector:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
+    def _make_update_request(self, endpoint, data):
+        """Base API PUT request with authentication"""
+        url = f"{self.api_base}/{endpoint}"
+        params = {
+            "consumer_key": self.consumer_key,
+            "consumer_secret": self.consumer_secret,
+        }
+        
+        try:
+            response = requests.put(
+                url, params=params, json=data, timeout=30
+            )
+            response.raise_for_status()
+            return {"success": True, "data": response.json()}
+        except requests.exceptions.ConnectionError:
+            return {
+                "success": False,
+                "error": "Cannot connect to site. Is it online?"
+            }
+        except requests.exceptions.HTTPError as e:
+            return {
+                "success": False,
+                "error": f"HTTP {e.response.status_code}: {str(e)}"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def update_product(self, product_id, data):
+        """Update a WooCommerce product via REST API.
+        data is a dict with WooCommerce fields:
+        name, description, short_description, etc."""
+        try:
+            print(
+                f"  🔄 Updating product {product_id}: "
+                f"{list(data.keys())}"
+            )
+            result = self._make_update_request(
+                f"products/{product_id}", data
+            )
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "product_id": product_id,
+                    "updated_fields": list(data.keys()),
+                }
+            return {
+                "success": False,
+                "error": result.get("error", "Unknown error"),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
     # ==================== PRODUCTS ====================
     
     def get_all_products(self, save=True):

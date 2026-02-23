@@ -1,0 +1,14 @@
+{
+  "type": "reconnect_page",
+  "url_slug": "reconnect",
+  "meta_title": "Reconnect with Falcon Herbs — We Want to Make Things Right",
+  "meta_description": "Were you a Falcon Herbs customer before 2023? We experienced a technical issue. Please reconnect so we can make things right.",
+  "content": "\n<h1>Were You Our Customer? Let's Reconnect 🙏</h1>\n\n<p>In [YEAR], our website experienced a security incident \nthat resulted in the loss of some customer data, including \norder records and contact information.</p>\n\n<p><strong>If you placed an order with Falcon Herbs that \nwas not fulfilled, or if you experienced any issues due to \nthis incident, we sincerely apologize.</strong></p>\n\n<h2>What Happened</h2>\n<p>Our website was compromised, and despite our best efforts, \nsome customer records were lost. We have since completely \nrebuilt our systems with enterprise-grade security to ensure \nthis never happens again.</p>\n\n<h2>How We Want to Make It Right</h2>\n<ul>\n<li>✦ Full refund for any unfulfilled orders</li>\n<li>✦ Free replacement shipment of your original order</li>\n<li>✦ 30% lifetime discount on all future purchases</li>\n<li>✦ Priority customer support</li>\n</ul>\n\n<h2>Please Reach Out</h2>\n<p>If you were affected, please contact us through \nany of these channels:</p>\n<ul>\n<li>📧 Email: [YOUR_EMAIL]</li>\n<li>📱 WhatsApp: [YOUR_WHATSAPP]</li>\n<li>📝 Or fill out the form below</li>\n</ul>\n\n[CONTACT_FORM]\n\n<p><em>We believe in doing the right thing. \nYour trust matters more than any transaction.</em></p>\n\n<p>With sincere apologies,<br>\n<strong>The Falcon Herbs Team</strong><br>\nAuthentic Ayurvedic Wellness</p>\n",
+  "seo_notes": [
+    "This page should be indexed by Google",
+    "If the Polish customer Googles 'Falcon Herbs' he might find this",
+    "Shows integrity and builds trust with ALL visitors",
+    "Add to main navigation or footer as 'Reconnect' or 'Customer Support'",
+    "Also helps with brand trust signals for Google E-E-A-T"
+  ]
+}

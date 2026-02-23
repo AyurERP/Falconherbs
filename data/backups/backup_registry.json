@@ -1,1 +1,177 @@
-[]
+[
+  {
+    "backup_id": "snap_20260223_082515",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:25:15.510115+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135515",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082515.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082515.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:25:15.510137+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_082729",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:27:29.181548+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135729",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082729.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082729.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:27:29.181555+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_082800",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:28:00.547585+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135800",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082800.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082800.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:28:00.547596+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_082822",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:28:22.802316+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135822",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082822.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082822.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:28:22.802323+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_082854",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:28:54.084062+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135854",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082854.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082854.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:28:54.084069+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_082922",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T08:29:22.114778+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_135922",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_082922.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_082922.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T08:29:22.114786+00:00",
+    "duration_seconds": 0.0
+  },
+  {
+    "backup_id": "snap_20260223_090400",
+    "site": "falconherbs.com",
+    "timestamp": "2026-02-23T09:04:00.522299+00:00",
+    "type": "pre_deploy",
+    "deploy_description": "quick_snap_20260223_143400",
+    "deploying_agent": "unknown",
+    "components": {
+      "database": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\database\\db_placeholder_20260223_090400.json",
+        "size_bytes": 0,
+        "checksum": ""
+      },
+      "files": {
+        "file": "F:\\FALCON AGENCY\\data\\backups\\falconherbs_com\\files\\files_placeholder_20260223_090400.json",
+        "size_bytes": 0,
+        "checksum": ""
+      }
+    },
+    "verified": false,
+    "ftp_uploaded": false,
+    "retention_days": 7,
+    "expires_at": "2026-03-02T09:04:00.522307+00:00",
+    "duration_seconds": 0.0
+  }
+]
