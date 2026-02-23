@@ -1,0 +1,157 @@
+# Falcon Herbs — Competitor Product Price Map
+# ============================================
+# Maps our products to competitor equivalents on Amazon India + 1mg
+# Update Amazon ASINs if they change (search product on amazon.in and
+# copy the ASIN from the URL: amazon.in/dp/ASIN)
+#
+# gap_strategy:
+#   budget   (our price < ₹200) → undercut by ₹5
+#   standard (₹200-₹499)        → undercut by ₹10
+#   premium  (₹500+)            → undercut by ₹20
+#
+# To add a product: copy any block, update fields, add competitor ASINs
+
+products:
+
+  - name: "Ashwagandha Capsules"
+    our_sku: "FALC-ASHWA-60"
+    our_price: 349
+    category: "stress_sleep"
+    competitors:
+      himalaya:
+        name: "Himalaya Ashvagandha"
+        amazon_asin: "B00RYZFR48"
+        amazon_url: "https://www.amazon.in/dp/B00RYZFR48"
+        last_price: null
+      patanjali:
+        name: "Patanjali Ashwagandha Capsule"
+        amazon_asin: "B071VXMS62"
+        amazon_url: "https://www.amazon.in/dp/B071VXMS62"
+        last_price: null
+      dabur:
+        name: "Dabur Ashwagandha Capsules"
+        amazon_asin: "B08BFSDXFW"
+        amazon_url: "https://www.amazon.in/dp/B08BFSDXFW"
+        last_price: null
+
+  - name: "Triphala Churna"
+    our_sku: "FALC-TRIPH-100"
+    our_price: 199
+    category: "digestion"
+    competitors:
+      himalaya:
+        name: "Himalaya Triphala"
+        amazon_asin: "B00CQ7RQHI"
+        amazon_url: "https://www.amazon.in/dp/B00CQ7RQHI"
+        last_price: null
+      patanjali:
+        name: "Patanjali Triphala Churna"
+        amazon_asin: "B01N3WKLKX"
+        amazon_url: "https://www.amazon.in/dp/B01N3WKLKX"
+        last_price: null
+      dabur:
+        name: "Dabur Triphala Churna"
+        amazon_asin: "B00WV6BHIS"
+        amazon_url: "https://www.amazon.in/dp/B00WV6BHIS"
+        last_price: null
+
+  - name: "Brahmi Capsules"
+    our_sku: "FALC-BRAHMI-60"
+    our_price: 299
+    category: "memory_brain"
+    competitors:
+      himalaya:
+        name: "Himalaya Brahmi"
+        amazon_asin: "B00CQ7S04O"
+        amazon_url: "https://www.amazon.in/dp/B00CQ7S04O"
+        last_price: null
+      patanjali:
+        name: "Patanjali Divya Medha Vati"
+        amazon_asin: "B00WSOX764"
+        amazon_url: "https://www.amazon.in/dp/B00WSOX764"
+        last_price: null
+
+  - name: "Moringa Capsules"
+    our_sku: "FALC-MORI-60"
+    our_price: 279
+    category: "nutrition"
+    competitors:
+      himalaya:
+        name: "Himalaya Moringa"
+        amazon_asin: "B08L3W5GXS"
+        amazon_url: "https://www.amazon.in/dp/B08L3W5GXS"
+        last_price: null
+      organic_india:
+        name: "Organic India Moringa"
+        amazon_asin: "B00JGQ5LF8"
+        amazon_url: "https://www.amazon.in/dp/B00JGQ5LF8"
+        last_price: null
+
+  - name: "Shatavari Capsules"
+    our_sku: "FALC-SHATA-60"
+    our_price: 329
+    category: "womens_health"
+    competitors:
+      himalaya:
+        name: "Himalaya Shatavari"
+        amazon_asin: "B00RYZFQZQ"
+        amazon_url: "https://www.amazon.in/dp/B00RYZFQZQ"
+        last_price: null
+      dabur:
+        name: "Dabur Shatavari Churna"
+        amazon_asin: "B00WSVF9EE"
+        amazon_url: "https://www.amazon.in/dp/B00WSVF9EE"
+        last_price: null
+
+  - name: "Giloy Capsules"
+    our_sku: "FALC-GILOY-60"
+    our_price: 249
+    category: "immunity"
+    competitors:
+      patanjali:
+        name: "Patanjali Giloy Ghanvati"
+        amazon_asin: "B07BPGKTDH"
+        amazon_url: "https://www.amazon.in/dp/B07BPGKTDH"
+        last_price: null
+      himalaya:
+        name: "Himalaya Guduchi"
+        amazon_asin: "B07MXK45JH"
+        amazon_url: "https://www.amazon.in/dp/B07MXK45JH"
+        last_price: null
+      zandu:
+        name: "Zandu Giloy"
+        amazon_asin: "B07V9BCRJN"
+        amazon_url: "https://www.amazon.in/dp/B07V9BCRJN"
+        last_price: null
+
+  - name: "Amla Juice / Powder"
+    our_sku: "FALC-AMLA-500"
+    our_price: 189
+    category: "immunity"
+    competitors:
+      patanjali:
+        name: "Patanjali Amla Juice"
+        amazon_asin: "B00YUQCQTC"
+        amazon_url: "https://www.amazon.in/dp/B00YUQCQTC"
+        last_price: null
+      dabur:
+        name: "Dabur Amla Juice"
+        amazon_asin: "B00I0V17D4"
+        amazon_url: "https://www.amazon.in/dp/B00I0V17D4"
+        last_price: null
+
+  - name: "Neem Capsules"
+    our_sku: "FALC-NEEM-60"
+    our_price: 219
+    category: "skin_detox"
+    competitors:
+      himalaya:
+        name: "Himalaya Neem"
+        amazon_asin: "B00RYZFQYE"
+        amazon_url: "https://www.amazon.in/dp/B00RYZFQYE"
+        last_price: null
+      patanjali:
+        name: "Patanjali Neem Ghanvati"
+        amazon_asin: "B07BPGKL8Q"
+        amazon_url: "https://www.amazon.in/dp/B07BPGKL8Q"
+        last_price: null

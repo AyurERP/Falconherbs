@@ -164,6 +164,14 @@ class IntegrationBridge:
         except Exception as e:
             self.status["aeo"] = f"failed: {e}"
 
+        # Competitor Price Tracker
+        try:
+            from agents.price_tracker import PriceTrackerAgent
+            self.tools["pricing"] = PriceTrackerAgent(bridge=self)
+            self.status["pricing"] = "loaded"
+        except Exception as e:
+            self.status["pricing"] = f"failed: {e}"
+
     def get_status(self):
         """Check which tools are available"""
         return {
@@ -394,6 +402,42 @@ class IntegrationBridge:
             return aeo.get_content_gaps()
         except Exception:
             return []
+
+    # ── Competitor Price Tracker Wrappers ──────────────────
+
+    def run_price_scan(self) -> dict:
+        """Run weekly competitor price scan"""
+        try:
+            pt = self.tools.get("pricing")
+            if not pt:
+                return {"success": False,
+                        "error": "Price Tracker not loaded"}
+            return pt.run_weekly_scan()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_price_report(self) -> str:
+        """Get latest price comparison report"""
+        try:
+            pt = self.tools.get("pricing")
+            if not pt:
+                return "Price Tracker not loaded"
+            return pt.get_latest_report()
+        except Exception as e:
+            return f"❌ Price report error: {e}"
+
+    def update_competitor_price(
+        self, product: str, brand: str, price: float
+    ) -> dict:
+        """Manually update a competitor price"""
+        try:
+            pt = self.tools.get("pricing")
+            if not pt:
+                return {"success": False,
+                        "error": "Price Tracker not loaded"}
+            return pt.update_manual_price(product, brand, price)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def run_backup(self):
         """Safe wrapper for daily backup"""

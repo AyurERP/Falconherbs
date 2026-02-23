@@ -550,6 +550,45 @@ class ExtendedIntentClassifier:
                 "handler": "handle_aeo_report",
                 "description": "Show latest AEO brand monitoring report"
             },
+
+            # ===== COMPETITOR PRICING =====
+            "price_scan": {
+                "patterns": [
+                    r"\bprice\s+(?:scan|check|compare|karo)\b",
+                    r"\bcompetitor\s+(?:price|pricing)\b",
+                    r"\bpricing\s+(?:scan|check|report)\b",
+                    r"\bpatanjali\s+price\b",
+                    r"\bhimalaya\s+price\b",
+                    r"\bkitna\s+(?:price|charge)\s+kar\b",
+                    r"\bprice\s+(?:tracking|tracker)\b",
+                    r"\bmarket\s+price\b",
+                ],
+                "handler": "handle_price_scan",
+                "description": "Run competitor price scan on Amazon India"
+            },
+
+            "price_report": {
+                "patterns": [
+                    r"\bprice\s+(?:report|status|dikhao|show)\b",
+                    r"\bpricing\s+(?:report|status)\b",
+                    r"\bcompetitor\s+(?:report|comparison)\b",
+                    r"\bkitne\s+mein\s+bech\s+rahe\b",
+                    r"\bham(?:ara)?\s+price\s+(?:sahi|theek|ok)\b",
+                ],
+                "handler": "handle_price_report",
+                "description": "Show latest competitor pricing report"
+            },
+
+            "price_update": {
+                "patterns": [
+                    r"\bset\s+(?:competitor\s+)?price\b",
+                    r"\bupdate\s+(?:competitor\s+)?price\b",
+                    r"\bmanual\s+price\b",
+                    r"\bprice\s+set\s+karo\b",
+                ],
+                "handler": "handle_price_update",
+                "description": "Manually update a competitor price"
+            },
         }
     
     def classify(self, message):
@@ -1737,6 +1776,94 @@ class IntentResponseHandler:
         return {
             "response": report + suffix,
             "success": True,
+        }
+
+    # ===== PRICING HANDLERS =====
+
+    def handle_price_scan(self, intent_result: dict) -> dict:
+        """Trigger live competitor price scan on Amazon India."""
+        pt = self.bridge.tools.get("pricing")
+        if not pt:
+            return {
+                "response": (
+                    "❌ Price Tracker not loaded.\n"
+                    "Check logs for import errors."
+                ),
+                "success": False,
+            }
+        result = self.bridge.run_price_scan()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "✅ Price scan complete."),
+                "success": True,
+            }
+        return {
+            "response": "❌ Price scan failed: {}".format(
+                result.get("error", "unknown")
+            ),
+            "success": False,
+        }
+
+    def handle_price_report(self, intent_result: dict) -> dict:
+        """Show latest competitor pricing comparison."""
+        return {
+            "response": self.bridge.get_price_report(),
+            "success": True,
+        }
+
+    def handle_price_update(self, intent_result: dict) -> dict:
+        """
+        Manually set a competitor price via WhatsApp.
+        Format: 'set price ashwagandha himalaya 299'
+        """
+        msg = (
+            intent_result.get("extracted_data", {})
+            .get("raw_message", "")
+            .lower()
+        )
+
+        # Parse: product brand price
+        # e.g. "set competitor price ashwagandha himalaya 299"
+        price_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:rs|rupees|₹)?$", msg)
+        if not price_match:
+            return {
+                "response": (
+                    "📝 *Manual Price Update*\n\n"
+                    "Format:\n"
+                    "*'set price [product] [brand] [price]'*\n\n"
+                    "Example:\n"
+                    "_set price ashwagandha himalaya 399_\n"
+                    "_set price triphala patanjali 149_"
+                ),
+                "success": True,
+            }
+
+        price = float(price_match.group(1))
+        # Extract remaining words for product + brand
+        words = re.sub(
+            r"(set|competitor|price|update|manual|rs|rupees|\d+)",
+            "", msg
+        ).split()
+
+        if len(words) >= 2:
+            product = words[0].title()
+            brand   = words[1]
+        elif len(words) == 1:
+            product = words[0].title()
+            brand   = "competitor"
+        else:
+            product = "Unknown"
+            brand   = "competitor"
+
+        result = self.bridge.update_competitor_price(
+            product, brand, price
+        )
+        return {
+            "response": (
+                "✅ {}\n"
+                "Run *'price scan'* to update full comparison."
+            ).format(result.get("message", "Updated")),
+            "success": result.get("success", False),
         }
 
     def _extract_comment_text(self, message: str) -> str:

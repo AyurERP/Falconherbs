@@ -155,6 +155,14 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Monthly AEO scan — Falcon Herbs visibility in AI search"
                 },
+                "weekly_price_scan": {
+                    "time": "08:30",
+                    "day": "wednesday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Weekly competitor price scan — Amazon India"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -267,7 +275,8 @@ class ExtendedSchedule:
             "inventory_screening": self._task_inventory_screening,
             "sentry_daily_scan": self._task_sentry_scan,
             "weekly_influencer_scan": self._task_influencer_scan,
-            "monthly_aeo_scan": self._task_aeo_scan,
+            "monthly_aeo_scan":   self._task_aeo_scan,
+            "weekly_price_scan":  self._task_price_scan,
         }
         
         handler = handlers.get(task_name)
@@ -970,6 +979,35 @@ class ExtendedSchedule:
                 "success": False,
                 "send_whatsapp": False,
                 "message": "AEO scan failed: {}".format(
+                    result.get("error", "unknown")
+                ),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _task_price_scan(self):
+        """
+        Weekly competitor price scan — every Wednesday 08:30.
+        Scrapes Amazon India, computes undercut recommendations,
+        alerts if action needed.
+        """
+        try:
+            result = self.bridge.run_price_scan()
+            if result.get("success"):
+                alerts = result.get("alerts", 0)
+                return {
+                    "success":      True,
+                    "send_whatsapp": alerts > 0,
+                    "message":      result.get(
+                        "summary",
+                        "\u2705 Price scan complete. "
+                        "No action needed."
+                    ),
+                }
+            return {
+                "success":      False,
+                "send_whatsapp": False,
+                "message":      "Price scan failed: {}".format(
                     result.get("error", "unknown")
                 ),
             }
