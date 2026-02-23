@@ -1,0 +1,16 @@
+[Unit]
+Description=Falcon Agency Director Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/falcon-agency
+ExecStart=/usr/bin/python3 core/director.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/falcon-agency.log
+StandardError=append:/var/log/falcon-agency.log
+EnvironmentFile=/opt/falcon-agency/.env
+
+[Install]
+WantedBy=multi-user.target
