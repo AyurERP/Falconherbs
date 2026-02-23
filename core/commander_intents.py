@@ -356,6 +356,53 @@ class ExtendedIntentClassifier:
                 "handler": "handle_backup_verify",
                 "description": "Verify backup integrity"
             },
+            
+            # ===== WORDPRESS PUBLISHING (B1) =====
+            "list_drafts": {
+                "patterns": [
+                    r"\bdraft(?:s)?\s+(?:dikhao|list|show|kitne|batao)\b",
+                    r"\blist\s+draft\b",
+                    r"\bblog(?:s)?\s+(?:dikhao|list|pending|drafts?)\b",
+                    r"\bpending\s+(?:blog|content|post)\b",
+                ],
+                "handler": "handle_list_drafts",
+                "description": "List pending blog drafts"
+            },
+            
+            "preview_draft": {
+                "patterns": [
+                    r"\bpreview\s+(?:blog|draft|post|karo|dikhao)\b",
+                    r"\bdraft\s+preview\b",
+                    r"\bblog\s+(?:preview|dekho|dekhao)\b",
+                    r"\bdekhao\s+draft\b",
+                ],
+                "handler": "handle_preview_draft",
+                "description": "Preview a blog draft for approval"
+            },
+            
+            "publish_blog": {
+                "patterns": [
+                    r"\bpublish\s+(?:karo|blog|post|draft|it|this)\b",
+                    r"\bblog\s+publish\b",
+                    r"\bpost\s+(?:karo|publish|daal)\b",
+                    r"\bwordpress\s+(?:pe|par|publish|post)\b",
+                    r"\bwp\s+(?:publish|post)\b",
+                    r"\bdaal\s+(?:do|de)\s+(?:blog|post|website)\b",
+                ],
+                "handler": "handle_publish_blog",
+                "description": "Publish blog to WordPress"
+            },
+            
+            "reject_draft": {
+                "patterns": [
+                    r"\breject\s+(?:karo|blog|draft|it)\b",
+                    r"\bdraft\s+(?:reject|delete|hata)\b",
+                    r"\bblog\s+(?:reject|delete|hata|cancel)\b",
+                    r"\bhata\s+(?:do|de)\s+(?:draft|blog)\b",
+                ],
+                "handler": "handle_reject_draft",
+                "description": "Reject and delete a draft"
+            },
         }
     
     def classify(self, message):
@@ -1082,6 +1129,74 @@ class IntentResponseHandler:
         except Exception as e:
             return {
                 "response": f"❌ Integrity check failed: {e}",
+                "success": False
+            }
+    
+    # ===== WORDPRESS PUBLISHING (B1) =====
+    
+    def handle_list_drafts(self, intent):
+        """List pending blog drafts"""
+        try:
+            from core.wordpress_publisher import wp_publisher
+            drafts = wp_publisher.list_drafts()
+            return {"response": drafts, "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Drafts list error: {e}",
+                "success": False
+            }
+    
+    def handle_preview_draft(self, intent):
+        """Preview a draft for WhatsApp approval"""
+        try:
+            from core.wordpress_publisher import wp_publisher
+            draft_name = intent.get("extracted_data", {}).get("topic")
+            result = wp_publisher.get_draft_preview(draft_name)
+            if result["success"]:
+                return {"response": result["preview"], "success": True}
+            return {
+                "response": f"❌ {result['error']}",
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "response": f"❌ Preview error: {e}",
+                "success": False
+            }
+    
+    def handle_publish_blog(self, intent):
+        """Publish draft to WordPress"""
+        try:
+            from core.wordpress_publisher import wp_publisher
+            draft_name = intent.get("extracted_data", {}).get("topic")
+            result = wp_publisher.publish_draft(draft_name, as_draft=False)
+            if result["success"]:
+                return {"response": result["message"], "success": True}
+            return {
+                "response": f"❌ Publish failed: {result['error']}",
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "response": f"❌ Publish error: {e}",
+                "success": False
+            }
+    
+    def handle_reject_draft(self, intent):
+        """Reject and delete a draft"""
+        try:
+            from core.wordpress_publisher import wp_publisher
+            draft_name = intent.get("extracted_data", {}).get("topic")
+            result = wp_publisher.reject_draft(draft_name)
+            if result["success"]:
+                return {"response": result["message"], "success": True}
+            return {
+                "response": f"❌ {result['error']}",
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "response": f"❌ Reject error: {e}",
                 "success": False
             }
 
