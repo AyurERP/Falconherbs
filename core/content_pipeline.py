@@ -98,6 +98,15 @@ class ContentPipeline:
             "eliminates disease",
         ]
         
+        # Danger keywords (Diseases) pulled from health_scanner
+        self.danger_keywords = [
+            "cancer", "diabetes", "heart disease", "alzheimer", "parkinson",
+            "hiv", "aids", "covid", "coronavirus", "tumor", "malignant",
+            "hypertension", "stroke", "epilepsy", "asthma", "hepatitis",
+            "tuberculosis", "malaria", "depression", "anxiety", "insomnia",
+            "arthritis", "eczema", "psoriasis"
+        ]
+        
         self.safe_alternatives = {
             "boosts immunity": 
                 "supports healthy immune function",
@@ -129,27 +138,51 @@ class ContentPipeline:
                 "supports healthy metabolism",
             "weight loss": 
                 "supports healthy weight management",
-            # Merged from health_scanner.safe_replacements
+            "cures diabetes":
+                "supports healthy blood sugar levels",
+            "theek kar deta hai":
+                "mein support karta hai",
+            "theek ho gaya":
+                "mein helps karta hai",
+            "ilaj":
+                "Ayurvedic care",
+            "theek ho gya":
+                "mein support karta hai",
+            "dawai":
+                "formulation",
+            "cure":
+                "support",
+            "treatment":
+                "natural wellness support",
+            # High-risk mapping from health_scanner
             "anti-cancer":
                 "rich in antioxidants",
+            "anti-tumor":
+                "supports healthy cellular function",
+            "anti-diabetic":
+                "supports healthy blood sugar balance",
+            "cancer-fighting":
+                "antioxidant rich",
             "lowers blood pressure":
-                "may support healthy blood pressure "
-                "already within normal range",
-            "cures diabetes":
-                "traditionally used in Ayurveda for "
-                "metabolic wellness",
+                "may support healthy blood pressure already within normal range",
             "no side effects":
-                "generally well-tolerated when used "
-                "as directed",
+                "generally well-tolerated when used as directed",
             "clinically proven":
                 "supported by traditional Ayurvedic use",
             "100% safe":
-                "made with carefully selected natural "
-                "ingredients",
+                "made with carefully selected natural ingredients",
             "miracle":
                 "time-honored",
             "instant relief":
                 "fast-acting support",
+            "boosts immunity":
+                "supports healthy immune function",
+            "fights infection":
+                "supports the body's natural defenses",
+            "detoxifies":
+                "supports the body's natural cleansing",
+            "purifies blood":
+                "traditionally used for blood purification in Ayurveda",
         }
     
     def safety_check(self, content):
@@ -160,7 +193,17 @@ class ContentPipeline:
         changes = []
         cleaned = content
         
-        # Check banned phrases
+        # 0. Check for Danger Keywords (Specific Diseases)
+        for word in self.danger_keywords:
+            pattern = re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE)
+            if pattern.search(cleaned):
+                changes.append({
+                    "found": word,
+                    "action": "FLAGGED disease mention — Use body system/function language",
+                    "severity": "HIGH"
+                })
+
+        # 1. Check banned phrases
         for phrase in self.banned_phrases:
             pattern = re.compile(re.escape(phrase), re.IGNORECASE)
             if pattern.search(cleaned):
