@@ -131,6 +131,22 @@ class IntegrationBridge:
         except Exception as e:
             self.workflow = None
             self.status["workflow"] = f"failed: {e}"
+            
+        # Health Rewriter (Phase 5)
+        try:
+            from core.health_rewriter import HealthClaimsRewriter
+            self.tools["rewriter"] = HealthClaimsRewriter(bridge=self)
+            self.status["rewriter"] = "loaded"
+        except Exception as e:
+            self.status["rewriter"] = f"failed: {e}"
+            
+        # Lead Predictor (Pillar 1)
+        try:
+            from core.lead_predictor import LeadPredictor
+            self.tools["predictor"] = LeadPredictor(bridge=self)
+            self.status["predictor"] = "loaded"
+        except Exception as e:
+            self.status["predictor"] = f"failed: {e}"
     
     def get_status(self):
         """Check which tools are available"""
@@ -268,6 +284,36 @@ class IntegrationBridge:
                 "error": str(e)
             }
             
+    def run_bulk_title_fix(self):
+        """Scan all products and apply title-only safety fixes"""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.bulk_fix_titles()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def run_disclaimer_injection(self):
+        """Inject FDA disclaimer into all products missing it"""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.inject_disclaimer()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_burn_rate_report(self):
+        """Get inventory/burn rate analysis"""
+        try:
+            predictor = self.tools.get("predictor")
+            if not predictor:
+                return {"success": False, "error": "Lead Predictor not loaded"}
+            return predictor.get_burn_rate_report()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def run_backup(self):
         """Safe wrapper for daily backup"""
         try:

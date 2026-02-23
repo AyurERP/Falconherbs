@@ -73,18 +73,23 @@ class HealthClaimsRewriter:
                 except Exception:
                     pass
 
-                combined = f"{desc} {short_desc}".strip()
+                combined = f"{name} {desc} {short_desc}".strip()
                 if not combined:
                     continue
 
                 check = pipeline.safety_check(combined)
-                if not check.get("is_safe", True):
+                
+                # Specifically check title for safety too
+                title_check = pipeline.safety_check(name)
+                
+                if not check.get("is_safe", True) or not title_check.get("is_safe", True):
                     flagged.append({
                         "id": pid,
                         "name": name,
                         "description": desc,
                         "short_description": short_desc,
                         "safety_check": check,
+                        "title_safety_check": title_check
                     })
 
             # Save scan results for later rewrite
@@ -161,21 +166,42 @@ class HealthClaimsRewriter:
                 # If AI client available, do proper
                 # rewrite
                 ai = self.bridge.tools.get("ai_client")
-                if ai and desc:
-                    try:
-                        prompt = (
-                            "Rewrite this product description "
-                            "for '{}' using safe, compliant "
-                            "Ayurvedic language. Remove ALL "
-                            "health claims. Keep it compelling "
-                            "and SEO-friendly.\n\n"
-                            "Original:\n{}"
-                        ).format(name, desc)
-                        response = ai.generate(prompt)
-                        if response:
-                            new_desc = response
-                    except Exception:
-                        pass
+                new_name = name
+                
+                if ai:
+                    # 1. Title Rewrite (if flagged)
+                    t_check = product.get("title_safety_check", {})
+                    if not t_check.get("is_safe", True):
+                        try:
+                            t_prompt = (
+                                "Rewrite this product title to be safe and "
+                                "compliant (no health claims/cures). "
+                                "Keep it SEO-friendly.\n\n"
+                                "Original Title: {}"
+                            ).format(name)
+                            t_response = ai.generate(t_prompt)
+                            if t_response:
+                                # Strip quotes if LLM adds them
+                                new_name = t_response.strip().strip('"').strip("'")
+                        except Exception:
+                            pass
+
+                    # 2. Description Rewrite
+                    if desc:
+                        try:
+                            prompt = (
+                                "Rewrite this product description "
+                                "for '{}' using safe, compliant "
+                                "Ayurvedic language. Remove ALL "
+                                "health claims. Keep it compelling "
+                                "and SEO-friendly.\n\n"
+                                "Original:\n{}"
+                            ).format(new_name, desc)
+                            response = ai.generate(prompt)
+                            if response:
+                                new_desc = response
+                        except Exception:
+                            pass
 
                 # Save original + rewrite
                 rewrite_data = {
@@ -183,10 +209,12 @@ class HealthClaimsRewriter:
                     "name": name,
                     "original_description": desc,
                     "original_short_description": short_desc,
+                    "rewritten_name": new_name if new_name != name else None,
                     "rewritten_description": new_desc,
                     "safety_issues": check.get(
                         "violations", []
                     ),
+                    "title_issues": product.get("title_safety_check", {}).get("violations", []),
                     "status": "pending_approval",
                     "created_at": datetime.now().isoformat(),
                     "applied_at": None,
@@ -226,7 +254,15 @@ class HealthClaimsRewriter:
                 }
 
             new_desc = data.get("rewritten_description", "")
-            if not new_desc:
+            new_name = data.get("rewritten_name", "")
+            
+            update_fields = {}
+            if new_desc:
+                update_fields["description"] = new_desc
+            if new_name:
+                update_fields["name"] = new_name
+
+            if not update_fields:
                 return {
                     "success": False,
                     "error": "No rewritten content available",
@@ -241,7 +277,7 @@ class HealthClaimsRewriter:
 
             result = woo.update_product(
                 product_id,
-                {"description": new_desc}
+                update_fields
             )
 
             if result.get("success"):
@@ -311,3 +347,87 @@ class HealthClaimsRewriter:
             ).format(pending, applied, len(files))
         except Exception as e:
             return f"❌ Rewrite status error: {e}"
+
+    # ── Bulk Actions ─────────────────────────────────────
+
+    def bulk_fix_titles(self):
+        """Scan all products and apply title-only safety fixes.
+        Safe because titles are short and AI fix is reliable."""
+        try:
+            # 1. Scan
+            scan = self.scan_all_products()
+            if not scan.get("success"):
+                return scan
+            
+            flagged = scan.get("products", [])
+            fixed = 0
+            
+            # 2. Rewrite & Apply
+            ai = self.bridge.tools.get("ai_client")
+            woo = self.bridge.tools.get("woocommerce")
+            
+            if not ai or not woo:
+                return {"success": False, "error": "AI/Woo tools missing"}
+            
+            for p in flagged:
+                pid = p["id"]
+                name = p["name"]
+                t_check = p.get("title_safety_check", {})
+                
+                if not t_check.get("is_safe", True):
+                    # Rewrite title
+                    prompt = (
+                        "Rewrite this product title to be safe/compliant "
+                        "(no health claims/cures). Keep it SEO-friendly.\n\n"
+                        "Original: {}"
+                    ).format(name)
+                    new_name = ai.generate(prompt)
+                    if new_name:
+                        new_name = new_name.strip().strip('"').strip("'")
+                        # Apply immediately
+                        res = woo.update_product(pid, {"name": new_name})
+                        if res.get("success"):
+                            fixed += 1
+            
+            return {
+                "success": True, 
+                "message": f"Fixed {fixed} product titles automatically."
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def inject_disclaimer(self, force=False):
+        """Append FDA disclaimer to all product descriptions."""
+        disclaimer = (
+            "\n\n---\n"
+            "*Disclaimer: These statements have not been evaluated by the "
+            "FDA. This product is not intended to diagnose, treat, cure, "
+            "or prevent any disease.*"
+        )
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"success": False, "error": "WooCommerce tool missing"}
+            
+            result = woo.get_all_products(save=False)
+            products = result.get("data", {}).get("products", [])
+            injected = 0
+            
+            for p in products:
+                pid = p["id"]
+                # Need raw desc
+                raw = woo._make_request(f"products/{pid}")
+                if raw.get("success"):
+                    desc = raw["data"].get("description", "")
+                    if "not been evaluated by the FDA" not in desc or force:
+                        new_desc = desc + disclaimer
+                        res = woo.update_product(pid, {"description": new_desc})
+                        if res.get("success"):
+                            injected += 1
+            
+            return {
+                "success": True, 
+                "message": f"Added disclaimer to {injected} products."
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}

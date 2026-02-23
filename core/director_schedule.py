@@ -125,6 +125,13 @@ class ExtendedSchedule:
                     "description": "Weekly SEO + content "
                                    "+ revenue digest"
                 },
+                "inventory_screening": {
+                    "time": "10:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Scan inventory for low stock alerts"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -222,6 +229,7 @@ class ExtendedSchedule:
             "customer_analysis": self._task_customer_analysis,
             "daily_backup": self._task_daily_backup,
             "weekly_seo_digest": self._task_weekly_seo_digest,
+            "inventory_screening": self._task_inventory_screening,
         }
         
         handler = handlers.get(task_name)
@@ -798,6 +806,31 @@ class ExtendedSchedule:
                 "success": False,
                 "error": str(e),
             }
+
+    def _task_inventory_screening(self):
+        """Daily inventory health check"""
+        try:
+            result = self.bridge.get_burn_rate_report()
+            if not result.get("success"):
+                return result
+
+            risky = result["data"].get("risky", [])
+            
+            # Only send WhatsApp if there are alerts
+            if risky:
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": result.get("summary")
+                }
+            else:
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "Inventory OK. No low stock alerts."
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 
 # ==================== TEST ====================

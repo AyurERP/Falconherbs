@@ -443,6 +443,57 @@ class ExtendedIntentClassifier:
                 "handler": "handle_retry_drafts",
                 "description": "Retry failed prompt-only drafts"
             },
+            
+            # ===== UTILS & ENHANCEMENTS =====
+            "help": {
+                "patterns": [
+                    r"\bhelp\b",
+                    r"\bkya\s+karsakte\b",
+                    r"\bcommands?\b",
+                    r"\bhelp\s+me\b",
+                    r"\bguide\b",
+                    r"\bmenu\b",
+                    r"\bsab\s+commands\b",
+                ],
+                "handler": "handle_help",
+                "description": "Show all available commands"
+            },
+            
+            "bulk_title_fix": {
+                "patterns": [
+                    r"\bfix\s+(?:all\s+)?titles\b",
+                    r"\btitle\s+fix\b",
+                    r"\btitle\s+compliance\b",
+                    r"\bfix\s+product\s+names\b",
+                ],
+                "handler": "handle_bulk_title_fix",
+                "description": "Scan and fix all risky product titles"
+            },
+            
+            "disclaimer_injection": {
+                "patterns": [
+                    r"\badd\s+disclaimer\b",
+                    r"\binject\s+disclaimer\b",
+                    r"\bdisclaimer\s+(?:daal|lagao|add)\b",
+                    r"\bfda\s+disclaimer\b",
+                ],
+                "handler": "handle_disclaimer_injection",
+                "description": "Add FDA disclaimer to all products"
+            },
+            
+            "inventory_status": {
+                "patterns": [
+                    r"\binventory\s+(?:status|report|check)\b",
+                    r"\bstock\s+(?:status|report|levels)\b",
+                    r"\bburn\s+rate\b",
+                    r"\bkitna\s+stock\b",
+                    r"\bstock\s+kab\s+khatam\b",
+                    r"\bstockout\b",
+                    r"\bprediction\s+inventory\b",
+                ],
+                "handler": "handle_inventory_status",
+                "description": "Inventory burn rate and stockout prediction"
+            },
         }
     
     def classify(self, message):
@@ -803,6 +854,75 @@ class IntentResponseHandler:
             "success": False
         }
     
+    def handle_help(self, intent):
+        """Show all available commands"""
+        response = (
+            "🛠️ *FALCON AGENCY COMMANDS*\n"
+            "─────────────────\n"
+            "🏥 *Health & Compliance*\n"
+            "• \"health scan\" — Full site audit\n"
+            "• \"fix titles\" — Fix risky product names\n"
+            "• \"add disclaimer\" — Add FDA disclaimer\n"
+            "• \"is this safe: [text]\" — Text check\n\n"
+            "🛒 *Store & Sales*\n"
+            "• \"store status\" — Product/API audit\n"
+            "• \"order check\" — Recent orders\n"
+            "• \"revenue\" — Sales summary\n"
+            "• \"profit report\" — Munafa calculation\n\n"
+            "📝 *Content Pipeline*\n"
+            "• \"write blog on [topic]\" — Draft blog\n"
+            "• \"social posts on [topic]\" — IG/FB/Pin\n"
+            "• \"content status\" — Check drafts\n"
+            "• \"publish [id]\" — Go live\n\n"
+            "🌍 *Marketing*\n"
+            "• \"competitor scan [url]\" — Spy\n"
+            "• \"polish customers\" — Recovery\n\n"
+            "⚙️ *System*\n"
+            "• \"status\" — AI workforce update\n"
+            "• \"backup\" — Data snapshot\n"
+            "• \"help\" — This menu"
+        )
+        return {"response": response, "success": True}
+
+    def handle_bulk_title_fix(self, intent):
+        """Scan and fix all risky titles"""
+        result = self.bridge.run_bulk_title_fix()
+        if result.get("success"):
+            return {
+                "response": f"✅ *Title Fix Complete*\n{result.get('message')}",
+                "success": True
+            }
+        return {
+            "response": f"❌ Title fix failed: {result.get('error')}",
+            "success": False
+        }
+
+    def handle_disclaimer_injection(self, intent):
+        """Add FDA disclaimer to all products"""
+        result = self.bridge.run_disclaimer_injection()
+        if result.get("success"):
+            return {
+                "response": f"✅ *Disclaimer Injection*\n{result.get('message')}",
+                "success": True
+            }
+        return {
+            "response": f"❌ Injection failed: {result.get('error')}",
+            "success": False
+        }
+
+    def handle_inventory_status(self, intent):
+        """Inventory burn rate report"""
+        result = self.bridge.get_burn_rate_report()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "✅ Inventory check complete."),
+                "success": True
+            }
+        return {
+            "response": f"❌ Inventory report failed: {result.get('error')}",
+            "success": False
+        }
+
     def handle_create_blog(self, intent):
         """Create a blog post"""
         topic = intent.get("extracted_data", {}).get("topic", "")
