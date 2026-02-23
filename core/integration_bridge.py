@@ -60,11 +60,23 @@ class IntegrationBridge:
         except Exception as e:
             self.status["revenue"] = f"failed: {e}"
         
-        # Content Pipeline
+        # Content AI Client (load before pipeline)
+        try:
+            from core.content_ai_client import ContentAIClient
+            self.tools["ai_client"] = ContentAIClient()
+            self.status["ai_client"] = "loaded"
+        except Exception as e:
+            self.tools["ai_client"] = None
+            self.status["ai_client"] = f"failed: {e}"
+        
+        # Content Pipeline (with AI client if available)
         try:
             from core.content_pipeline import ContentPipeline
-            self.tools["content"] = ContentPipeline()
-            self.status["content"] = "loaded"
+            ai = self.tools.get("ai_client")
+            self.tools["content"] = ContentPipeline(ai_client=ai)
+            self.status["content"] = (
+                "loaded+ai" if ai else "loaded (no AI)"
+            )
         except Exception as e:
             self.status["content"] = f"failed: {e}"
     
