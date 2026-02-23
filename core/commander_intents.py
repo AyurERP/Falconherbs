@@ -8,6 +8,7 @@ Import this in commander.py to add new capabilities.
 """
 
 import re
+import json
 from datetime import datetime
 
 
@@ -30,7 +31,7 @@ class ExtendedIntentClassifier:
                 "patterns": [
                     r"\bstore\s+audit\b",
                     r"\bcheck\s+store\b",
-                    r"\bstore\s+health\b",
+                    r"\bstore\s+(?:check|health)\b",
                     r"\bstore\s+status\b",
                     r"\bwoocommerce\b",
                     r"\bproduct(?:s)?\s+check\b",
@@ -120,15 +121,11 @@ class ExtendedIntentClassifier:
                     r"\bkitna\s+kamaya\b",
                     r"\bkamai\b",
                     r"\bincome\b",
-                    r"\bprofit\b",
                     r"\bpaise\b",
                     r"\bmoney\b",
                     r"\brevenue\s+report\b",
-                    r"\bdaily\s+report\b",
                     r"\bfinancial\b",
                     r"\bkitna\s+hua\b",
-                    r"\btarget\b",
-                    r"\bgoal\b",
                 ],
                 "handler": "handle_revenue_check",
                 "description": "Revenue and financial report"
@@ -170,7 +167,6 @@ class ExtendedIntentClassifier:
                     r"\bkitna\s+content\b",
                     r"\bcontent\s+ready\b",
                     r"\bblog(?:s)?\s+(?:kitne|status|ready)\b",
-                    r"\bcalendar\b",
                 ],
                 "handler": "handle_content_status",
                 "description": "Content pipeline status"
@@ -237,6 +233,128 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_customer_recovery",
                 "description": "Customer recovery and reactivation"
+            },
+            
+            # ===== GOALS & TRACKING (new) =====
+            "goal_set": {
+                "patterns": [
+                    r"\bgoal\s+set\b",
+                    r"\bgoal\s+(?:lagao|rakho|karo)\b",
+                    r"\btarget\s+set\b",
+                    r"\btarget\s+(?:lagao|rakho|karo)\b",
+                    r"\bset\s+(?:monthly|30.?day)\s+goal\b",
+                    r"\bmonthly\s+(?:target|goal)\b",
+                    r"\b30\s*day\s+goal\b",
+                    r"\bgoal.*\brevenue\b",
+                    r"\btarget.*\brevenue\b",
+                    r"\bgoal.*\bblog\b",
+                    r"\bgoal.*\bsocial\b",
+                ],
+                "handler": "handle_goal_set",
+                "description": "Set 30-day goals"
+            },
+            
+            "progress_check": {
+                "patterns": [
+                    r"\bprogress\s+(?:dikhao|check|status|batao|show)\b",
+                    r"\bgoal\s+(?:progress|status|update)\b",
+                    r"\btarget\s+(?:progress|status|kahan)\b",
+                    r"\bkitna\s+(?:hua|done|complete)\b",
+                    r"\btrack\s+(?:dikhao|check|show)\b",
+                    r"\bdaily\s+report\b",
+                ],
+                "handler": "handle_progress_check",
+                "description": "Check goal progress"
+            },
+            
+            "profit_report": {
+                "patterns": [
+                    r"\bprofit\s+report\b",
+                    r"\bprofit\s+(?:dikhao|batao|show|check)\b",
+                    r"\bkitna\s+profit\b",
+                    r"\bcost\s+(?:report|check|kitna)\b",
+                    r"\broi\b",
+                    r"\bexpense\b",
+                    r"\bkharcha\b",
+                    r"\bmunafa\b",
+                ],
+                "handler": "handle_profit_report",
+                "description": "Profit and cost report"
+            },
+            
+            # ===== FULL SEO (new) =====
+            "full_seo_audit": {
+                "patterns": [
+                    r"\bfull\s+seo\b",
+                    r"\bseo\s+audit\b",
+                    r"\bseo\s+(?:karo|check|scan|report)\b",
+                    r"\bcomplete\s+seo\b",
+                    r"\bdeep\s+seo\b",
+                    r"\bseo\s+analysis\b",
+                ],
+                "handler": "handle_full_seo_audit",
+                "description": "Full multi-page SEO audit"
+            },
+            
+            # ===== CONTENT CALENDAR (new) =====
+            "content_calendar": {
+                "patterns": [
+                    r"\bcontent\s+calendar\b",
+                    r"\bcalendar\s+(?:bana|create|generate)\b",
+                    r"\bmonthly\s+(?:content|plan)\b",
+                    r"\b30\s*day\s+(?:content|plan)\b",
+                    r"\bposting\s+(?:plan|schedule)\b",
+                ],
+                "handler": "handle_content_calendar",
+                "description": "Generate content calendar"
+            },
+            
+            # ===== COMPETITOR (new) =====
+            "competitor_analysis": {
+                "patterns": [
+                    r"\bcompetitor\s+(?:analysis|check|scan)\b",
+                    r"\bcompetition\s+(?:check|dekho|analysis)\b",
+                    r"\bcompetitor\s+(?:karo|dekho)\b",
+                    r"\brival\b",
+                    r"\bcompete\b",
+                ],
+                "handler": "handle_competitor_analysis",
+                "description": "Deep competitor analysis"
+            },
+            
+            # ===== BACKUP (new) =====
+            "backup_create": {
+                "patterns": [
+                    r"\bbackup\s+(?:bana|create|le|karo|banao)\b",
+                    r"\bsnapshot\s+(?:bana|le|create)\b",
+                    r"\bdata\s+(?:backup|save)\b",
+                    r"\bbackup\s+le\b",
+                    r"\bbanao\s+backup\b",
+                ],
+                "handler": "handle_backup_create",
+                "description": "Create backup snapshot"
+            },
+            
+            "backup_list": {
+                "patterns": [
+                    r"\bbackup(?:s)?\s+(?:dikhao|list|show|kitne)\b",
+                    r"\blist\s+backup\b",
+                    r"\bkitne\s+backup\b",
+                    r"\bavailable\s+backup\b",
+                ],
+                "handler": "handle_backup_list",
+                "description": "List available backups"
+            },
+            
+            "backup_verify": {
+                "patterns": [
+                    r"\bdata\s+verify\b",
+                    r"\bbackup\s+(?:verify|check|integrity)\b",
+                    r"\bintegrity\s+check\b",
+                    r"\bdata\s+(?:safe|check)\b",
+                ],
+                "handler": "handle_backup_verify",
+                "description": "Verify backup integrity"
             },
         }
     
@@ -317,6 +435,33 @@ class ExtendedIntentClassifier:
             )
             if url_match:
                 data["url"] = url_match.group(1)
+        
+        elif intent == "goal_set":
+            # Extract revenue target
+            rev_match = re.search(
+                r'(?:revenue|target|kamana)\s+(?:₹)?\s*(\d[\d,]*)', message, re.IGNORECASE
+            )
+            if rev_match:
+                data["revenue_target"] = int(rev_match.group(1).replace(',', ''))
+            
+            blog_match = re.search(r'blog(?:s)?\s+(\d+)', message, re.IGNORECASE)
+            if blog_match:
+                data["blog_posts_target"] = int(blog_match.group(1))
+            
+            social_match = re.search(r'social\s+(\d+)', message, re.IGNORECASE)
+            if social_match:
+                data["social_posts_target"] = int(social_match.group(1))
+        
+        elif intent == "competitor_analysis":
+            # Extract competitor URL
+            url_match = re.search(r'(https?://\S+)', message)
+            if url_match:
+                data["competitor_url"] = url_match.group(1)
+            else:
+                # Try bare domain
+                domain_match = re.search(r'([a-zA-Z0-9-]+\.(?:com|in|co\.in|net|org))', message)
+                if domain_match:
+                    data["competitor_url"] = f"https://{domain_match.group(1)}"
         
         return data
 
@@ -774,6 +919,169 @@ class IntentResponseHandler:
         except Exception as e:
             return {
                 "response": f"❌ Error: {e}",
+                "success": False
+            }
+    
+    # ===== NEW HANDLERS (Phase 2 additions) =====
+    
+    def handle_goal_set(self, intent):
+        """Set 30-day goals"""
+        from core.goal_tracker import goal_tracker
+        
+        data = intent.get("extracted_data", {})
+        revenue = data.get("revenue_target", 0)
+        blogs = data.get("blog_posts_target", 0)
+        social = data.get("social_posts_target", 0)
+        
+        if not revenue and not blogs and not social:
+            return {
+                "response": (
+                    "🎯 *Goal Set karna hai!*\n\n"
+                    "Format:\n"
+                    "\"Goal set karo revenue 12500 blogs 8 social 30\"\n\n"
+                    "Ya individual set karo:\n"
+                    "\"Target set karo revenue 12500\""
+                ),
+                "success": True
+            }
+        
+        goals = {}
+        if revenue:
+            goals["revenue_target"] = revenue
+        if blogs:
+            goals["blog_posts_target"] = blogs
+        if social:
+            goals["social_posts_target"] = social
+        
+        goal_tracker.set_monthly_goals(goals)
+        
+        response = "🎯 *30-DAY GOALS SET!*\n─────────────\n"
+        if revenue:
+            response += f"💰 Revenue Target: ₹{revenue:,}\n"
+        if blogs:
+            response += f"📝 Blog Posts: {blogs}\n"
+        if social:
+            response += f"📱 Social Posts: {social}\n"
+        response += "\n✅ Tracking started! \"Progress dikhao\" bol ke check karo."
+        
+        return {"response": response, "success": True}
+    
+    def handle_progress_check(self, intent):
+        """Check goal progress and daily report"""
+        from core.goal_tracker import goal_tracker
+        
+        try:
+            report = goal_tracker.generate_daily_report()
+            return {"response": report, "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Progress check failed: {e}\n"
+                           "Pehle goals set karo: \"Goal set karo revenue 12500\"",
+                "success": False
+            }
+    
+    def handle_profit_report(self, intent):
+        """Profit and cost report"""
+        from core.profit_tracker import profit_tracker
+        
+        try:
+            report = profit_tracker.generate_profit_report(days=30)
+            return {"response": report, "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Profit report failed: {e}",
+                "success": False
+            }
+    
+    def handle_full_seo_audit(self, intent):
+        """Full multi-page SEO audit via DeveloperAgent"""
+        try:
+            from agents.developer import DeveloperAgent
+            dev = DeveloperAgent()
+            report = dev._full_seo_audit(site="falconherbs.com")
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ SEO audit failed: {e}",
+                "success": False
+            }
+    
+    def handle_content_calendar(self, intent):
+        """Generate 30-day content calendar"""
+        try:
+            from agents.strategist import StrategistAgent
+            strat = StrategistAgent()
+            report = strat._content_calendar(days=30)
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Calendar generation failed: {e}",
+                "success": False
+            }
+    
+    def handle_competitor_analysis(self, intent):
+        """Deep competitor analysis"""
+        url = intent.get("extracted_data", {}).get("competitor_url", "")
+        
+        if not url:
+            return {
+                "response": (
+                    "🔍 *Competitor Analysis*\n\n"
+                    "Kiska analysis karna hai?\n\n"
+                    "Format:\n"
+                    "\"Competitor analysis karo https://example.com\"\n"
+                    "\"Competition check karo herbsforever.com\""
+                ),
+                "success": True
+            }
+        
+        try:
+            from agents.strategist import StrategistAgent
+            strat = StrategistAgent()
+            report = strat._deep_competitor_analysis(competitor_url=url)
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Competitor analysis failed: {e}",
+                "success": False
+            }
+    
+    def handle_backup_create(self, intent):
+        """Create backup snapshot"""
+        try:
+            from agents.backup import BackupAgent
+            backup = BackupAgent()
+            report = backup.quick_snapshot()
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Backup failed: {e}",
+                "success": False
+            }
+    
+    def handle_backup_list(self, intent):
+        """List available backups"""
+        try:
+            from agents.backup import BackupAgent
+            backup = BackupAgent()
+            report = backup.quick_list()
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Backup list failed: {e}",
+                "success": False
+            }
+    
+    def handle_backup_verify(self, intent):
+        """Verify backup integrity"""
+        try:
+            from agents.backup import BackupAgent
+            backup = BackupAgent()
+            report = backup.quick_verify()
+            return {"response": report[:1500], "success": True}
+        except Exception as e:
+            return {
+                "response": f"❌ Integrity check failed: {e}",
                 "success": False
             }
 
