@@ -3,8 +3,8 @@ Falcon Agency — Content AI Client
 Wrapper that bridges call_ai() to ContentPipeline's
 expected ai_client.generate(prompt) interface.
 
-Uses NVIDIA NIM → Llama 3.3 70B (primary)
-                → Qwen 2.5 72B (fallback)
+Uses NVIDIA NIM → Qwen 3 Next 80B (primary)
+                → Llama 3.3 70B (fallback)
 
 Cost: ₹0 (free NVIDIA NIM tier)
 """
@@ -73,7 +73,8 @@ class ContentAIClient:
             return result
         
         # Fallback to Qwen
-        print(f"⚠️ Primary model failed, trying fallback ({self.fallback_model})...")
+        print(f"⚠️ Primary model ({self.primary_model}) failed: {result}")
+        print(f"⚠️ Trying fallback ({self.fallback_model})...")
         result = self._call_model(
             model=self.fallback_model,
             prompt=prompt,

@@ -21,8 +21,8 @@ AI_MODELS = {
     "director": "deepseek-ai/deepseek-v3.1",
     "developer": "meta/llama-3.3-70b-instruct",
     "media": "qwen/qwq-32b",
-    "content": "meta/llama-3.3-70b-instruct",
-    "content_fallback": "qwen/qwen2.5-72b-instruct",
+    "content": "qwen/qwen3-next-80b-a3b-instruct",
+    "content_fallback": "meta/llama-3.3-70b-instruct",
     "fallback": "meta/llama-3.1-8b-instruct"
 }
 
