@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=/opt/falcon-agency
-ExecStart=/usr/bin/python3 core/director.py
+ExecStart=/usr/bin/python3 main.py
 Restart=always
 RestartSec=10
 StandardOutput=append:/var/log/falcon-agency.log

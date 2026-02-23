@@ -1,17 +1,21 @@
 #!/bin/bash
 # Falcon Agency VPS Deployment Script
 
-echo "🚀 Starting Deployment..."
+echo "Starting Deployment..."
 
 cd /opt/falcon-agency || { echo "Directory /opt/falcon-agency not found!"; exit 1; }
 
-echo "📥 Pulling latest code..."
+echo "Cleaning __pycache__..."
+find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+find . -name "*.pyc" -delete 2>/dev/null || true
+
+echo "Pulling latest code..."
 git pull
 
-echo "📦 Installing dependencies..."
+echo "Installing dependencies..."
 pip install -r requirements.txt
 
-echo "🔍 Running Health Check..."
+echo "Running Health Check..."
 python3 scripts/health_check.py
 
 if [ $? -eq 0 ]; then

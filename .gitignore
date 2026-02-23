@@ -53,3 +53,7 @@ test_out.txt
 
 # AEO scan data — contains API responses, not for version control
 data/aeo/
+
+# SSH keys — never commit
+*.key
+ssh-key*
