@@ -494,6 +494,33 @@ class ExtendedIntentClassifier:
                 "handler": "handle_inventory_status",
                 "description": "Inventory burn rate and stockout prediction"
             },
+            
+            "sentry_check": {
+                "patterns": [
+                    r"\bcheck\s+(this\s+)?comment\b",
+                    r"\bscan\s+comment\b",
+                    r"\bsentry\b",
+                    r"\bis\s+this\s+(comment\s+)?(safe|risky|okay|compliant)\b",
+                    r"\bcompliance\s+check\b",
+                    r"\bcomment\s+(check|scan|review)\b",
+                    # Hindi/Hinglish
+                    r"\bcomment\s+check\s+kar(o)?\b",
+                    r"\bye\s+safe\s+hai\b",
+                ],
+                "handler": "handle_sentry_check",
+                "description": "Analyze a social media comment for compliance risks"
+            },
+            
+            "pr_outreach": {
+                "patterns": [
+                    r"\bfind\s+(?:influencers|creators)\s+for\s+(.+)\b",
+                    r"\binfluencer\s+search\s+(.+)\b",
+                    r"\bfind\s+creators\s+for\s+(.+)\b",
+                    r"\bpr\s+outreach\s+(.+)\b",
+                ],
+                "handler": "handle_pr_outreach",
+                "description": "Search for YouTube influencers for PR outreach"
+            },
         }
     
     def classify(self, message):
@@ -1066,67 +1093,117 @@ class IntentResponseHandler:
         }
     
     def handle_customer_recovery(self, intent):
-        """Customer recovery info"""
-        # Check if customer data available
+        """Customer win-back: find inactive customers + generate emails"""
         try:
-            woo = self.bridge.tools.get("woocommerce")
-            customers = None
-            
-            if woo:
-                result = woo.get_customers()
-                if result.get("success"):
-                    customers = result["data"]
-            
-            response = "👥 *CUSTOMER RECOVERY*\n─────────────\n\n"
-            
-            if customers:
-                total = customers.get("total_customers", 0)
-                countries = customers.get(
-                    "country_breakdown", {}
-                )
-                polish = countries.get("PL", 0)
-                
-                response += f"📊 Total Customers: {total}\n"
-                response += f"🇵🇱 Polish Customers: {polish}\n\n"
-                
-                if polish > 0:
-                    response += (
-                        "✅ Polish customer data FOUND "
-                        "in WooCommerce!\n"
-                        "Check data/woocommerce/"
-                        "customers.json\n"
-                        "Search for country: 'PL'\n\n"
-                    )
-                
-                response += "🌍 Customer Countries:\n"
-                for country, count in sorted(
-                    countries.items(),
-                    key=lambda x: x[1], reverse=True
-                )[:10]:
-                    response += f"   {country}: {count}\n"
-            else:
-                response += (
-                    "⚠️ WooCommerce data not available.\n"
-                    "Run 'store audit' first.\n"
-                )
-            
-            response += (
-                "\n📧 *RECOVERY TOOLS READY:*\n"
-                "├── Reactivation emails: ✅ Drafted\n"
-                "├── Polish customer email: ✅ Drafted\n"
-                "├── Reconnect page: ✅ Ready\n"
-                "└── Welcome sequence: ✅ Ready\n\n"
-                "📂 Check: data/content/drafts/email_*.json\n"
-                "📂 Check: data/content/drafts/"
-                "reconnect_page.json"
+            wb = self.bridge.tools.get("winback")
+
+            # If winback module not loaded, fall back gracefully
+            if not wb:
+                return {
+                    "response": (
+                        "⚠️ Win-Back module not loaded.\n"
+                        "Check logs for import errors."
+                    ),
+                    "success": False,
+                }
+
+            # Always show current status first
+            status_msg = wb.get_winback_status()
+
+            # Decide action based on message keywords
+            msg = (
+                intent.get("extracted_data", {})
+                .get("raw_message", "")
+                .lower()
             )
-            
+
+            # "find" / "dhundh" / "list" → scan for inactive
+            if any(
+                kw in msg
+                for kw in [
+                    "find", "dhundh", "search", "list",
+                    "scan", "inactive", "purane", "old",
+                ]
+            ):
+                result = wb.find_inactive_customers(days=90)
+                if result.get("success"):
+                    inactive = result.get("inactive", 0)
+                    total = result.get("total_customers", 0)
+                    sample = result.get("customers", [])[:5]
+
+                    response = (
+                        "👥 *INACTIVE CUSTOMERS FOUND*\n"
+                        "─────────────────────\n"
+                        "📊 Total customers: {}\n"
+                        "🚫 Inactive (90+ days): {}\n\n"
+                    ).format(total, inactive)
+
+                    if sample:
+                        response += "📋 *Sample (top 5):*\n"
+                        for c in sample:
+                            response += "   • {} — {}\n".format(
+                                c.get("name", "Unknown"),
+                                c.get("email", ""),
+                            )
+
+                    response += (
+                        "\n💡 Say *'generate winback emails'* "
+                        "to create reactivation drafts."
+                    )
+                    return {"response": response, "success": True}
+
+                return {
+                    "response": "❌ Scan failed: {}".format(
+                        result.get("error", "unknown")
+                    ),
+                    "success": False,
+                }
+
+            # "email" / "generate" / "draft" → create email drafts
+            if any(
+                kw in msg
+                for kw in [
+                    "email", "generate", "draft", "bana",
+                    "create", "winback", "reactivat",
+                ]
+            ):
+                result = wb.generate_winback_emails(count=10)
+                if result.get("success"):
+                    generated = result.get("generated", 0)
+                    return {
+                        "response": (
+                            "✅ *WIN-BACK EMAILS READY*\n"
+                            "─────────────────────\n"
+                            "📧 {} draft(s) created.\n"
+                            "📂 data/customer_winback/"
+                            "email_drafts/\n\n"
+                            "⚠️ *Emails NOT sent automatically.*\n"
+                            "Review → approve → send manually."
+                        ).format(generated),
+                        "success": True,
+                    }
+                return {
+                    "response": "❌ Email generation failed: {}".format(
+                        result.get("error", "unknown")
+                    ),
+                    "success": False,
+                }
+
+            # Default: just show status with options
+            response = (
+                "{}\n\n"
+                "💡 *Commands:*\n"
+                "• *'find inactive customers'* — scan 90-day lapsed\n"
+                "• *'generate winback emails'* — create email drafts\n"
+                "• *'customer list'* — see inactive customers"
+            ).format(status_msg)
+
             return {"response": response, "success": True}
-            
+
         except Exception as e:
             return {
-                "response": f"❌ Error: {e}",
-                "success": False
+                "response": "❌ Error: {}".format(e),
+                "success": False,
             }
     
     # ===== NEW HANDLERS (Phase 2 additions) =====
@@ -1482,6 +1559,106 @@ class IntentResponseHandler:
 
 
 # ==================== TEST ====================
+
+    def handle_pr_outreach(self, intent_result: dict) -> dict:
+        """
+        Search for YouTube influencers.
+        """
+        # Extract topic from patterns
+        topic = None
+        matched_groups = intent_result.get("extracted_data", {}).get("matched_groups", [])
+        if matched_groups:
+            topic = matched_groups[0]
+        
+        if not topic:
+            # Fallback extraction from raw message if regex groups failed
+            raw_message = intent_result.get("message_text", "")
+            topic = re.sub(r"^(find influencers for|influencer search|find creators for|pr outreach)\s+", "", raw_message, flags=re.IGNORECASE).strip()
+
+        if not topic or len(topic) < 3:
+            return {
+                "response": "🤔 Please specify a topic for the influencer search.\n\n"
+                           "Example: *find influencers for stress relief*",
+                "success": False
+            }
+
+        from agents.pr_outreach import PROutreach
+        from core.ai_client import call_ai
+        
+        outreach = PROutreach(llm_caller=call_ai)
+        results = outreach.find_influencers(topic)
+        
+        # Format for WhatsApp
+        response = outreach.format_whatsapp_result(results)
+        
+        # Store results in memory for subsequent "Reply 1" interaction if needed
+        # (Though full interaction logic might need more state management)
+        # For now, we return the list.
+        
+        return {
+            "response": response,
+            "success": True,
+            "data": {"influencers": results if isinstance(results, list) else []}
+        }
+
+    def handle_sentry_check(self, intent_result: dict) -> dict:
+        """
+        Analyze a social media comment for compliance risks.
+        Expects: "Check this comment: [text]"
+        """
+        raw_message = intent_result.get("extracted_data", {}).get("raw_message", "")
+        # If not in extracted_data, try getting it from the classifier context if available
+        # or just fallback to some extraction logic
+        
+        # In our system, the classifier doesn't always put 'raw_message' in extracted_data
+        # We need to make sure we have the text.
+        
+        message_text = intent_result.get("message_text", "") # We might need to pass this in
+        
+        # Let's use a helper to extract the comment
+        comment = self._extract_comment_text(message_text)
+        
+        if not comment:
+            return {
+                "response": "🤔 Please paste the comment after the command.\n\n"
+                           "Example: *Check this comment: This product cured my diabetes*",
+                "success": False
+            }
+        
+        from agents.social_sentry import SocialSentry
+        from core.ai_client import call_ai
+        
+        sentry = SocialSentry(llm_caller=call_ai)
+        result = sentry.analyze(comment)
+        alert = sentry.format_whatsapp_alert(result)
+        
+        return {
+            "response": alert,
+            "success": True,
+            "data": result
+        }
+
+    def _extract_comment_text(self, message: str) -> str:
+        """Pull the actual comment from various input formats"""
+        if not message:
+            return None
+            
+        separators = [":", "—", "-", "\n"]
+        for sep in separators:
+            if sep in message:
+                parts = message.split(sep, 1)
+                if len(parts) > 1:
+                    comment = parts[1].strip().strip('"\'')
+                    if len(comment) > 5:
+                        return comment
+        
+        # If no separator, strip the command words and return the rest
+        stripped = re.sub(
+            r"^(check|scan|sentry|review|compliance)\s+(this\s+)?(comment\s*)?",
+            "", message, flags=re.IGNORECASE
+        ).strip()
+        
+        return stripped if len(stripped) > 5 else None
 
 if __name__ == "__main__":
     import sys

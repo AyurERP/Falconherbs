@@ -46,3 +46,7 @@ data/costs.json.bak
 data/revenue.json.bak
 nul
 scripts/migrate_revenue.py
+
+# Test output artifacts — not for version control
+full_test_report.txt
+test_out.txt

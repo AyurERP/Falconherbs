@@ -268,6 +268,7 @@ class FalconCommander:
                 try:
                     ext_result = self._extended_classifier.classify(text)
                     if ext_result:
+                        ext_result["message_text"] = text
                         response = self._extended_handler.handle(ext_result)
                         if response.get("success"):
                             self._whatsapp.send_message(response["response"])

@@ -1,0 +1,51 @@
+# Falcon Herbs - Compliance & Brand Voice rules
+
+compliance:
+  prohibited_terms:
+    danger:
+      - 'cure[ds]?\s+(my|the|his|her|our|completely|instantly)'
+      - 'treat(ed|s|ing)?\s+(my|the|his|her)'
+      - 'heal(ed|s|ing)?\s+(my|the|his|her)'
+      - 'no\s+more\s+(diabetes|cancer|thyroid|bp|sugar|cholesterol|tumor)'
+      - 'stop(ped)?\s+(my\s+)?(medicine|medication|insulin|pills|tablets)'
+      - 'replace[ds]?\s+(my\s+)?(doctor|medicine|medication)'
+      - 'don''?t\s+need\s+(my\s+)?.*?(doctor|medicine|hospital|insulin)'
+      - '(\bcured?\b|\bhealed?\b)\s+completely'
+      - '100\s*%\s*(cure|effective|solution)'
+      # Hindi Script
+      - '(ठीक\s+हो\s+गया|बीमारी\s+दूर|इलाज\s+हो\s+गया)'
+      - '(दवाई\s+बंद|गोली\s+छोड़|doctor\s+की\s+जरूरत\s+नहीं)'
+      - '(cancer|diabetes|sugar|thyroid|bp)\s+(ठीक|cure|heal)'
+      # Hinglish (English Script)
+      - '(theek\s+ho\s+gaya|theek\s+ho\s+gya|theek\s+hogaya|theek\s+hogya)'
+      - '(dawai\s+band|goli\s+chod|medicine\s+band|dawai\s+chute)'
+      - '(doctor\s+ki\s+jarurat\s+nahi|doctor\s+nahi\s+chahiye|doctor\s+ke\s+paas\s+nahi)'
+      - '(cancer|diabetes|sugar|thyroid|bp)\s+(theek|thek|cure|heal|theek\s+hogaya)'
+      - '(\bcure\b|\btheek\b).*?(thyroid|diabetes|cancer)'
+    caution:
+      - '(helped|fixed|solved)\s+(my|the|his|her)'
+      - '(better|improved|reduced|disappeared|vanished|gone)\s+.*?(health|condition|symptoms|pain|sugar|bp|ache|problem|issue|energy|digestion|immunity)'
+      - '(health|condition|symptoms|pain|sugar|bp|ache|problem|issue|energy|digestion|immunity)\s+.*?(improved|better|reduced|disappeared|vanished|gone)'
+      - '(miracle|magic|wonder)\s+(product|herb|medicine)'
+      - '(works?\s+better\s+than)\s+(medicine|allopathy|doctor)'
+      - '(doctor|results|tests|blood).*?(surprised|amazed|better)'
+
+  mandatory_disclaimer: "Individual experiences may vary. These products are traditional Ayurvedic formulations."
+
+brand_voice:
+  tone: "warm, professional, helpful"
+  role: "Social Media Manager for an Ayurvedic brand"
+  style_notes:
+    - "Do NOT confirm or repeat any medical/health claim made by the customer"
+    - "Include the mandatory disclaimer"
+    - "Mention products are traditional Ayurvedic formulations"
+    - "If CRITICAL risk: Gently suggest consulting a healthcare professional"
+    - "Maximum 3 sentences"
+    - "Match the language of the comment (Hindi/English)"
+
+outreach:
+  youtube_api_key: "YOUR_KEY_HERE"
+  min_subscribers: 5000
+  max_results: 8
+  product_focus: "Ayurvedic immunity, stress relief, digestive health"
+  gifting_budget: "2-3 products per collaboration"

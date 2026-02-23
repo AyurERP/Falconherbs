@@ -132,6 +132,21 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Scan inventory for low stock alerts"
                 },
+                "sentry_daily_scan": {
+                    "time": "11:00",
+                    "frequency": "daily",
+                    "enabled": False,
+                    "last_run": None,
+                    "description": "Scan recent FB/IG comments for compliance risks"
+                },
+                "weekly_influencer_scan": {
+                    "time": "09:00",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": False,
+                    "last_run": None,
+                    "description": "Weekly YouTube influencer discovery and outreach"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -230,6 +245,8 @@ class ExtendedSchedule:
             "daily_backup": self._task_daily_backup,
             "weekly_seo_digest": self._task_weekly_seo_digest,
             "inventory_screening": self._task_inventory_screening,
+            "sentry_daily_scan": self._task_sentry_scan,
+            "weekly_influencer_scan": self._task_influencer_scan,
         }
         
         handler = handlers.get(task_name)
@@ -486,40 +503,73 @@ class ExtendedSchedule:
                "error": result.get("error")}
     
     def _task_customer_analysis(self):
-        """Weekly customer analysis"""
+        """Weekly customer analysis — uses Win-Back module
+        to find inactive customers and notify owner.
+        NEVER sends emails automatically."""
         try:
+            lines = ["\U0001F465 *WEEKLY CUSTOMER ANALYSIS*"]
+
+            # 1. WooCommerce overview
             woo = self.bridge.tools.get("woocommerce")
-            if not woo:
-                return {"success": False,
-                       "error": "WooCommerce not loaded"}
-            
-            customers = woo.get_customers()
-            if customers["success"]:
-                total = customers["data"]["total_customers"]
-                countries = customers["data"].get(
-                    "country_breakdown", {}
-                )
-                
-                message = (
-                    f"👥 *WEEKLY CUSTOMER ANALYSIS*\n"
-                    f"Total Customers: {total}\n"
-                    f"Countries: {len(countries)}\n\n"
-                    f"Top Markets:\n"
-                )
-                for country, count in sorted(
-                    countries.items(),
-                    key=lambda x: x[1], reverse=True
-                )[:5]:
-                    message += f"  {country}: {count}\n"
-                
-                return {
-                    "success": True,
-                    "send_whatsapp": True,
-                    "message": message
-                }
-            
-            return {"success": False,
-                   "error": customers.get("error")}
+            if woo:
+                customers = woo.get_customers(save=False)
+                if customers.get("success"):
+                    total = customers["data"].get(
+                        "total_customers", 0
+                    )
+                    countries = customers["data"].get(
+                        "country_breakdown", {}
+                    )
+                    lines.append(
+                        "\U0001F4CA Total Customers: {}".format(
+                            total
+                        )
+                    )
+                    lines.append(
+                        "\U0001F30D Countries: {}".format(
+                            len(countries)
+                        )
+                    )
+                    top = sorted(
+                        countries.items(),
+                        key=lambda x: x[1],
+                        reverse=True,
+                    )[:5]
+                    if top:
+                        lines.append("\nTop Markets:")
+                        for country, count in top:
+                            lines.append(
+                                "  {}: {}".format(
+                                    country, count
+                                )
+                            )
+
+            # 2. Win-back scan — finds inactive customers
+            wb = self.bridge.tools.get("winback")
+            if wb:
+                wb_result = wb.find_inactive_customers(days=90)
+                if wb_result.get("success"):
+                    inactive = wb_result.get("inactive", 0)
+                    lines.append(
+                        "\n\U0001F6AB Inactive (90+ days): "
+                        "{}".format(inactive)
+                    )
+                    if inactive > 0:
+                        lines.append(
+                            "\U0001F4E7 Say "
+                            "*'generate winback emails'* "
+                            "to create reactivation drafts."
+                        )
+
+            lines.append(
+                "\n\U0001F4C2 data/customer_winback/"
+            )
+
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": "\n".join(lines),
+            }
         except Exception as e:
             return {"success": False, "error": str(e)}
     
@@ -832,6 +882,100 @@ class ExtendedSchedule:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
+    
+    def _task_sentry_scan(self):
+        """
+        Phase 2: Routine social media compliance scan.
+        Currently a placeholder until Meta Graph API is connected.
+        """
+        # from agents.social_sentry import SocialSentry
+        # from core.ai_client import call_ai
+        # sentry = SocialSentry(llm_caller=call_ai)
+        
+        # In the future:
+        # comments = meta_api.get_recent_comments(hours=24)
+        # risky = [sentry.analyze(c) for c in comments if sentry.analyze(c)["action_needed"]]
+        # for r in risky:
+        #     self.whatsapp.send(sentry.format_whatsapp_alert(r))
+        
+        return {
+            "success": True, 
+            "send_whatsapp": False,
+            "message": "Social Sentry daily scan placeholder executed. "
+                       "Waiting for Meta API integration."
+        }
+
+    def _task_influencer_scan(self):
+        """
+        Weekly scan for new influencers to connect with.
+        Topic rotates each week across Ayurvedic categories
+        so we never repeat the same search twice in a row.
+        """
+        from agents.pr_outreach import PROutreach
+        from core.ai_client import call_ai
+
+        # ── Topic selection ────────────────────────────
+        # 1. Try ContentWorkflow's smart picker first
+        target_topic = None
+        workflow = self.bridge.tools.get("workflow") if self.bridge else None
+        if workflow and hasattr(workflow, "pick_next_topic"):
+            try:
+                topic, _, _ = workflow.pick_next_topic()
+                target_topic = topic
+            except Exception:
+                pass
+
+        # 2. Fall back to week-based rotation from curated list
+        if not target_topic:
+            _INFLUENCER_TOPICS = [
+                "immunity booster ayurveda",
+                "ashwagandha stress relief",
+                "ayurvedic skincare",
+                "natural hair care herbs",
+                "triphala gut health",
+                "turmeric benefits",
+                "moringa superfood",
+                "ayurvedic weight loss",
+                "shilajit energy",
+                "herbal sleep remedy",
+                "chyawanprash winter health",
+                "neem detox",
+                "brahmi memory",
+                "shatavari womens health",
+                "ayurvedic diabetes management",
+                "joint pain herbal remedy",
+            ]
+            week_num = datetime.now().isocalendar()[1]
+            target_topic = _INFLUENCER_TOPICS[
+                week_num % len(_INFLUENCER_TOPICS)
+            ]
+        # ── End topic selection ────────────────────────
+
+        outreach = PROutreach(llm_caller=call_ai)
+        results = outreach.find_influencers(
+            target_topic, max_results=3
+        )
+
+        if isinstance(results, list) and results:
+            message = outreach.format_whatsapp_result(results)
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": (
+                    "\U0001F4C5 *WEEKLY INFLUENCER DISCOVERY*\n"
+                    "Topic: {}\n\n{}".format(
+                        target_topic, message
+                    )
+                ),
+            }
+
+        return {
+            "success": True,
+            "send_whatsapp": False,
+            "message": "No new influencers found this week "
+                       "for topic: {}".format(target_topic),
+        }
 
 # ==================== TEST ====================
 

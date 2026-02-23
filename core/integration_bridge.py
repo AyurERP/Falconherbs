@@ -147,7 +147,15 @@ class IntegrationBridge:
             self.status["predictor"] = "loaded"
         except Exception as e:
             self.status["predictor"] = f"failed: {e}"
-    
+
+        # Customer Win-Back
+        try:
+            from core.customer_winback import CustomerWinback
+            self.tools["winback"] = CustomerWinback(bridge=self)
+            self.status["winback"] = "loaded"
+        except Exception as e:
+            self.status["winback"] = f"failed: {e}"
+
     def get_status(self):
         """Check which tools are available"""
         return {
@@ -313,6 +321,38 @@ class IntegrationBridge:
             return predictor.get_burn_rate_report()
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    # ── Customer Win-Back Wrappers ──────────────────────────
+
+    def find_inactive_customers(self, days=90):
+        """Find customers with no orders in last N days"""
+        try:
+            wb = self.tools.get("winback")
+            if not wb:
+                return {"success": False, "error": "Win-Back not loaded"}
+            return wb.find_inactive_customers(days=days)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_winback_emails(self, count=10):
+        """Generate reactivation email drafts (never auto-sends)"""
+        try:
+            wb = self.tools.get("winback")
+            if not wb:
+                return {"success": False, "error": "Win-Back not loaded"}
+            return wb.generate_winback_emails(count=count)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_winback_status(self):
+        """WhatsApp-friendly win-back summary"""
+        try:
+            wb = self.tools.get("winback")
+            if not wb:
+                return "Win-Back module not loaded"
+            return wb.get_winback_status()
+        except Exception as e:
+            return f"❌ Win-back status error: {e}"
 
     def run_backup(self):
         """Safe wrapper for daily backup"""
