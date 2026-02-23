@@ -337,15 +337,54 @@ class ContentWorkflow:
     # ========= TOPIC PICKER =========
 
     def pick_next_topic(self):
-        """Pick the next topic that hasn't been generated
-        recently"""
+        """
+        Pick the next topic that hasn't been generated recently.
+
+        Priority order (highest → lowest):
+          1. AEO content gaps  — topics where Falcon Herbs is
+             missing from AI search results (auto-fed by AEOAgent)
+          2. Content calendar  — today's scheduled topic
+          3. Evergreen list    — curated Ayurvedic topics
+          4. Cycle-back        — restart from top of evergreen list
+        """
         queue = self._load_queue()
         used_topics = {
             e.get("topic", "").lower()
             for e in queue["queue"]
         }
 
-        # Check content calendar first
+        # ── Priority 1: AEO content gaps ─────────────────
+        try:
+            gaps_file = Path("data/aeo/content_gaps.json")
+            if gaps_file.exists():
+                gaps = json.loads(
+                    gaps_file.read_text(encoding="utf-8")
+                )
+                for gap in gaps:
+                    if (not gap.get("used", False)
+                            and gap.get("topic", "").lower()
+                            not in used_topics):
+                        # Mark as used so we don't repeat
+                        gap["used"] = True
+                        gap["used_date"] = (
+                            datetime.now().isoformat()
+                        )
+                        gaps_file.write_text(
+                            json.dumps(gaps, indent=2,
+                                       ensure_ascii=False),
+                            encoding="utf-8",
+                        )
+                        return (
+                            gap["topic"],
+                            gap.get("keyword",
+                                    gap["topic"].lower()),
+                            None,  # AEO gaps don't map to a
+                                   # specific product
+                        )
+        except Exception:
+            pass
+
+        # ── Priority 2: Content calendar ─────────────────
         try:
             calendar_dir = Path("data/content/calendar")
             today = datetime.now().strftime("%Y%m%d")
@@ -366,7 +405,7 @@ class ContentWorkflow:
         except Exception:
             pass
 
-        # Fall back to evergreen topics
+        # ── Priority 3: Evergreen topics ─────────────────
         for t in EVERGREEN_TOPICS:
             if t["topic"].lower() not in used_topics:
                 return (
@@ -375,7 +414,7 @@ class ContentWorkflow:
                     t.get("product")
                 )
 
-        # All topics used — cycle back
+        # ── Priority 4: Cycle back ────────────────────────
         if EVERGREEN_TOPICS:
             t = EVERGREEN_TOPICS[0]
             return t["topic"], t["keyword"], t.get("product")

@@ -50,3 +50,6 @@ scripts/migrate_revenue.py
 # Test output artifacts — not for version control
 full_test_report.txt
 test_out.txt
+
+# AEO scan data — contains API responses, not for version control
+data/aeo/

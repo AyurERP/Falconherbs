@@ -147,6 +147,14 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Weekly YouTube influencer discovery and outreach"
                 },
+                "monthly_aeo_scan": {
+                    "time": "10:00",
+                    "day": "monday",
+                    "frequency": "monthly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Monthly AEO scan — Falcon Herbs visibility in AI search"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -197,7 +205,19 @@ class ExtendedSchedule:
             task_day = task.get("day", "monday")
             if current_day != task_day:
                 return False
-        
+
+        # Monthly tasks: run on 1st Monday of the month
+        if frequency == "monthly":
+            task_day = task.get("day", "monday")
+            if current_day != task_day:
+                return False
+            # Only run if we haven't run this calendar month
+            if last_run:
+                last_month = last_run[:7]   # "YYYY-MM"
+                this_month = now.strftime("%Y-%m")
+                if last_month == this_month:
+                    return False
+
         return True
     
     def mark_completed(self, task_name):
@@ -247,6 +267,7 @@ class ExtendedSchedule:
             "inventory_screening": self._task_inventory_screening,
             "sentry_daily_scan": self._task_sentry_scan,
             "weekly_influencer_scan": self._task_influencer_scan,
+            "monthly_aeo_scan": self._task_aeo_scan,
         }
         
         handler = handlers.get(task_name)
@@ -905,6 +926,55 @@ class ExtendedSchedule:
             "message": "Social Sentry daily scan placeholder executed. "
                        "Waiting for Meta API integration."
         }
+
+    def _task_aeo_scan(self):
+        """
+        Monthly AEO brand visibility scan.
+        Checks if Falcon Herbs appears in Perplexity/OpenAI answers
+        for 25 Ayurveda queries. Saves content gaps automatically.
+        Only runs once per calendar month (1st Monday).
+        """
+        try:
+            import os
+            has_key = bool(
+                os.getenv("PERPLEXITY_API_KEY")
+                or os.getenv("OPENAI_API_KEY")
+                or os.getenv("NVIDIA_API_KEY")
+            )
+
+            if not has_key:
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": (
+                        "\U0001F916 *AEO SCAN SKIPPED*\n"
+                        "No API key found.\n"
+                        "Add PERPLEXITY_API_KEY to .env\n"
+                        "to enable AI visibility monitoring."
+                    ),
+                }
+
+            result = self.bridge.run_aeo_scan()
+
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": result.get(
+                        "summary",
+                        "\u2705 AEO scan complete."
+                    ),
+                }
+
+            return {
+                "success": False,
+                "send_whatsapp": False,
+                "message": "AEO scan failed: {}".format(
+                    result.get("error", "unknown")
+                ),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def _task_influencer_scan(self):
         """

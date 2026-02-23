@@ -156,6 +156,14 @@ class IntegrationBridge:
         except Exception as e:
             self.status["winback"] = f"failed: {e}"
 
+        # AEO Agent (brand monitoring in AI answers)
+        try:
+            from agents.aeo_agent import AEOAgent
+            self.tools["aeo"] = AEOAgent(bridge=self)
+            self.status["aeo"] = "loaded"
+        except Exception as e:
+            self.status["aeo"] = f"failed: {e}"
+
     def get_status(self):
         """Check which tools are available"""
         return {
@@ -353,6 +361,39 @@ class IntegrationBridge:
             return wb.get_winback_status()
         except Exception as e:
             return f"❌ Win-back status error: {e}"
+
+    # ── AEO Agent Wrappers ──────────────────────────────
+
+    def run_aeo_scan(self) -> dict:
+        """Run monthly AEO brand visibility scan"""
+        try:
+            aeo = self.tools.get("aeo")
+            if not aeo:
+                return {"success": False,
+                        "error": "AEO Agent not loaded"}
+            return aeo.run_monthly_scan()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_aeo_report(self) -> str:
+        """Get latest AEO scan report (WhatsApp format)"""
+        try:
+            aeo = self.tools.get("aeo")
+            if not aeo:
+                return "AEO Agent not loaded"
+            return aeo.get_latest_report()
+        except Exception as e:
+            return f"❌ AEO report error: {e}"
+
+    def get_aeo_content_gaps(self) -> list:
+        """Return unused AEO content gaps"""
+        try:
+            aeo = self.tools.get("aeo")
+            if not aeo:
+                return []
+            return aeo.get_content_gaps()
+        except Exception:
+            return []
 
     def run_backup(self):
         """Safe wrapper for daily backup"""

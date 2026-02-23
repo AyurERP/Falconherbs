@@ -521,6 +521,35 @@ class ExtendedIntentClassifier:
                 "handler": "handle_pr_outreach",
                 "description": "Search for YouTube influencers for PR outreach"
             },
+
+            # ===== AEO — BRAND MONITORING =====
+            "aeo_scan": {
+                "patterns": [
+                    r"\baeo\s+(?:scan|check|run|karo)\b",
+                    r"\bbrand\s+(?:scan|monitor|check)\b",
+                    r"\bai\s+(?:visibility|monitoring|check)\b",
+                    r"\bchatgpt\s+(?:mention|check|scan)\b",
+                    r"\bperplexity\s+(?:check|scan|mention)\b",
+                    r"\bfind\s+us\s+in\s+ai\b",
+                    r"\bai\s+mein\s+(?:check|dhundh|scan)\b",
+                    r"\bkya\s+(?:chatgpt|ai)\s+(?:mention|bolte)\b",
+                ],
+                "handler": "handle_aeo_scan",
+                "description": "Run monthly AEO brand visibility scan"
+            },
+
+            "aeo_report": {
+                "patterns": [
+                    r"\baeo\s+(?:report|status|dikhao|show)\b",
+                    r"\bbrand\s+(?:visibility|report|score)\b",
+                    r"\bai\s+(?:report|status|score)\b",
+                    r"\bai\s+visibility\s+report\b",
+                    r"\bkitna\s+aata\s+hai\s+ai\s+mein\b",
+                    r"\bcontent\s+gaps?\b",
+                ],
+                "handler": "handle_aeo_report",
+                "description": "Show latest AEO brand monitoring report"
+            },
         }
     
     def classify(self, message):
@@ -1636,6 +1665,78 @@ class IntentResponseHandler:
             "response": alert,
             "success": True,
             "data": result
+        }
+
+    # ===== AEO HANDLERS =====
+
+    def handle_aeo_scan(self, intent_result: dict) -> dict:
+        """
+        Trigger a live AEO brand visibility scan.
+        Queries Perplexity/OpenAI for 25 Ayurveda questions,
+        checks Falcon Herbs mentions, saves content gaps.
+        """
+        aeo = self.bridge.tools.get("aeo")
+        if not aeo:
+            return {
+                "response": (
+                    "❌ AEO Agent not loaded.\n"
+                    "Check logs for import errors."
+                ),
+                "success": False,
+            }
+
+        import os
+        has_key = bool(
+            os.getenv("PERPLEXITY_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("NVIDIA_API_KEY")
+        )
+        if not has_key:
+            return {
+                "response": (
+                    "⚠️ *AEO Scan — API Key Missing*\n\n"
+                    "Add to .env file:\n"
+                    "• PERPLEXITY_API_KEY  ← recommended\n"
+                    "• OPENAI_API_KEY      ← fallback\n\n"
+                    "Perplexity free tier: 5 req/min\n"
+                    "signup: perplexity.ai"
+                ),
+                "success": False,
+            }
+
+        # Kick off scan — takes ~30s for 25 questions
+        result = self.bridge.run_aeo_scan()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "✅ AEO scan complete."),
+                "success": True,
+                "data": result.get("data", {}),
+            }
+        return {
+            "response": "❌ AEO scan failed: {}".format(
+                result.get("error", "unknown")
+            ),
+            "success": False,
+        }
+
+    def handle_aeo_report(self, intent_result: dict) -> dict:
+        """Show latest saved AEO report + content gaps."""
+        report = self.bridge.get_aeo_report()
+
+        # Also show content gaps count
+        gaps = self.bridge.get_aeo_content_gaps()
+        unused = [g for g in gaps if not g.get("used", False)]
+
+        suffix = ""
+        if unused:
+            suffix = (
+                "\n\n📝 *{} gaps queued in ContentWorkflow*\n"
+                "These will be auto-picked as next blog topics."
+            ).format(len(unused))
+
+        return {
+            "response": report + suffix,
+            "success": True,
         }
 
     def _extract_comment_text(self, message: str) -> str:
