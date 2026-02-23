@@ -253,7 +253,7 @@ class FalconWebhook:
             message_id = msg.get("id", "")
             msg_type = msg.get("type", "")
 
-            # ── Deduplication ──
+            # ── Deduplication: message ID ──
             if message_id:
                 with self._id_lock:
                     if message_id in self._processed_ids:
@@ -262,8 +262,25 @@ class FalconWebhook:
                     self._processed_ids.add(message_id)
                     # Keep set bounded
                     if len(self._processed_ids) > 1000:
-                        # Remove oldest (set doesn't preserve order, but this prevents unbounded growth)
                         self._processed_ids = set(list(self._processed_ids)[-500:])
+
+            # ── Deduplication: same text within 60s (A5 enhancement) ──
+            import hashlib, time as _time
+            text_body_peek = msg.get("text", {}).get("body", "").strip()
+            if text_body_peek and sender:
+                dedup_key = f"{sender}:{hashlib.md5(text_body_peek.encode()).hexdigest()}"
+                now_ts = _time.time()
+                if not hasattr(self, '_text_dedup'):
+                    self._text_dedup = {}
+                last_seen = self._text_dedup.get(dedup_key, 0)
+                if now_ts - last_seen < 60:
+                    log.info("Webhook: same text within 60s — skipping")
+                    return
+                self._text_dedup[dedup_key] = now_ts
+                # Prune old entries
+                if len(self._text_dedup) > 200:
+                    cutoff = now_ts - 120
+                    self._text_dedup = {k: v for k, v in self._text_dedup.items() if v > cutoff}
 
             # ── Security: validate sender ──
             if not self._is_allowed_sender(sender):

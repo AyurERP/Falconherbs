@@ -19,7 +19,7 @@ def call_ai(role: str, messages: list, timeout: int = 120) -> str:
                 "model": model,
                 "messages": messages,
                 "temperature": 0.7,
-                "max_tokens": 2048
+                "max_tokens": 4096
             },
             timeout=timeout
         )
