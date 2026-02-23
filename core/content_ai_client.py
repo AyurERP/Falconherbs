@@ -3,8 +3,9 @@ Falcon Agency — Content AI Client
 Wrapper that bridges call_ai() to ContentPipeline's
 expected ai_client.generate(prompt) interface.
 
-Uses NVIDIA NIM → Qwen 3 Next 80B (primary)
-                → Llama 3.3 70B (fallback)
+Uses NVIDIA NIM → Qwen 3 Next 80B (Media/Content)
+                → DeepSeek V3 (Director/Strategist)
+                → Llama 3.3 70B (Developer)
 
 Cost: ₹0 (free NVIDIA NIM tier)
 """

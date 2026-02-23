@@ -18,9 +18,10 @@ NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 # Model assignments
 AI_MODELS = {
     "commander": "meta/llama-3.1-8b-instruct",
-    "director": "deepseek-ai/deepseek-v3.1",
-    "developer": "meta/llama-3.3-70b-instruct",
-    "media": "qwen/qwq-32b",
+    "director": "deepseek-ai/deepseek-v3.1",    # Summary + Planning
+    "strategist": "deepseek-ai/deepseek-v3.1",  # Analysis + Compliance
+    "developer": "meta/llama-3.3-70b-instruct", # Technical analysis + Data
+    "media": "qwen/qwen3-next-80b-a3b-instruct", # Creative writing + Graphics
     "content": "qwen/qwen3-next-80b-a3b-instruct",
     "content_fallback": "meta/llama-3.3-70b-instruct",
     "fallback": "meta/llama-3.1-8b-instruct"

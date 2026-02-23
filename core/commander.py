@@ -46,6 +46,11 @@ from config.keys import AI_MODELS
 from core.data_reader import RealDataReader
 from core.integration_bridge import IntegrationBridge
 from core.commander_intents import ExtendedIntentClassifier, IntentResponseHandler
+from core.memory import memory
+from core.website_tools import website_tools
+from core.goal_tracker import goal_tracker
+from core.profit_tracker import profit_tracker
+from core.content_generator import content_generator
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -219,15 +224,16 @@ class FalconCommander:
     #  MAIN HANDLER
     # ══════════════════════════════════════════════════════════════════
 
-    def handle_message(self, text: str, message_id: str) -> None:
+    def handle_message(self, text: str, message_id: str, user_id: str = "owner") -> None:
         """
         Process an incoming WhatsApp message from the owner.
 
         This is the main entry point called by the webhook. It:
-            1. Classifies intent using Claude
-            2. Routes to the appropriate handler
-            3. Generates a natural-language reply
-            4. Sends the reply via WhatsApp
+            1. Stores message in conversation memory
+            2. Classifies intent using Claude
+            3. Routes to the appropriate handler
+            4. Generates a natural-language reply
+            5. Sends the reply via WhatsApp
 
         Never raises — all errors are caught, logged, and an error
         message is sent to the owner.
@@ -238,7 +244,12 @@ class FalconCommander:
             The owner's message text.
         message_id : str
             WhatsApp message ID (for logging/dedup).
+        user_id : str
+            User identifier for memory tracking.
         """
+        # Store user message in memory
+        memory.add_message(user_id, "user", text)
+
         log.info(
             "Commander processing  |  msg_id=%s  |  text='%s'",
             message_id[:16], text[:80],

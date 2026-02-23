@@ -184,7 +184,7 @@ class StrategistAgent(BaseAgent):
         """
         super().__init__(whatsapp_client)
         self.name = "Strategist"
-        self.ai_role = "director"  # Uses DeepSeek for strategic thinking
+        self.ai_role = "strategist"  # Uses DeepSeek for strategic thinking and compliance
         self.capabilities = [
             "Market analysis",
             "Competitor research", 
