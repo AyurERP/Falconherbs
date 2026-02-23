@@ -52,6 +52,7 @@ from core.logger import log
 from core.approval import ApprovalSystem
 from agents.base_agent import BaseAgent
 from core.ai_client import call_ai
+from core.content_generator import content_generator
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2377,6 +2378,85 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
             "timestamp": _utcnow_iso(),
             "agent": "media",
         }
+
+    # ── New Quick-Generation Methods (surgical additions) ──
+
+    def quick_blog(self, topic: str, keywords: list = None) -> str:
+        """Quick blog post using content_generator (Qwen-powered)"""
+
+        self._send_alert(f"✍️ Quick blog: {topic}...")
+
+        result = content_generator.generate_blog_post(
+            topic=topic,
+            keywords=keywords or ["herbal", "ayurveda", "wellness"],
+            word_count=800
+        )
+
+        if "title" in result:
+            report = f"""✍️ QUICK BLOG READY
+
+📝 Title: {result.get('title')}
+🔗 Slug: {result.get('slug')}
+
+{result.get('content', '')[:1000]}...
+
+✅ Review and publish!"""
+            self._send_alert(report[:1500])
+            return report
+        return str(result)[:1500]
+
+    def quick_social(self, topic: str, platform: str = "instagram") -> str:
+        """Quick social post using content_generator (Qwen-powered)"""
+
+        self._send_alert(f"📱 Quick {platform} post: {topic}...")
+
+        result = content_generator.generate_social_post(
+            topic=topic,
+            platform=platform,
+            include_hashtags=True
+        )
+
+        if "caption" in result:
+            hashtags = " ".join([f"#{h}" for h in result.get('hashtags', [])[:10]])
+
+            report = f"""📱 {platform.upper()} POST READY
+
+{result.get('caption')}
+
+{hashtags}
+
+🖼️ Image: {result.get('image_suggestion', 'N/A')}
+⏰ Best Time: {result.get('best_posting_time', 'N/A')}
+
+✅ Copy to HeroPost!"""
+            self._send_alert(report[:1500])
+            return report
+        return str(result)[:1500]
+
+    def quick_product_desc(self, product_name: str) -> str:
+        """Quick product description using content_generator (Qwen-powered)"""
+
+        self._send_alert(f"📦 Quick description: {product_name}...")
+
+        result = content_generator.generate_product_description(
+            product_name=product_name,
+            features=["Natural", "Traditional", "Quality tested"],
+            benefits=["Wellness support", "Daily health"]
+        )
+
+        if "short_description" in result:
+            report = f"""📦 PRODUCT DESCRIPTION — {product_name}
+
+📝 Short:
+{result.get('short_description')}
+
+📄 Long:
+{result.get('long_description', '')[:500]}...
+
+✅ Compliance: {'Passed' if result.get('compliance_check') else 'Review'}"""
+            self._send_alert(report[:1500])
+            return report
+        return str(result)[:1500]
 
     def __repr__(self) -> str:
         index = self._load_content_index()

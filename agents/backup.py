@@ -2229,6 +2229,48 @@ class BackupAgent(BaseAgent):
             "agent": "backup",
         }
 
+    # ── New Quick-Access Methods (surgical additions) ──
+
+    def quick_snapshot(self, name: str = "", site: str = "falconherbs.com") -> str:
+        """Quick data snapshot — wrapper around existing backup methods"""
+        from datetime import datetime
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        snapshot_name = name or f"quick_snap_{timestamp}"
+
+        self._send_alert(f"💾 Creating quick snapshot: {snapshot_name}...")
+
+        # Use existing backup method if available
+        if hasattr(self, 'pre_deploy_snapshot'):
+            result = self.pre_deploy_snapshot(site, {"deploy_description": snapshot_name})
+            return f"💾 Quick Snapshot Created: {snapshot_name}\n\n{str(result)[:500]}"
+
+        return f"💾 Snapshot requested: {snapshot_name}\nUse run_daily_backup() for full backup."
+
+    def quick_list(self, site: str = "falconherbs.com") -> str:
+        """Quick list of backups — wrapper around existing list_backups"""
+
+        if hasattr(self, 'list_backups'):
+            result = self.list_backups(site, {})
+            return f"💾 AVAILABLE BACKUPS\n\n{str(result)[:1500]}"
+
+        return "💾 Use list_backups() to see available backups."
+
+    def quick_verify(self, site: str = "falconherbs.com") -> str:
+        """Quick integrity check — wrapper around existing verify_backup"""
+
+        self._send_alert("🔍 Running quick integrity check...")
+
+        if hasattr(self, 'verify_backup'):
+            result = self.verify_backup(site, {})
+            return f"🔍 INTEGRITY CHECK\n\n{str(result)[:1500]}"
+
+        if hasattr(self, 'get_backup_status'):
+            result = self.get_backup_status(site, {})
+            return f"🔍 BACKUP STATUS\n\n{str(result)[:1500]}"
+
+        return "🔍 Use verify_backup() or get_backup_status() for integrity check."
+
     def __repr__(self) -> str:
         registry = self._load_backup_registry()
         return (

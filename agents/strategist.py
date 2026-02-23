@@ -58,6 +58,8 @@ from core.logger import log
 from core.approval import ApprovalSystem
 from agents.base_agent import BaseAgent
 from core.ai_client import call_ai
+from core.content_generator import content_generator
+from core.website_tools import website_tools
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2387,6 +2389,61 @@ Output JSON: {"trends": [...], "relevance": "...", "action_items": [...]}"""},
             "timestamp": _utcnow_iso(),
             "agent": "strategist",
         }
+
+
+    # ── New Tool-Integrated Methods (surgical additions) ──
+
+    def _content_calendar(self, days: int = 30, site: str = "falconherbs.com") -> str:
+        """Generate 30-day content calendar using content_generator"""
+
+        self._send_telegram_summary(f"📅 Creating {days}-day content calendar...")
+
+        calendar = content_generator.generate_content_calendar(days=days, posts_per_day=1)
+
+        if "calendar" in calendar:
+            items = calendar["calendar"][:7]  # First 7 days
+
+            report = f"📅 {days}-DAY CONTENT CALENDAR — {site}\n\n"
+            for item in items:
+                report += f"Day {item.get('day')}: {item.get('theme')}\n"
+                report += f"  📝 {item.get('topic')}\n"
+                report += f"  💡 {item.get('caption_idea')}\n\n"
+
+            report += f"📊 Total Posts Planned: {calendar.get('total_posts', days)}"
+            self._send_telegram_summary(report[:1500])
+            return report
+        else:
+            return f"Content Calendar:\n{str(calendar)[:1500]}"
+
+    def _deep_competitor_analysis(self, competitor_url: str, site: str = "falconherbs.com") -> str:
+        """Deep competitor analysis using website_tools crawl"""
+        from core.ai_client import call_ai
+        import json
+
+        self._send_telegram_summary(f"🔍 Deep analysis of competitor: {competitor_url}...")
+
+        website_tools.set_site(competitor_url)
+        pages = website_tools.crawl_all_pages(max_pages=15)
+
+        competitor_data = {
+            "competitor": competitor_url,
+            "pages_found": len(pages),
+            "page_titles": [p["title"] for p in pages[:10]],
+            "products_pages": [p["url"] for p in pages if "product" in p["url"].lower()][:5]
+        }
+
+        prompt = f"""Analyze this competitor data for {site}:
+
+{json.dumps(competitor_data, indent=2)}
+
+Provide competitive analysis JSON:
+{{"strengths": [], "weaknesses": [], "opportunities_for_us": [], "threats": [], "content_gaps_we_can_fill": [], "recommended_actions": []}}"""
+
+        response = call_ai("strategist", [{"role": "user", "content": prompt}])
+
+        report = f"🔍 COMPETITOR ANALYSIS\n{competitor_url}\n\n{response[:1500]}"
+        self._send_telegram_summary(report[:1500])
+        return report
 
     # ── Repr ──
 

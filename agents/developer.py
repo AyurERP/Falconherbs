@@ -57,6 +57,7 @@ from core.logger import log
 from core.approval import ApprovalSystem
 from agents.base_agent import BaseAgent
 from core.ai_client import call_ai
+from core.website_tools import website_tools
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2231,6 +2232,68 @@ Output JSON: {"issues": [...], "fixes": [...], "priority": "high|medium|low"}"""
             self._approval.send_alert(message)
         except Exception as exc:
             log.warning("Alert send failed: %s", exc)
+
+    # ── New Tool-Integrated Methods (surgical additions) ──
+
+    def _full_seo_audit(self, site: str = "falconherbs.com") -> str:
+        """Deep SEO audit using website_tools — crawls ALL pages"""
+        from core.ai_client import call_ai
+        import json
+
+        self._send_alert(f"🔍 Running full SEO audit on {site} (all pages)...")
+
+        website_tools.set_site(f"https://{site}")
+        pages = website_tools.crawl_all_pages(max_pages=30)
+
+        audit_data = {
+            "site": site,
+            "pages_crawled": len(pages),
+            "pages": [{"url": p["url"], "title": p["title"], "meta": p["meta_description"], "h1": p["h1"]} for p in pages[:15]]
+        }
+
+        prompt = f"""Analyze this multi-page SEO data:
+
+{json.dumps(audit_data, indent=2)}
+
+Provide JSON:
+{{"overall_score": 0-100, "critical_issues": [], "warnings": [], "good_practices": [], "recommendations": [{{"priority": "high/medium/low", "issue": "...", "fix": "..."}}]}}"""
+
+        response = call_ai("developer", [{"role": "user", "content": prompt}])
+
+        report = f"🔍 FULL SEO AUDIT — {site}\nPages Crawled: {len(pages)}\n\n{response[:2000]}"
+        self._send_alert(report[:1500])
+        return report
+
+    def _health_claims_audit(self, site: str = "falconherbs.com") -> str:
+        """FDA/FTC health claims compliance audit"""
+
+        self._send_alert(f"⚕️ Scanning {site} for health claims violations...")
+
+        website_tools.set_site(f"https://{site}")
+        audit = website_tools.full_health_audit(max_pages=30)
+
+        summary = audit.get("summary", {})
+
+        report = f"""⚕️ HEALTH CLAIMS AUDIT — {site}
+
+📄 Pages Scanned: {summary.get('total_pages', 0)}
+✅ Clean Pages: {summary.get('clean_pages', 0)}
+⚠️ Pages with Issues: {summary.get('pages_with_issues', 0)}
+
+📊 COMPLIANCE SCORE: {summary.get('compliance_score', 0)}%
+
+🔴 HIGH RISK: {summary.get('high_risk_count', 0)}
+🟡 MEDIUM RISK: {summary.get('medium_risk_count', 0)}
+🟢 LOW RISK: {summary.get('low_risk_count', 0)}
+
+{'🚨 IMMEDIATE ACTION REQUIRED!' if summary.get('high_risk_count', 0) > 0 else '✅ No critical violations.'}"""
+
+        # Show first few high risk items
+        for claim in audit.get('high_risk', [])[:3]:
+            report += f"\n\n❌ {claim.get('matched_text')}\n   Page: {claim.get('page_url')}\n   Issue: {claim.get('issue')}"
+
+        self._send_alert(report[:1500])
+        return report
 
     # ── Repr ──
 
