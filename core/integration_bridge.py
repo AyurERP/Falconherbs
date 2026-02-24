@@ -308,6 +308,61 @@ class IntegrationBridge:
                 "error": str(e)
             }
             
+    # ── Health Rewriter Wrappers ────────────────────────────
+
+    def scan_products(self) -> dict:
+        """Scan all WooCommerce products for health claim
+        violations. Returns {total, flagged, products}."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False,
+                        "error": "Health Rewriter not loaded"}
+            return rewriter.scan_all_products()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def rewrite_flagged_products(
+        self, product_id=None
+    ) -> dict:
+        """AI-rewrite flagged product descriptions.
+        Saves to data/content/product_rewrites/ — NEVER
+        auto-applies."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False,
+                        "error": "Health Rewriter not loaded"}
+            return rewriter.rewrite_flagged(
+                product_id=product_id
+            )
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def apply_product_rewrite(
+        self, product_id: int
+    ) -> dict:
+        """Apply an approved rewrite to WooCommerce.
+        Only call after explicit human approval."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False,
+                        "error": "Health Rewriter not loaded"}
+            return rewriter.apply_rewrite(product_id)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_rewrite_status(self) -> str:
+        """WhatsApp-friendly summary of pending rewrites."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return "Health Rewriter not loaded"
+            return rewriter.get_rewrite_status()
+        except Exception as e:
+            return f"❌ Rewrite status error: {e}"
+
     def run_bulk_title_fix(self):
         """Scan all products and apply title-only safety fixes"""
         try:

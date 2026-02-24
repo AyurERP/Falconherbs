@@ -469,6 +469,61 @@ class ExtendedIntentClassifier:
                 "handler": "handle_bulk_title_fix",
                 "description": "Scan and fix all risky product titles"
             },
+
+            # ===== HEALTH REWRITER (Phase 3) =====
+            "scan_products": {
+                "patterns": [
+                    r"\bscan\s+(?:all\s+)?products?\b",
+                    r"\bproduct(?:s)?\s+scan\b",
+                    r"\bproduct(?:s)?\s+(?:compliance|safety)\s+(?:scan|check)\b",
+                    r"\bcheck\s+(?:all\s+)?product(?:s)?\s+(?:description|content)\b",
+                    r"\bproduct\s+health\s+(?:scan|check)\b",
+                    r"\bwoocommerce\s+scan\b",
+                    r"\bproduct\s+violations?\b",
+                    r"\bscan\s+descriptions?\b",
+                ],
+                "handler": "handle_scan_products",
+                "description": "Scan WooCommerce products for health claim violations"
+            },
+
+            "rewrite_products": {
+                "patterns": [
+                    r"\brewrite\s+(?:flagged\s+)?products?\b",
+                    r"\bproduct(?:s)?\s+rewrite\b",
+                    r"\bai\s+rewrite\s+products?\b",
+                    r"\bgenerate\s+rewrites?\b",
+                    r"\bfix\s+(?:product\s+)?descriptions?\b",
+                    r"\bcreate\s+rewrites?\b",
+                    r"\bdescription\s+rewrite\b",
+                ],
+                "handler": "handle_rewrite_products",
+                "description": "AI-rewrite flagged product descriptions (saves for approval)"
+            },
+
+            "apply_rewrite": {
+                "patterns": [
+                    r"\bapply\s+rewrite\b",
+                    r"\brewrite\s+apply\b",
+                    r"\bapply\s+product\s+(?:fix|update)\b",
+                    r"\bpush\s+rewrite\b",
+                    r"\bupdate\s+product\s+description\b",
+                    r"\bapply\s+(?:product\s+)?(\d+)\b",
+                ],
+                "handler": "handle_apply_rewrite",
+                "description": "Apply approved product rewrite to WooCommerce"
+            },
+
+            "rewrite_status": {
+                "patterns": [
+                    r"\brewrite(?:s)?\s+(?:status|pending|dikhao|show|list)\b",
+                    r"\bpending\s+rewrites?\b",
+                    r"\bproduct\s+rewrite\s+status\b",
+                    r"\bkitne\s+rewrites?\b",
+                    r"\brewrite\s+queue\b",
+                ],
+                "handler": "handle_rewrite_status",
+                "description": "Show status of pending product rewrites"
+            },
             
             "disclaimer_injection": {
                 "patterns": [
@@ -1003,6 +1058,138 @@ class IntentResponseHandler:
         return {
             "response": f"❌ Injection failed: {result.get('error')}",
             "success": False
+        }
+
+    # ===== HEALTH REWRITER HANDLERS (Phase 3) =====
+
+    def handle_scan_products(self, intent):
+        """Scan all WooCommerce products for health claim
+        violations. Returns flagged count + list."""
+        result = self.bridge.scan_products()
+        if result.get("success"):
+            total = result.get("total", 0)
+            flagged = result.get("flagged", 0)
+            products = result.get("products", [])
+
+            response = (
+                "🔍 *PRODUCT COMPLIANCE SCAN*\n"
+                "─────────────────────\n"
+                "📦 Total Products: {}\n"
+                "⚠️ Flagged: {}\n"
+                "✅ Clean: {}\n"
+            ).format(total, flagged, total - flagged)
+
+            if products:
+                response += "\n🔴 *Flagged Products:*\n"
+                for p in products[:10]:
+                    issues = p.get("safety_check", {})
+                    changes = issues.get("changes", [])
+                    high = sum(
+                        1 for c in changes
+                        if c.get("severity") == "HIGH"
+                    )
+                    response += "   • {} — {} HIGH issues\n".format(
+                        p["name"][:35], high
+                    )
+                if flagged > 10:
+                    response += (
+                        "   ...and {} more.\n".format(flagged - 10)
+                    )
+
+            if flagged > 0:
+                response += (
+                    "\n💡 Say *'rewrite products'* to generate "
+                    "AI-safe rewrites for approval."
+                )
+            else:
+                response += "\n✅ All products are compliant!"
+
+            return {"response": response, "success": True}
+
+        return {
+            "response": "❌ Scan failed: {}".format(
+                result.get("error", "unknown")
+            ),
+            "success": False,
+        }
+
+    def handle_rewrite_products(self, intent):
+        """AI-rewrite flagged products. Saves for approval —
+        NEVER auto-applies to WooCommerce."""
+        result = self.bridge.rewrite_flagged_products()
+        if result.get("success"):
+            count = result.get("rewrites", 0)
+            if count == 0:
+                return {
+                    "response": (
+                        "ℹ️ No flagged products to rewrite.\n"
+                        "Run *'scan products'* first."
+                    ),
+                    "success": True,
+                }
+            return {
+                "response": (
+                    "✅ *REWRITES GENERATED*\n"
+                    "─────────────────────\n"
+                    "📝 {} rewrite(s) created.\n"
+                    "📂 data/content/product_rewrites/\n\n"
+                    "⚠️ *NOT applied yet.*\n"
+                    "Review → Say *'apply rewrite [product_id]'*\n"
+                    "Or check status: *'rewrite status'*"
+                ).format(count),
+                "success": True,
+            }
+        return {
+            "response": "❌ Rewrite failed: {}".format(
+                result.get("error", "unknown")
+            ),
+            "success": False,
+        }
+
+    def handle_apply_rewrite(self, intent):
+        """Apply an approved rewrite to WooCommerce.
+        Requires product_id from the message."""
+        msg = intent.get("message_text", "").lower()
+        # Extract product ID from message
+        id_match = re.search(r"\b(\d+)\b", msg)
+        if not id_match:
+            return {
+                "response": (
+                    "🤔 *Which product to apply?*\n\n"
+                    "Format:\n"
+                    "*'apply rewrite [product_id]'*\n\n"
+                    "Check pending rewrites:\n"
+                    "*'rewrite status'*"
+                ),
+                "success": True,
+            }
+
+        product_id = int(id_match.group(1))
+        result = self.bridge.apply_product_rewrite(product_id)
+        if result.get("success"):
+            return {
+                "response": (
+                    "✅ *REWRITE APPLIED*\n"
+                    "Product ID: {}\n"
+                    "{}"
+                ).format(
+                    product_id,
+                    result.get("message", "Updated on WooCommerce.")
+                ),
+                "success": True,
+            }
+        return {
+            "response": "❌ Apply failed: {}".format(
+                result.get("error", "unknown")
+            ),
+            "success": False,
+        }
+
+    def handle_rewrite_status(self, intent):
+        """Show pending / applied product rewrites."""
+        return {
+            "response": self.bridge.get_rewrite_status(),
+            "success": True,
         }
 
     def handle_inventory_status(self, intent):
