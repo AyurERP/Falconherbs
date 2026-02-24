@@ -14,9 +14,10 @@ load_dotenv(ROOT / ".env")
 def check_env():
     print("--- 1. Checking Environment Variables ---")
     required = [
-        "WOO_SITE_URL", "WOO_KEY", "WOO_SECRET", 
-        "NVIDIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN",
-        "WHATSAPP_PHONE_ID", "WHATSAPP_ACCESS_TOKEN"
+        "FALCONHERBS_WC_API_KEY", "FALCONHERBS_WC_API_SECRET",
+        "NVIDIA_API_KEY",
+        "WHATSAPP_PHONE_ID", "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_VERIFY_TOKEN",
+        "ANTHROPIC_API_KEY",
     ]
     missing = []
     for var in required:
@@ -56,9 +57,9 @@ def check_imports():
 
 def check_woo():
     print("\n--- 3. Testing WooCommerce Connectivity ---")
-    url = os.getenv("WOO_SITE_URL")
-    key = os.getenv("WOO_KEY")
-    secret = os.getenv("WOO_SECRET")
+    url = os.getenv("WOO_SITE_URL") or "https://falconherbs.com"
+    key = os.getenv("WOO_KEY") or os.getenv("FALCONHERBS_WC_API_KEY")
+    secret = os.getenv("WOO_SECRET") or os.getenv("FALCONHERBS_WC_API_SECRET")
     
     if not (url and key and secret):
         print("  [SKIP] WooCommerce credentials missing")
