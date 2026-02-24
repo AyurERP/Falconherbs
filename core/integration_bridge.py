@@ -178,7 +178,7 @@ class IntegrationBridge:
             "timestamp": datetime.now().isoformat(),
             "tools": self.status,
             "all_loaded": all(
-                v == "loaded" for v in self.status.values()
+                "loaded" in str(v) for v in self.status.values()
             )
         }
     
@@ -607,14 +607,14 @@ class IntegrationBridge:
             "",
         ]
 
-        # Tools loaded
+        # Tools loaded (include "loaded+ai", "loaded (no AI)", etc.)
         loaded = [
             k for k, v in self.status.items()
-            if v == "loaded"
+            if "loaded" in str(v)
         ]
         failed = [
             k for k, v in self.status.items()
-            if v != "loaded"
+            if "loaded" not in str(v)
         ]
         lines.append(
             "\u2705 *Tools active:* {}/{}".format(
