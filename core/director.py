@@ -1448,7 +1448,12 @@ Respond in JSON:
         # ── Instantiate and execute ──
         try:
             instance = agent_class()
-            result = instance.execute(task=task, site=site, params=params)
+            # All agents use execute(action: str, details: str) signature
+            import json as _json
+            _details = f"site={site}"
+            if params:
+                _details += f", params={_json.dumps(params)}"
+            result = instance.execute(action=task, details=_details)
             if not isinstance(result, dict):
                 result = {"status": "success", "raw": str(result)[:500]}
             return result

@@ -299,6 +299,22 @@ class FalconWebhook:
             if not text_body:
                 return
 
+            # ── Extract quote-reply context ──
+            # When user swipe-replies to a message in WhatsApp, Meta sends
+            # a "context" object with the quoted message ID.
+            quoted_text = ""
+            reply_context = msg.get("context", {})
+            if reply_context:
+                quoted_msg_id = reply_context.get("id", "")
+                log.info(
+                    "Webhook: quote-reply detected  |  replying_to=%s",
+                    quoted_msg_id[:20] if quoted_msg_id else "none",
+                )
+                # If we stored the director's outbound messages, we could
+                # look up the quoted text here.  For now, pass the ID so
+                # the commander knows this is a reply to a specific message.
+                quoted_text = f"[Replying to message {quoted_msg_id[:20]}]"
+
             log.info(
                 "Webhook: incoming message  |  from=%s…  |  id=%s  |  text='%s'",
                 sender[:6], message_id[:16], text_body[:60],
@@ -313,6 +329,7 @@ class FalconWebhook:
                     "message_id": message_id[:20],
                     "text_preview": text_body[:80],
                     "type": msg_type,
+                    "is_reply": bool(reply_context),
                 },
             )
 
@@ -323,17 +340,36 @@ class FalconWebhook:
                 return
 
             # ── Route: everything else → commander ──
+            # If this is a quote-reply, prepend the context so the
+            # Director knows what message the owner is referring to.
+            full_text = text_body
+            if quoted_text:
+                full_text = f"{quoted_text}\n{text_body}"
+
             try:
-                self._commander.handle_message(text_body, message_id)
+                self._commander.handle_message(full_text, message_id)
             except Exception as exc:
                 log.critical(
                     "Commander.handle_message crashed: %s", exc, exc_info=True,
                 )
-                # Best-effort error reply
-                self._whatsapp.send_message(
-                    "⚠️ Sorry sir, internal error aa gaya. "
-                    "Team dekh rahi hai, thodi der mein try karo."
-                )
+                try:
+                    from core.director_brain import director_brain
+                    from core.memory import memory
+                    raw = "Hit an internal error. Logged and investigating. Please try again in a moment."
+                    recent = None
+                    try:
+                        recent = memory.get_recent_messages("owner", limit=4)
+                    except Exception:
+                        pass
+                    reply = director_brain.wrap_raw_response(
+                        full_text, raw, "webhook_crash",
+                        recent_messages=recent,
+                    )
+                    self._whatsapp.send_message(reply)
+                except Exception:
+                    self._whatsapp.send_message(
+                        "Hit an internal error. Please try again in a moment."
+                    )
 
         except Exception as exc:
             log.critical(

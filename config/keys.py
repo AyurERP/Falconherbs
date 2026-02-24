@@ -11,20 +11,51 @@ from cryptography.fernet import Fernet
 # Load .env file
 load_dotenv()
 
-# NVIDIA Multi-Model Setup
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+# ── NVIDIA API ─────────────────────────────────────────────────────────
+NVIDIA_API_KEY  = os.getenv("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 
-# Model assignments
+# ── OpenRouter API ──────────────────────────────────────────────────────
+OPENROUTER_API_KEY  = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+# ── Model assignments ───────────────────────────────────────────────────
+# Prefix convention:
+#   "nv::<model>"  →  NVIDIA NIM endpoint  (PRIMARY — fast, no rate limits)
+#   "or::<model>"  →  OpenRouter endpoint  (BACKUP — free tier rate-limited)
+#   No prefix      →  NVIDIA NIM (legacy compat)
+#
+# Benchmark results (Feb 2025):
+#   NVIDIA Llama 3.3 70B  → 1.8s, reliable, great Hinglish + JSON
+#   NVIDIA Qwen3 80B MoE  → 2.1s, reliable, BEST creative + strategic
+#   OpenRouter free tier   → 429 rate-limited after 2-3 calls (not production-ready)
+#   DeepSeek R1 free       → 35s response, sometimes empty (too slow for WhatsApp)
+#
 AI_MODELS = {
-    "commander": "meta/llama-3.1-8b-instruct",
-    "director": "deepseek-ai/deepseek-v3.1",    # Summary + Planning
-    "strategist": "deepseek-ai/deepseek-v3.1",  # Analysis + Compliance
-    "developer": "meta/llama-3.3-70b-instruct", # Technical analysis + Data
-    "media": "qwen/qwen3-next-80b-a3b-instruct", # Creative writing + Graphics
-    "content": "qwen/qwen3-next-80b-a3b-instruct",
-    "content_fallback": "meta/llama-3.3-70b-instruct",
-    "fallback": "meta/llama-3.1-8b-instruct"
+    # Commander Brain (reply generation) — Qwen3 80B MoE via NVIDIA
+    # Strategic thinking, natural Hinglish, creative. ~2s responses.
+    "commander":        "nv::qwen/qwen3-next-80b-a3b-instruct",
+
+    # Commander Fast (intent classification) — Llama 3.3 70B via NVIDIA
+    # Reliable JSON output, sub-2s. Used only for intent routing.
+    "commander_fast":   "nv::meta/llama-3.3-70b-instruct",
+
+    # Director analysis/planning — Qwen3 80B MoE
+    "director":         "nv::qwen/qwen3-next-80b-a3b-instruct",
+
+    # Strategist — Llama 3.3 70B, fast + reliable analysis
+    "strategist":       "nv::meta/llama-3.3-70b-instruct",
+
+    # Developer — Llama 3.3 70B, technical precision
+    "developer":        "nv::meta/llama-3.3-70b-instruct",
+
+    # Media/Content — Qwen3 80B MoE, creative writing
+    "media":            "nv::qwen/qwen3-next-80b-a3b-instruct",
+    "content":          "nv::qwen/qwen3-next-80b-a3b-instruct",
+    "content_fallback": "nv::meta/llama-3.3-70b-instruct",
+
+    # Fallback — 70B (massive upgrade from old 8B garbage model)
+    "fallback":         "nv::meta/llama-3.3-70b-instruct",
 }
 
 # Other existing keys (load from .env)

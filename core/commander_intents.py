@@ -1912,20 +1912,25 @@ class IntentResponseHandler:
             }
 
         import os
-        has_key = bool(
-            os.getenv("PERPLEXITY_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
-            or os.getenv("NVIDIA_API_KEY")
-        )
-        if not has_key:
+        has_serper = bool(os.getenv("SERPER_API_KEY"))
+        has_nvidia = bool(os.getenv("NVIDIA_API_KEY"))
+        if not has_serper:
             return {
                 "response": (
                     "⚠️ *AEO Scan — API Key Missing*\n\n"
                     "Add to .env file:\n"
-                    "• PERPLEXITY_API_KEY  ← recommended\n"
-                    "• OPENAI_API_KEY      ← fallback\n\n"
-                    "Perplexity free tier: 5 req/min\n"
-                    "signup: perplexity.ai"
+                    "• SERPER_API_KEY  ← for Google search (serper.dev)\n\n"
+                    "Free tier: 2500 searches/month\n"
+                    "signup: serper.dev"
+                ),
+                "success": False,
+            }
+        if not has_nvidia:
+            return {
+                "response": (
+                    "⚠️ *AEO Scan — NVIDIA API Key needed*\n\n"
+                    "NVIDIA_API_KEY is used for AI analysis of search results.\n"
+                    "Already configured in project — check .env"
                 ),
                 "success": False,
             }

@@ -1,23 +1,23 @@
 """
 Falcon Agency — AEO (Answer Engine Optimization) Agent
 =======================================================
-Monitors whether Falcon Herbs appears in AI-generated answers
-from Perplexity and OpenAI.
+Monitors Falcon Herbs visibility in Google search results (Answer Engine).
+Uses Serper.dev for live Google search + NVIDIA API for AI analysis.
 
 NOT an SEO injection tool — this is BRAND MONITORING.
-Like Google Alerts, but for AI search engines.
+Like Google Alerts for Answer Engine visibility.
 
 How it works:
-  1. Queries 25 Ayurveda-related questions to Perplexity/OpenAI
-  2. Checks if "Falcon Herbs" is mentioned in the answer
-  3. Tracks competitor mentions (Patanjali, Himalaya, etc.)
+  1. Searches Google via Serper.dev API (real-time, free tier)
+  2. Gets top 10 organic results, People Also Ask, Featured Snippets
+  3. NVIDIA AI analyzes gaps between our content and top results
   4. Saves missed topics as content gaps
   5. ContentWorkflow picks up those gaps automatically (closed loop)
   6. Reports monthly score card to WhatsApp
 
 APIs needed (.env):
-  PERPLEXITY_API_KEY  — perplexity.ai (free tier: 5 req/min)
-  OPENAI_API_KEY      — fallback if Perplexity unavailable
+  SERPER_API_KEY  — serper.dev (free tier: 2500 searches/month)
+  NVIDIA_API_KEY  — for AI analysis (already configured in project)
 """
 
 import os
@@ -193,99 +193,145 @@ class AEOAgent:
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     # ─────────────────────────────────────────────────────
-    #  API QUERY LAYER
+    #  SERPER.DEV GOOGLE SEARCH
     # ─────────────────────────────────────────────────────
 
-    def _query_perplexity(self, question: str) -> str:
-        """Query Perplexity sonar model. Returns answer text or ''."""
-        api_key = os.getenv("PERPLEXITY_API_KEY", "")
+    def _search_serper(self, query: str) -> Dict:
+        """
+        Search Google via Serper.dev API.
+        Returns dict with organic[], peopleAlsoAsk[], answerBox, knowledgeGraph.
+        """
+        api_key = os.getenv("SERPER_API_KEY", "")
         if not api_key:
-            return ""
+            return {}
+
         try:
             r = requests.post(
-                "https://api.perplexity.ai/chat/completions",
+                "https://google.serper.dev/search",
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "X-API-KEY": api_key,
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": "sonar",
-                    "messages": [{"role": "user", "content": question}],
-                    "max_tokens": 300,
-                },
-                timeout=30,
+                json={"q": query, "gl": "in", "hl": "en"},
+                timeout=15,
             )
             if r.status_code == 200:
-                return r.json()["choices"][0]["message"]["content"]
-            return ""
+                return r.json()
+            return {}
         except Exception:
-            return ""
+            return {}
 
-    def _query_openai(self, question: str) -> str:
-        """Query OpenAI gpt-3.5-turbo as fallback. Returns answer text or ''."""
-        api_key = os.getenv("OPENAI_API_KEY", "")
-        if not api_key:
-            return ""
+    def _serper_to_analysis_text(self, serper_data: Dict) -> str:
+        """Extract search result text for brand/competitor analysis."""
+        parts = []
+
+        # Top 10 organic results
+        organic = serper_data.get("organic", [])[:10]
+        for i, o in enumerate(organic, 1):
+            title = o.get("title", "")
+            snippet = o.get("snippet", "")
+            if title or snippet:
+                parts.append(f"{i}. {title}\n{snippet}")
+
+        # People Also Ask
+        paa = serper_data.get("peopleAlsoAsk", [])
+        for p in paa[:5]:
+            q = p.get("question", "")
+            a = p.get("snippet", "")
+            if q or a:
+                parts.append(f"PAA: {q}\n{a}")
+
+        # Answer box / featured snippet
+        answer = serper_data.get("answerBox", {})
+        if answer:
+            title = answer.get("title", "")
+            snippet = answer.get("snippet", "")
+            if title or snippet:
+                parts.append(f"Featured: {title}\n{snippet}")
+
+        # Knowledge graph
+        kg = serper_data.get("knowledgeGraph", {})
+        if kg:
+            desc = kg.get("description", "")
+            if desc:
+                parts.append(f"Knowledge: {desc}")
+
+        return "\n\n".join(parts) if parts else ""
+
+    def _analyse_with_nvidia(
+        self, question: str, search_text: str
+    ) -> Dict:
+        """
+        Use NVIDIA API (project's call_ai) to analyze search results.
+        Returns brand_mentioned, competitors_mentioned, snippet.
+        """
         try:
-            r = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-3.5-turbo",
-                    "messages": [{"role": "user", "content": question}],
-                    "max_tokens": 300,
-                },
-                timeout=30,
+            from core.ai_client import call_ai
+
+            prompt = (
+                "You are analyzing Google search results for Answer Engine visibility.\n\n"
+                "Question searched: {}\n\n"
+                "Search results (organic, PAA, featured snippets):\n{}\n\n"
+                "Answer in JSON only. No markdown. Schema:\n"
+                '{{"brand_mentioned": true/false, "competitors_mentioned": ["patanjali", ...], '
+                '"snippet": "first 200 chars of most relevant result"}}\n'
+                "Brand to check: Falcon Herbs (or falconherbs). "
+                "Competitors: patanjali, himalaya, dabur, baidyanath, zandu, hamdard, charak, "
+                "kerala ayurveda, kama ayurveda, forest essentials, biotique."
+            ).format(question, search_text[:3000])
+
+            raw = call_ai(
+                "commander_fast",
+                [{"role": "user", "content": prompt}],
+                max_tokens=512,
             )
-            if r.status_code == 200:
-                return r.json()["choices"][0]["message"]["content"]
-            return ""
-        except Exception:
-            return ""
 
-    def _query_nvidia(self, question: str) -> str:
-        """Query NVIDIA API (llama/deepseek) — uses existing project key."""
-        api_key = os.getenv("NVIDIA_API_KEY", "")
-        if not api_key:
-            return ""
-        try:
-            # Try the project's existing AI client
-            if self.bridge:
-                ai = self.bridge.tools.get("ai_client")
-                if ai and hasattr(ai, "generate"):
-                    prompt = (
-                        "Answer this question in 2-3 sentences, "
-                        "naming specific brands if relevant: "
-                        + question
-                    )
-                    return ai.generate(prompt) or ""
-            return ""
+            if raw.startswith("AI_ERROR:"):
+                return self._analyse(search_text)  # fallback to regex
+
+            # Parse JSON from response
+            import re
+            raw = raw.strip()
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[-1]
+            if raw.endswith("```"):
+                raw = raw.rsplit("```", 1)[0]
+            raw = raw.strip()
+
+            parsed = json.loads(raw)
+            return {
+                "brand_mentioned": bool(parsed.get("brand_mentioned", False)),
+                "competitors_mentioned": parsed.get("competitors_mentioned", []),
+                "snippet": parsed.get("snippet", search_text[:350].strip()),
+            }
         except Exception:
-            return ""
+            return self._analyse(search_text)
 
     def _best_answer(self, question: str) -> tuple:
         """
-        Try Perplexity → OpenAI → NVIDIA API in order.
-        Returns (answer_text, engine_name).
-        Respects Perplexity free-tier rate limit (1 req/sec).
+        Search Google via Serper + analyze with NVIDIA.
+        Returns (analysis_dict, engine_name).
+        analysis_dict: {brand_mentioned, competitors_mentioned, snippet}
         """
-        text = self._query_perplexity(question)
-        if text:
-            time.sleep(1.2)   # Perplexity free tier: ~1 req/sec
-            return text, "perplexity"
+        serper_data = self._search_serper(question)
+        if not serper_data:
+            return {
+                "brand_mentioned": False,
+                "competitors_mentioned": [],
+                "snippet": "",
+            }, "unavailable"
 
-        text = self._query_openai(question)
-        if text:
-            return text, "openai"
+        search_text = self._serper_to_analysis_text(serper_data)
+        if not search_text:
+            return {
+                "brand_mentioned": False,
+                "competitors_mentioned": [],
+                "snippet": "",
+            }, "serper_empty"
 
-        text = self._query_nvidia(question)
-        if text:
-            return text, "nvidia"
-
-        return "", "unavailable"
+        # NVIDIA analyzes: brand mention, competitors, gaps
+        analysis = self._analyse_with_nvidia(question, search_text)
+        return analysis, "serper+nvidia"
 
     # ─────────────────────────────────────────────────────
     #  ANALYSIS
@@ -340,22 +386,20 @@ class AEOAgent:
 
             print(f"[AEO] {i}/{total_q}: {question[:55]}...")
 
-            answer, engine = self._best_answer(question)
+            analysis, engine = self._best_answer(question)
 
             entry = {
                 "question": question,
                 "topic":    topic,
                 "keyword":  keyword,
                 "engine":   engine,
-                "brand_mentioned": False,
-                "competitors_mentioned": [],
-                "snippet": "",
+                "brand_mentioned": analysis.get("brand_mentioned", False),
+                "competitors_mentioned": analysis.get("competitors_mentioned", []),
+                "snippet": analysis.get("snippet", ""),
             }
 
-            if answer:
-                analysis = self._analyse(answer)
-                entry.update(analysis)
-                if analysis["brand_mentioned"]:
+            if engine not in ("unavailable", "serper_empty"):
+                if entry["brand_mentioned"]:
                     mentioned_count += 1
                 else:
                     missed.append({
@@ -367,6 +411,9 @@ class AEOAgent:
                 missed.append({"topic": topic, "keyword": keyword})
 
             results.append(entry)
+
+            # Rate limit: Serper free tier
+            time.sleep(0.5)
 
         # ── Build scan summary ──────────────────────────
         answered = sum(1 for r in results if r["engine"] != "unavailable")
@@ -589,7 +636,7 @@ class AEOAgent:
                 "📊 *AEO STATUS*\n"
                 "No scans run yet.\n"
                 "Say *'aeo scan'* to start monthly monitoring.\n\n"
-                "ℹ️ Needs PERPLEXITY_API_KEY in .env"
+                "ℹ️ Needs SERPER_API_KEY + NVIDIA_API_KEY in .env"
             )
         try:
             data = json.loads(scans[0].read_text(encoding="utf-8"))
@@ -630,16 +677,14 @@ if __name__ == "__main__":
     agent = AEOAgent()
 
     # ── Check API availability ───────────────────────────
-    perp = bool(os.getenv("PERPLEXITY_API_KEY"))
-    oai  = bool(os.getenv("OPENAI_API_KEY"))
-    nv   = bool(os.getenv("NVIDIA_API_KEY"))
-    print(f"APIs: Perplexity={'✅' if perp else '❌'}  "
-          f"OpenAI={'✅' if oai else '❌'}  "
+    serper = bool(os.getenv("SERPER_API_KEY"))
+    nv     = bool(os.getenv("NVIDIA_API_KEY"))
+    print(f"APIs: Serper={'✅' if serper else '❌'}  "
           f"NVIDIA={'✅' if nv else '❌'}")
 
-    if not (perp or oai or nv):
-        print("\n⚠️  No API keys found in .env")
-        print("Add PERPLEXITY_API_KEY or OPENAI_API_KEY to run live scan")
+    if not (serper and nv):
+        print("\n⚠️  API keys needed: SERPER_API_KEY + NVIDIA_API_KEY")
+        print("Add both to .env to run live scan")
         print("\nRunning OFFLINE demo with 2 mock questions...")
 
         # Offline demo — simulate a result
@@ -663,8 +708,7 @@ if __name__ == "__main__":
         print("\n🚀 Running LIVE scan (2 questions)...")
         q = agent.QUESTIONS[:2]
         for item in q:
-            ans, eng = agent._best_answer(item["q"])
-            analysis = agent._analyse(ans) if ans else {}
+            analysis, eng = agent._best_answer(item["q"])
             mentioned = analysis.get("brand_mentioned", False)
             print(f"\nQ: {item['q'][:60]}")
             print(f"  Engine: {eng}")

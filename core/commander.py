@@ -51,6 +51,7 @@ from core.website_tools import website_tools
 from core.goal_tracker import goal_tracker
 from core.profit_tracker import profit_tracker
 from core.content_generator import content_generator
+from core.director_brain import director_brain
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -116,45 +117,6 @@ Question detection (asking about business/data):
 Status check:
 - "status", "kya ho raha hai", "update do"
 """
-
-PERSONALITY_PROMPT: str = """You are the Lead Intelligence System of Falcon Agency, an elite and highly capable AI workforce managing herbal product websites for the owner.
-
-CRITICAL PERSONALITY RULES:
-
-1. LANGUAGE MIRRORING (CRITICAL):
-   - You MUST exactly match the owner's language choice.
-   - If the owner writes in English -> reply in pure, professional English.
-   - If the owner writes in Hinglish (mixed Hindi-English) -> reply in natural Hinglish.
-   - If the owner writes in pure Hindi -> reply in pure Hindi.
-   - Never force Hinglish if they are speaking English.
-
-2. INTELLIGENCE & TONE:
-   - You are highly intelligent, sharp, and powerful.
-   - Speak clearly and confidently without sounding like a classic robotic bot.
-   - Do NOT use forced words like "sir" in every sentence unless it naturally fits the context.
-   - Never say "I am an AI language model". You are the Falcon Agency Lead AI.
-   - Ask clarifying questions if a complex task needs more details before execution.
-
-3. FORMAT:
-   - Max 150-200 words per response.
-   - Use line breaks for readability.
-   - Limit emojis to 1-2 per message max, and only where they naturally fit.
-
-4. RESPONSE RULES (CRITICAL):
-   - Always be clear about task status: "Completed", "In Progress", "Failed", or "Pending Approval"
-   - Never assume actions were taken — only report what actually happened
-   - If unsure, say "Let me check" instead of making up responses
-
-5. HONESTY RULES (ABSOLUTE):
-   - You have access to REAL SYSTEM DATA above
-   - ONLY report what is in that data
-   - If data says 2 failed tasks, say 2 - not 1, not 3
-   - If asked about something not in data, say "That information is not in my records"
-   - NEVER invent task names, market names, or cycle details
-   - When unsure, say "Let me check" or "I don't have that specific data"
-
-Respond to the following context and user message naturally."""
-
 
 def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -274,8 +236,21 @@ class FalconCommander:
                         # Previously fell through on success=False which caused
                         # old keyword classifier to misroute (e.g. "price scan"
                         # → "security_scan").
-                        reply_text = response.get("response", "")
-                        if reply_text:
+                        raw_reply = response.get("response", "")
+                        if raw_reply:
+                            # FIX 2: Every extended intent response passes through
+                            # DirectorBrain for personality wrapping before WhatsApp.
+                            # Flow: Handler → RAW DATA → DirectorBrain → Send
+                            try:
+                                recent_msgs = memory.get_recent_messages(user_id, limit=8)
+                            except Exception:
+                                recent_msgs = []
+                            reply_text = director_brain.wrap_raw_response(
+                                owner_message=text,
+                                raw_response=raw_reply,
+                                intent=ext_result.get("intent", ""),
+                                recent_messages=recent_msgs,
+                            )
                             self._whatsapp.send_message(reply_text)
                             memory.add_message(
                                 user_id, "assistant", reply_text
@@ -323,11 +298,19 @@ class FalconCommander:
             )
 
             if intent == "unclear" and clarifying_question:
-                self._whatsapp.send_message(f"🤔 {clarifying_question}")
+                reply = director_brain.wrap_raw_response(
+                    text, clarifying_question, "clarify",
+                    recent_messages=self._get_recent_for_wrap(),
+                )
+                self._whatsapp.send_message(reply)
                 return
             elif intent == "plan_task" and task:
                 plan_text = plan_summary if plan_summary else f"I will need to run {task} on {site}."
-                self._whatsapp.send_message(f"📋 *Plan Proposed*\n\n{plan_text}")
+                reply = director_brain.wrap_raw_response(
+                    text, f"Plan proposed: {plan_text}", "plan_proposed",
+                    recent_messages=self._get_recent_for_wrap(),
+                )
+                self._whatsapp.send_message(reply)
                 
                 def _trigger_approval():
                     try:
@@ -338,9 +321,19 @@ class FalconCommander:
                         if ok:
                             self._handle_run_task(text, task, site, params)
                         else:
-                            self._whatsapp.send_message("❌ Cancelled. Plan discarded.")
+                            raw = "Cancelled. Plan discarded."
+                            r = director_brain.wrap_raw_response(
+                                text, raw, "plan_cancelled",
+                                recent_messages=self._get_recent_for_wrap(),
+                            )
+                            self._whatsapp.send_message(r)
                     except Exception as e:
-                        self._whatsapp.send_message(f"❌ Task planning failed: {task}\nError: {str(e)[:200]}")
+                        raw = f"Task planning failed: {task}. Error: {str(e)[:200]}"
+                        r = director_brain.wrap_raw_response(
+                            text, raw, "plan_error",
+                            recent_messages=self._get_recent_for_wrap(),
+                        )
+                        self._whatsapp.send_message(r)
                         
                 # request_approval is blocking (poll_for_reply loops with timeout),
                 # so we run it in a daemon thread (async wrapper behaviour) to prevent blocking webhook responses.
@@ -356,10 +349,10 @@ class FalconCommander:
                 self._handle_run_task(text, task, site, params)
 
             elif intent == "approve_action":
-                self._handle_approve()
+                self._handle_approve(text)
 
             elif intent == "deny_action":
-                self._handle_deny()
+                self._handle_deny(text)
 
             elif intent == "idea_capture":
                 self._handle_idea_capture(text, idea_text)
@@ -378,11 +371,12 @@ class FalconCommander:
                 "Commander.handle_message crashed: %s", exc, exc_info=True,
             )
             try:
-                self._whatsapp.send_message(
-                    "⚠️ Ek technical issue aa gaya sir. "
-                    "Log mein dekh ke fix karta hun. "
-                    "Thodi der mein phir try karo."
+                raw = "Hit a snag on my end. Logged and investigating. Please try again in a moment."
+                reply = director_brain.wrap_raw_response(
+                    text, raw, "crash_fallback",
+                    recent_messages=self._get_recent_for_wrap(),
                 )
+                self._whatsapp.send_message(reply)
             except Exception:
                 pass
 
@@ -395,14 +389,20 @@ class FalconCommander:
         Handle direct agent communication: @developer, @strategist, @media, @backup
         Example: "@developer check website speed"
         """
-        from core.director import Director
-        
+        # Use existing Director instance — never create a new one
+        director = self._director
+        if director is None:
+            raw = "Director not connected. System may still be starting."
+            reply = director_brain.wrap_raw_response(
+                text, raw, "director_offline",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
+            return
+
         parts = text.strip().split(" ", 1)
         agent_tag = parts[0].lower()  # @developer
         query = parts[1] if len(parts) > 1 else "status"
-        
-        # Initialize director to access agents
-        director = Director(self._whatsapp)
         
         agent_map = {
             "@developer": director._developer,
@@ -418,41 +418,66 @@ class FalconCommander:
         agent = agent_map.get(agent_tag)
         
         if agent_tag in ["@director", "@dir"]:
-            # Direct to Director brain
-            self._whatsapp.send_message(f"🎯 Director se baat kar raha hun...")
+            raw = "Talking to Director..."
+            reply = director_brain.wrap_raw_response(
+                text, raw, "direct_agent_start",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
             plan = director.think(query)
-            self._whatsapp.send_message(f"📋 Director's Response:\n{json.dumps(plan, indent=2)}")
+            plan_str = json.dumps(plan, indent=2)[:2000]
+            reply2 = director_brain.wrap_raw_response(
+                text, f"Director's response: {plan_str}", "director_response",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply2)
             return
         
         if agent is None:
-            self._whatsapp.send_message(
-                f"❓ Unknown agent: {agent_tag}\n\n"
-                f"Available agents:\n"
-                f"• @developer / @dev\n"
-                f"• @strategist / @strategy\n"
-                f"• @media\n"
-                f"• @backup\n"
-                f"• @director / @dir"
+            raw = (
+                f"Unknown agent: {agent_tag}. "
+                "Available: @developer, @strategist, @media, @backup, @director"
             )
+            reply = director_brain.wrap_raw_response(
+                text, raw, "unknown_agent",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
             return
         
         # Send to specific agent
-        self._whatsapp.send_message(f"🔄 {agent.name} se baat kar raha hun...")
+        raw_start = f"Talking to {agent.name}..."
+        reply = director_brain.wrap_raw_response(
+            text, raw_start, "direct_agent_start",
+            recent_messages=self._get_recent_for_wrap(),
+        )
+        self._whatsapp.send_message(reply)
         
         try:
-            # Agent thinks about the query
             thought = agent.think(query)
-            
-            # If it needs action, execute
             if any(k in query.lower() for k in ["execute", "run", "do"]):
                 result = agent.execute(query, "")
-                self._whatsapp.send_message(f"✅ {agent.name} Result:\n{result[:1500]}")
+                raw_result = f"{agent.name} result: {result[:1500]}"
+                reply = director_brain.wrap_raw_response(
+                    text, raw_result, "agent_result",
+                    recent_messages=self._get_recent_for_wrap(),
+                )
+                self._whatsapp.send_message(reply)
             else:
-                # Just thinking/analysis
-                self._whatsapp.send_message(f"💭 {agent.name}'s Analysis:\n{json.dumps(thought, indent=2)}")
-        
+                thought_str = json.dumps(thought, indent=2)[:1500]
+                raw_analysis = f"{agent.name} analysis: {thought_str}"
+                reply = director_brain.wrap_raw_response(
+                    text, raw_analysis, "agent_analysis",
+                    recent_messages=self._get_recent_for_wrap(),
+                )
+                self._whatsapp.send_message(reply)
         except Exception as e:
-            self._whatsapp.send_message(f"❌ {agent.name} Error: {str(e)[:500]}")
+            raw_err = f"{agent.name} error: {str(e)[:500]}"
+            reply = director_brain.wrap_raw_response(
+                text, raw_err, "agent_error",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
 
     # ══════════════════════════════════════════════════════════════════
     #  INTENT HANDLERS
@@ -470,7 +495,12 @@ class FalconCommander:
                     current = getattr(self._director, "_current_task", None)
                     if current and "Monitoring" not in current:
                         smart += "\n\n\u23F1 *Active:* {}".format(current)
-                    self._whatsapp.send_message(smart)
+                    # Route through DirectorBrain for human tone
+                    reply = director_brain.wrap_raw_response(
+                        original_text, smart, "status_check",
+                        recent_messages=self._get_recent_for_wrap(),
+                    )
+                    self._whatsapp.send_message(reply)
                     return
                 except Exception as e:
                     log.warning("Smart status failed, falling back: %s", e)
@@ -490,10 +520,12 @@ class FalconCommander:
 
         except Exception as exc:
             log.warning("Status check failed: %s", exc)
-            self._whatsapp.send_message(
-                "Abhi status pull karne mein issue aa raha hai. "
-                "System chal raha hai, details thodi der mein bhejta hun."
+            raw = "Status check hit an issue. System is running. Retrying shortly."
+            reply = director_brain.wrap_raw_response(
+                original_text, raw, "status_error",
+                recent_messages=self._get_recent_for_wrap(),
             )
+            self._whatsapp.send_message(reply)
 
     def _handle_run_task(
         self,
@@ -504,17 +536,24 @@ class FalconCommander:
     ) -> None:
         """Dispatch a task to the Director and report results."""
         if not task:
-            self._whatsapp.send_message(
-                "Kaunsa task run karna hai sir? 🤔\n"
-                "Try karo: 'seo report chalao', 'security scan karo', "
-                "'performance check karo'"
+            raw = (
+                "Which task to run? Try: 'seo report', 'security scan', "
+                "'performance check'"
             )
+            reply = director_brain.wrap_raw_response(
+                original_text, raw, "task_clarify",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
             return
 
-        # Notify owner that task is starting
-        self._whatsapp.send_message(
-            f"⚙️ {task.replace('_', ' ').title()} shuru kar raha hun {site} pe..."
+        # Notify owner that task is starting — via DirectorBrain for tone matching
+        raw_start = f"Task {task.replace('_', ' ').title()} starting on {site}."
+        start_msg = director_brain.wrap_raw_response(
+            original_text, raw_start, "task_start",
+            recent_messages=self._get_recent_for_wrap(),
         )
+        self._whatsapp.send_message(start_msg)
 
         try:
             # Map task to agent
@@ -550,86 +589,51 @@ class FalconCommander:
 
         except Exception as exc:
             log.critical("Task dispatch failed: %s", exc, exc_info=True)
-            self._whatsapp.send_message(
-                f"⚠️ {task} run karne mein issue aaya sir.\n"
-                f"Error: {str(exc)[:100]}\n"
-                "Log mein dekh ke fix karta hun."
+            raw_err = f"Task {task} failed. Error: {str(exc)[:100]}"
+            err_msg = director_brain.wrap_raw_response(
+                original_text, raw_err, "task_error",
+                recent_messages=self._get_recent_for_wrap(),
             )
+            self._whatsapp.send_message(err_msg)
 
 
-    def _handle_plan_task(
-        self,
-        original_text: str,
-        task: Optional[str],
-        site: str,
-        params: dict,
-    ) -> None:
-        """Discuss a complex task and seek approval before running it."""
-        if not task:
-            self._whatsapp.send_message("Kaunsa complex task aapko discuss karna hai? 🤔")
-            return
-
-        try:
-            reply = self._generate_reply(
-                original_text,
-                f"The owner wants to run a complex task: '{task}' on site '{site}'. "
-                f"Instead of running it immediately, generate a short, smart plan on how you "
-                f"will execute this task. Explain the steps briefly and explicitly ask for the owner's "
-                f"approval ('Should I go ahead?', 'Kya main shuru karu?') to proceed. "
-                f"Keep it powerful, clear, and perfectly match their language."
-            )
-            
-            self._whatsapp.send_message(reply)
-            
-            request_id = f"plan_{task}_{site}_{int(time.time())}"
-            self._whatsapp.send_approval_request(
-                action=f"Execute {task} on {site}?",
-                details={"Task": task, "Site": site},
-                request_id=request_id,
-            )
-
-            def _wait_and_run():
-                reply_val = self._whatsapp.poll_for_reply(request_id, timeout=3600)
-                if reply_val == "YES":
-                    try:
-                        self._whatsapp.send_message(f"✅ Awesome, starting {task} now!")
-                    except Exception:
-                        pass
-                    self._handle_run_task(original_text, task, site, params)
-                elif reply_val == "NO":
-                    try:
-                        self._whatsapp.send_message(f"❌ Cancelled {task}. Let me know if you want to adjust the plan.")
-                    except Exception:
-                        pass
-
-            threading.Thread(target=_wait_and_run, daemon=True).start()
-
-        except Exception as exc:
-            log.critical("Plan task failed: %s", exc, exc_info=True)
-            self._whatsapp.send_message(f"⚠️ Planning mein issue aaya.\nError: {str(exc)[:100]}")
-
-    def _handle_approve(self) -> None:
+    def _handle_approve(self, original_text: str = "") -> None:
         """Route an approval to the pending request."""
         pending = self._whatsapp.latest_pending_id
         if pending:
             self._whatsapp.receive_reply("latest", "YES")
-            self._whatsapp.send_message("✅ Approved! Kaam shuru karta hun.")
-        else:
-            self._whatsapp.send_message(
-                "Koi pending approval nahi hai abhi sir. "
-                "Jab koi action approval maangega toh bataunga. 👍"
+            raw = "Approved. Starting the action."
+            reply = director_brain.wrap_raw_response(
+                original_text or "yes", raw, "approve",
+                recent_messages=self._get_recent_for_wrap(),
             )
+            self._whatsapp.send_message(reply)
+        else:
+            raw = "No pending approval. When an action needs approval, I'll ask."
+            reply = director_brain.wrap_raw_response(
+                original_text or "approve", raw, "approve_none",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
 
-    def _handle_deny(self) -> None:
+    def _handle_deny(self, original_text: str = "") -> None:
         """Route a denial to the pending request."""
         pending = self._whatsapp.latest_pending_id
         if pending:
             self._whatsapp.receive_reply("latest", "NO")
-            self._whatsapp.send_message("❌ Rejected. Action cancel kar diya.")
-        else:
-            self._whatsapp.send_message(
-                "Koi pending approval nahi hai abhi sir. 👍"
+            raw = "Rejected. Action cancelled."
+            reply = director_brain.wrap_raw_response(
+                original_text or "no", raw, "deny",
+                recent_messages=self._get_recent_for_wrap(),
             )
+            self._whatsapp.send_message(reply)
+        else:
+            raw = "No pending approval."
+            reply = director_brain.wrap_raw_response(
+                original_text or "deny", raw, "deny_none",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
 
     def _handle_idea_capture(
         self,
@@ -642,11 +646,12 @@ class FalconCommander:
         self._save_idea(idea)
 
         preview = idea[:50] + "…" if len(idea) > 50 else idea
-        self._whatsapp.send_message(
-            f"💡 Note kar liya sir!\n"
-            f"Idea: {preview}\n"
-            "Ideas log mein save ho gaya. Baad mein review karenge."
+        raw = f"Idea noted: {preview}\nSaved to ideas log. Will review later."
+        reply = director_brain.wrap_raw_response(
+            original_text, raw, "idea_capture",
+            recent_messages=self._get_recent_for_wrap(),
         )
+        self._whatsapp.send_message(reply)
 
     def _handle_question(self, original_text: str, site: str) -> None:
         """Answer a question using Claude with business context."""
@@ -671,10 +676,15 @@ class FalconCommander:
 
         except Exception as exc:
             log.warning("Question handling failed: %s", exc)
-            self._whatsapp.send_message(
-                "Is sawaal ka jawab dene ke liye mujhe thoda data chahiye sir. 🤔\n"
-                "Kya main ek report run karun? 'seo report' ya 'sales report' bol do."
+            raw = (
+                "Need more data to answer. "
+                "Should I run a report? Try 'seo report' or 'sales report'."
             )
+            reply = director_brain.wrap_raw_response(
+                original_text, raw, "question_error",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
 
     def _reply_unknown(self, original_text: str) -> None:
         """Reply when the message intent cannot be determined."""
@@ -690,14 +700,15 @@ class FalconCommander:
             )
             self._whatsapp.send_message(reply)
         except Exception:
-            self._whatsapp.send_message(
-                "Samajh nahi aaya sir 😅\n"
-                "Ye try karo:\n"
-                "• 'status batao'\n"
-                "• 'seo report chalao'\n"
-                "• 'security scan karo'\n"
-                "• Ya koi bhi sawaal puchho sites ke baare mein"
+            raw = (
+                "Didn't catch that. Try: 'status', 'sales report', "
+                "'seo check', 'write blog about [topic]', or ask anything."
             )
+            reply = director_brain.wrap_raw_response(
+                original_text, raw, "unknown_fallback",
+                recent_messages=self._get_recent_for_wrap(),
+            )
+            self._whatsapp.send_message(reply)
 
     # ══════════════════════════════════════════════════════════════════
     #  AI ENGINE
@@ -706,55 +717,24 @@ class FalconCommander:
     def _classify_intent(self, text: str) -> Optional[dict]:
         """
         Use AI to classify the owner's message intent.
-        
-        Uses the multi-model AI Client, then falls back to keyword-based.
+
+        Uses DirectorBrain (DeepSeek R1 via OpenRouter) → falls back to
+        keyword-based classifier if AI is unavailable.
         """
-        from core.ai_client import call_ai
-        
         # Build rich context for better classification
         try:
             context = memory.build_rich_context("owner")
         except Exception:
             context = ""
-        
-        system_content = INTENT_SYSTEM_PROMPT
-        if context:
-            system_content = (
-                f"{INTENT_SYSTEM_PROMPT}\n\n"
-                f"=== USER CONTEXT ===\n{context}\n"
-                f"===================="
-            )
-        
-        messages = [
-            {"role": "system", "content": system_content},
-            {"role": "user", "content": text}
-        ]
-        
-        raw = call_ai("commander", messages)
-        
-        if raw.startswith("AI_ERROR:"):
-            log.warning("AI classification failed: %s", raw)
-        else:
-            try:
-                # Clean any markdown fences
-                if raw.startswith("```"):
-                    raw = raw.split("\n", 1)[-1]
-                if raw.endswith("```"):
-                    raw = raw.rsplit("```", 1)[0]
-                raw = raw.strip()
-                if raw.startswith("json\n"):
-                    raw = raw[5:].strip()
-                
-                parsed = json.loads(raw)
-                log.info("Intent classified via new AI client")
-                return parsed
-                
-            except json.JSONDecodeError as exc:
-                log.warning("AI returned invalid JSON: %s  |  raw=%s", exc, raw[:200])
-            except Exception as exc:
-                log.warning("AI parsing failed: %s", exc)
-        
+
+        # Try DirectorBrain first (reasoning model = better JSON output)
+        result = director_brain.classify_intent(text, context=context)
+        if result:
+            log.info("Intent classified via DirectorBrain (DeepSeek R1)")
+            return result
+
         # ── Fallback: keyword-based classification ──
+        log.info("Falling back to keyword classifier")
         return self._keyword_classify(text)
 
     def _keyword_classify(self, text: str) -> dict:
@@ -831,57 +811,69 @@ class FalconCommander:
 
     def _generate_reply(self, owner_message: str, context: str) -> str:
         """
-        Generate a natural-language reply using AI with personality prompt.
+        Generate a natural-language reply using DirectorBrain.
+
+        DirectorBrain uses DeepSeek R1 (reasoning model) with the full
+        Director persona — understands Hinglish, knows the business,
+        gives intelligent contextual responses.
         """
-        # GET REAL DATA - not fake
-        real_status = RealDataReader.get_real_system_status()
-        
-        # Build context with REAL data
-        real_data_context = f"""
-=== REAL SYSTEM DATA (from actual files) ===
-Total Tasks: {real_status['total_tasks_ever']}
-Completed: {real_status['completed_count']}
-Failed: {real_status['failed_count']}
-
-COMPLETED TASKS (real):
-{json.dumps(real_status['completed_tasks'], indent=2)}
-
-FAILED TASKS (real with reasons):
-{json.dumps(real_status['failed_tasks'], indent=2)}
-
-SPENDING (real):
-{json.dumps(real_status['spending'], indent=2)}
-
-IMPORTANT: Only report data shown above. If information is not here, say "I don't have that data stored."
-===========================================
-"""
-        
-        prompt = (
-            f"Owner's message: \"{owner_message}\"\n\n"
-            f"Context for your reply:\n{context}"
-        )
-        
-        messages = [
-            {"role": "system", "content": f"{PERSONALITY_PROMPT}\n\n{real_data_context}"},
-            {"role": "user", "content": prompt}
-        ]
-        
+        # GET REAL DATA — inject into context
         try:
-            reply = call_ai("commander", messages)
+            real_status = RealDataReader.get_real_system_status()
+            real_data_block = (
+                f"REAL SYSTEM DATA:\n"
+                f"Tasks completed: {real_status['completed_count']} | "
+                f"Failed: {real_status['failed_count']} | "
+                f"Today's spend: ${real_status['spending'].get('today_usd', 0):.3f}\n"
+                f"Recent tasks: {json.dumps(real_status['completed_tasks'][-3:], default=str)}"
+            )
+            full_context = f"{real_data_block}\n\n{context}" if context else real_data_block
+        except Exception:
+            full_context = context
+
+        # Get recent conversation history
+        try:
+            recent_msgs = memory.get_recent_messages("owner", limit=8)
+        except Exception:
+            recent_msgs = []
+
+        # Get live system status for context injection
+        try:
+            system_status = self._get_director_status()
+        except Exception:
+            system_status = None
+
+        try:
+            reply = director_brain.generate_reply(
+                owner_message=owner_message,
+                context=full_context,
+                recent_messages=recent_msgs,
+                system_status=system_status,
+            )
             log.log_action(
                 action="reply_generated",
                 agent="commander",
                 status="success",
-                details={"chars": len(reply), "provider": "call_ai"},
+                details={"chars": len(reply), "provider": "director_brain"},
             )
             return reply
         except Exception as exc:
-            log.warning("AI reply generation failed: %s", exc)
-            return context[:500] if context else "Processing ho raha hai sir, thodi der mein update dunga. 👍"
+            log.warning("DirectorBrain reply failed: %s", exc)
+            return (
+                "System is processing. Give me a moment.\n"
+                "Try: 'status', 'sales report', or 'seo check'"
+            )
 
     # ══════════════════════════════════════════════════════════════════
     #  STATUS HELPERS
     # ══════════════════════════════════════════════════════════════════
+
+    def _get_recent_for_wrap(self, user_id: str = "owner") -> Optional[List]:
+        """Get recent messages for DirectorBrain wrap. Returns None on error."""
+        try:
+            return memory.get_recent_messages(user_id, limit=6)
+        except Exception:
+            return None
 
     def _get_director_status(self) -> dict:
         """

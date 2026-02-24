@@ -35,8 +35,11 @@ class ContentAIClient:
     def __init__(self):
         self.api_key = NVIDIA_API_KEY
         self.base_url = NVIDIA_BASE_URL
-        self.primary_model = AI_MODELS.get("content", "meta/llama-3.3-70b-instruct")
-        self.fallback_model = AI_MODELS.get("content_fallback", "qwen/qwen2.5-72b-instruct")
+        # Strip provider prefix (nv:: or or::) — this client calls NVIDIA directly
+        _raw_primary = AI_MODELS.get("content", "qwen/qwen3-next-80b-a3b-instruct")
+        _raw_fallback = AI_MODELS.get("content_fallback", "meta/llama-3.3-70b-instruct")
+        self.primary_model = _raw_primary.split("::", 1)[-1] if "::" in _raw_primary else _raw_primary
+        self.fallback_model = _raw_fallback.split("::", 1)[-1] if "::" in _raw_fallback else _raw_fallback
         self.max_tokens = 4096   # Long-form content needs space
         self.temperature = 0.65  # Focused but creative
         self.timeout = 180       # 3 min — long content takes time
