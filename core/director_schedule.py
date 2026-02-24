@@ -163,6 +163,13 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Weekly competitor price scan — Amazon India"
                 },
+                "daily_digest": {
+                    "time": "07:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Unified daily digest — orders, content, pricing, goals"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -260,6 +267,7 @@ class ExtendedSchedule:
             }
         
         handlers = {
+            "daily_digest": self._task_daily_digest,
             "morning_report": self._task_morning_report,
             "evening_report": self._task_evening_report,
             "site_health_check": self._task_site_health,
@@ -310,6 +318,19 @@ class ExtendedSchedule:
     
     # ========= TASK HANDLERS =========
     
+    def _task_daily_digest(self):
+        """Unified daily digest at 07:00 — replaces separate
+        morning/evening reports with one richer message."""
+        try:
+            digest = self.bridge.generate_daily_digest()
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": digest,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def _task_morning_report(self):
         """Generate and return morning report"""
         report = self.bridge.generate_morning_report()

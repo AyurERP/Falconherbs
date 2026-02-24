@@ -591,6 +591,133 @@ class IntegrationBridge:
         except Exception as e:
             return f"Error: {e}"
 
+    # ========= SMART STATUS (Phase 4) =========
+    # generate_daily_digest() is defined further below.
+    # This is a placeholder comment to preserve file structure.
+
+    def generate_smart_status(self) -> str:
+        """Rich status for WhatsApp 'kya ho raha hai' queries.
+        Shows active tools, last task, scheduled upcoming tasks,
+        and any queues needing attention."""
+
+        now = datetime.now()
+        lines = [
+            "\U0001F985 *FALCON AGENCY STATUS*",
+            "\u23F0 {}".format(now.strftime('%d %b %H:%M')),
+            "",
+        ]
+
+        # Tools loaded
+        loaded = [
+            k for k, v in self.status.items()
+            if v == "loaded"
+        ]
+        failed = [
+            k for k, v in self.status.items()
+            if v != "loaded"
+        ]
+        lines.append(
+            "\u2705 *Tools active:* {}/{}".format(
+                len(loaded), len(loaded) + len(failed)
+            )
+        )
+        if failed:
+            lines.append(
+                "   \u26A0\uFE0F Not loaded: {}".format(
+                    ", ".join(failed)
+                )
+            )
+
+        # Content queue
+        try:
+            drafts_dir = Path("data/content/drafts")
+            if drafts_dir.exists():
+                all_drafts = list(drafts_dir.glob("*.json"))
+                pending = 0
+                needs_review = 0
+                for d in all_drafts:
+                    try:
+                        data = json.loads(
+                            d.read_text(encoding="utf-8")
+                        )
+                        s = data.get("status", "")
+                        if s == "generated":
+                            pending += 1
+                        elif s == "needs_review":
+                            needs_review += 1
+                    except Exception:
+                        continue
+                lines.append(
+                    "\n\U0001F4DD *Content:* "
+                    "{} ready  |  {} need review".format(
+                        pending, needs_review
+                    )
+                )
+        except Exception:
+            pass
+
+        # Extended schedule — next upcoming task
+        try:
+            sched_file = Path("data/extended_schedule.json")
+            if sched_file.exists():
+                sched = json.loads(
+                    sched_file.read_text(encoding="utf-8")
+                )
+                tasks = sched.get("tasks", {})
+                # Find next task that will run today
+                upcoming = []
+                today_str = now.strftime("%A").lower()
+                now_min = now.hour * 60 + now.minute
+                for name, task in tasks.items():
+                    if not task.get("enabled"):
+                        continue
+                    freq = task.get("frequency", "daily")
+                    t_str = task.get("time", "00:00")
+                    t_h, t_m = map(int, t_str.split(":"))
+                    t_min = t_h * 60 + t_m
+                    day = task.get("day", "")
+                    if freq == "weekly" and day != today_str:
+                        continue
+                    if t_min > now_min:
+                        upcoming.append((t_min, name, t_str))
+                upcoming.sort()
+                if upcoming:
+                    _, next_name, next_time = upcoming[0]
+                    lines.append(
+                        "\n\u23F3 *Next scheduled:* "
+                        "{} @ {}".format(next_name, next_time)
+                    )
+        except Exception:
+            pass
+
+        # Pending product rewrites
+        try:
+            rewrites_dir = Path(
+                "data/content/product_rewrites"
+            )
+            if rewrites_dir.exists():
+                pending_rw = sum(
+                    1 for f in rewrites_dir.glob("*.json")
+                    if f.name not in ("last_scan.json",)
+                    and json.loads(
+                        f.read_text(encoding="utf-8")
+                    ).get("status") == "pending"
+                )
+                if pending_rw:
+                    lines.append(
+                        "\n\U0001F6E1\uFE0F *Product rewrites "
+                        "pending:* {}".format(pending_rw)
+                    )
+        except Exception:
+            pass
+
+        lines.append(
+            "\n\U0001F916 _Director is monitoring — "
+            "always on._"
+        )
+
+        return "\n".join(lines)
+
     # ========= MORNING REPORT =========
 
     def generate_morning_report(self):
@@ -889,7 +1016,54 @@ class IntegrationBridge:
         except Exception:
             pass
 
-        # 7. System health
+        # 7. Pricing alerts (if latest.json exists)
+        try:
+            pricing_file = Path("data/pricing/latest.json")
+            if pricing_file.exists():
+                import json as _pj
+                pd = _pj.loads(
+                    pricing_file.read_text(encoding="utf-8")
+                )
+                price_alerts = [
+                    r for r in pd.get("results", [])
+                    if r.get("recommendation", {}).get(
+                        "action"
+                    ) == "lower"
+                ]
+                if price_alerts:
+                    lines.append(
+                        "\n\U0001F4B9 *PRICING ALERTS:* "
+                        "{} products to adjust".format(
+                            len(price_alerts)
+                        )
+                    )
+                    for pa in price_alerts[:3]:
+                        rec = pa.get("recommendation", {})
+                        lines.append(
+                            "   \u2022 {} \u2192 "
+                            "\u20B9{}".format(
+                                pa["product"][:25],
+                                rec.get("recommended", "?"),
+                            )
+                        )
+        except Exception:
+            pass
+
+        # 7b. Pending product rewrites
+        try:
+            rewriter = self.tools.get("rewriter")
+            if rewriter:
+                rw_status = rewriter.get_rewrite_status()
+                if "pending" in rw_status.lower():
+                    first_line = rw_status.split("\n")[0]
+                    lines.append(
+                        "\n\U0001F6E1\uFE0F *REWRITES:* "
+                        "{}".format(first_line)
+                    )
+        except Exception:
+            pass
+
+        # 8. System health
         status = self.get_status()
         tools_ok = sum(
             1 for v in status["tools"].values()
@@ -902,7 +1076,7 @@ class IntegrationBridge:
             )
         )
 
-        # 8. Task success rates
+        # 9. Task success rates
         try:
             stats_file = Path("data/task_stats.json")
             if stats_file.exists():

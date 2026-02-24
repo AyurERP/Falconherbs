@@ -270,9 +270,21 @@ class FalconCommander:
                     if ext_result:
                         ext_result["message_text"] = text
                         response = self._extended_handler.handle(ext_result)
-                        if response.get("success"):
-                            self._whatsapp.send_message(response["response"])
-                            log.info("Extended intent handled: %s", ext_result["intent"])
+                        # ALWAYS send if intent was classified — even on errors.
+                        # Previously fell through on success=False which caused
+                        # old keyword classifier to misroute (e.g. "price scan"
+                        # → "security_scan").
+                        reply_text = response.get("response", "")
+                        if reply_text:
+                            self._whatsapp.send_message(reply_text)
+                            memory.add_message(
+                                user_id, "assistant", reply_text
+                            )
+                            log.info(
+                                "Extended intent: %s (success=%s)",
+                                ext_result["intent"],
+                                response.get("success"),
+                            )
                             return
                 except Exception as e:
                     log.warning("Extended intent failed (falling through): %s", e)
@@ -447,26 +459,40 @@ class FalconCommander:
     # ══════════════════════════════════════════════════════════════════
 
     def _handle_status_check(self, original_text: str) -> None:
-        """Gather system status and send a natural-language reply."""
+        """Gather system status and send a rich smart-status reply."""
         try:
+            # Use bridge smart status if available — it shows tools,
+            # content queue, upcoming schedule, and pending actions.
+            if self._bridge and hasattr(self._bridge, "generate_smart_status"):
+                try:
+                    smart = self._bridge.generate_smart_status()
+                    # Append current Director task for live context
+                    current = getattr(self._director, "_current_task", None)
+                    if current and "Monitoring" not in current:
+                        smart += "\n\n\u23F1 *Active:* {}".format(current)
+                    self._whatsapp.send_message(smart)
+                    return
+                except Exception as e:
+                    log.warning("Smart status failed, falling back: %s", e)
+
+            # Fallback: legacy Director status
             status = self._get_director_status()
             status_summary = self._get_status_message(status)
-
-            # Use Claude to format a natural reply with the status data
             reply = self._generate_reply(
                 original_text,
-                f"The owner asked for status. Here is the current system data:\n{status_summary}\n\n"
-                "Generate a short, natural WhatsApp reply with this info. "
-                "Include the key numbers but keep it conversational.",
+                "The owner asked for status. Current system data:\n"
+                "{}\n\nGenerate a short WhatsApp reply. Include the "
+                "key numbers but keep it conversational.".format(
+                    status_summary
+                ),
             )
-
             self._whatsapp.send_message(reply)
 
         except Exception as exc:
             log.warning("Status check failed: %s", exc)
             self._whatsapp.send_message(
-                "Abhi status pull karne mein issue aa raha hai sir. "
-                "System chal raha hai, details thodi der mein bhejta hun. 🔧"
+                "Abhi status pull karne mein issue aa raha hai. "
+                "System chal raha hai, details thodi der mein bhejta hun."
             )
 
     def _handle_run_task(

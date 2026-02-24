@@ -498,11 +498,16 @@ class Director:
 
         Priority 1 is the most urgent.  Ties are broken by ``created_at``
         (earliest first).
+
+        When all goals are exhausted, auto-injects recurring maintenance
+        goals so the Director is never permanently idle.
         """
         try:
             goals = self.load_goals()
             pending = [g for g in goals if g.get("status") == "pending"]
             if not pending:
+                # All goals done — inject recurring maintenance goals
+                self._auto_refresh_goals(goals)
                 return None
             # Sort: lowest priority number first, then earliest creation
             pending.sort(key=lambda g: (
@@ -513,6 +518,149 @@ class Director:
         except Exception as exc:
             log.critical("get_next_goal crashed: %s", exc, exc_info=True)
             return None
+
+    _MAINTENANCE_GOALS = [
+        {
+            "description": "Monitor site health and uptime",
+            "agent": "sentinel",
+            "task": "uptime_check",
+            "priority": 10,
+        },
+        {
+            "description": "Review content queue for pending drafts",
+            "agent": "media",
+            "task": "content_queue_review",
+            "priority": 10,
+        },
+        {
+            "description": "Sync latest revenue data from WooCommerce",
+            "agent": "internal",
+            "task": "revenue_sync",
+            "priority": 10,
+        },
+        {
+            "description": "Check inventory levels for low-stock alerts",
+            "agent": "internal",
+            "task": "inventory_check",
+            "priority": 10,
+        },
+    ]
+
+    def _auto_refresh_goals(self, existing_goals: list) -> None:
+        """When all goals are exhausted, inject recurring maintenance
+        goals so the Director is never idle indefinitely.
+
+        Only injects if no maintenance goal was added in the last
+        3 hours (prevents goal flooding)."""
+        try:
+            # Check if we recently added maintenance goals
+            recent_maintenance = [
+                g for g in existing_goals
+                if g.get("auto_maintenance")
+                and g.get("created_at", "") > (
+                    datetime.now(timezone.utc)
+                    - timedelta(hours=3)
+                ).isoformat()
+            ]
+            if recent_maintenance:
+                return  # Don't flood — wait 3 hours between refreshes
+
+            new_goals = []
+            for template in self._MAINTENANCE_GOALS:
+                new_goals.append({
+                    "id": str(uuid.uuid4()),
+                    "description": template["description"],
+                    "agent": template["agent"],
+                    "task": template.get("task"),
+                    "site": "falconherbs.com",
+                    "priority": template["priority"],
+                    "status": "pending",
+                    "created_at": _utcnow_iso(),
+                    "auto_maintenance": True,
+                })
+
+            updated = existing_goals + new_goals
+            self.save_goals(updated)
+            log.info(
+                "Director: Auto-refreshed %d maintenance goals",
+                len(new_goals),
+            )
+        except Exception as exc:
+            log.warning("_auto_refresh_goals failed: %s", exc)
+
+    def _run_idle_monitoring(self) -> None:
+        """Called when a cycle completes with zero work done.
+        Performs lightweight background checks and updates
+        _current_task so WhatsApp status is always meaningful."""
+        import json as _json
+
+        status_parts: list[str] = []
+
+        # 1. Content queue check
+        try:
+            drafts_dir = DATA_DIR / "content" / "drafts"
+            if drafts_dir.exists():
+                needs_review = sum(
+                    1 for f in drafts_dir.glob("*.json")
+                    if _json.loads(
+                        f.read_text(encoding="utf-8")
+                    ).get("status") == "needs_review"
+                )
+                if needs_review:
+                    status_parts.append(
+                        "{} draft(s) need review".format(needs_review)
+                    )
+        except Exception:
+            pass
+
+        # 2. Pending product rewrites
+        try:
+            rw_dir = (
+                DATA_DIR / "content" / "product_rewrites"
+            )
+            if rw_dir.exists():
+                pending_rw = 0
+                for f in rw_dir.glob("*.json"):
+                    if f.name == "last_scan.json":
+                        continue
+                    try:
+                        if _json.loads(
+                            f.read_text(encoding="utf-8")
+                        ).get("status") == "pending":
+                            pending_rw += 1
+                    except Exception:
+                        continue
+                if pending_rw:
+                    status_parts.append(
+                        "{} product rewrite(s) pending "
+                        "approval".format(pending_rw)
+                    )
+        except Exception:
+            pass
+
+        # 3. Quick site ping every 10 idle cycles
+        if self._cycle_count % 10 == 0:
+            try:
+                import os
+                site_url = os.getenv(
+                    "WOO_SITE_URL", "https://falconherbs.com"
+                )
+                urllib.request.urlopen(site_url, timeout=5)
+                status_parts.append("site responding OK")
+            except Exception:
+                status_parts.append("site ping timeout")
+                log.warning(
+                    "Director idle-monitoring: site ping failed"
+                )
+
+        summary = (
+            "Monitoring: " + " | ".join(status_parts)
+            if status_parts
+            else "Monitoring: all systems OK"
+        )
+        self._current_task = summary
+        self._current_site = "falconherbs.com"
+        log.info("Director idle: %s", summary)
 
     def _update_goal_status(
         self,
@@ -1526,6 +1674,7 @@ Respond in JSON:
                 self._idle_alert_sent = False
 
             # ── 3. Goal processing (if time remains) ──
+            goal = None
             elapsed = time.monotonic() - cycle_start
             if elapsed < CYCLE_TIME_BUDGET:
                 goal = self.get_next_goal()
@@ -1542,22 +1691,41 @@ Respond in JSON:
             cycle_duration = time.monotonic() - cycle_start
 
             # ── 4. Extended schedule check ──
+            ext_ran = 0
             if self._extended_schedule:
                 try:
                     ext_results = self._extended_schedule.check_and_execute(
                         whatsapp_sender=getattr(self._whatsapp, 'send_message', None)
                     )
+                    ext_ran = len([
+                        r for r in ext_results
+                        if r["result"].get("success")
+                    ])
                     for r in ext_results:
                         if r["result"].get("success"):
                             log.info("Extended task %s completed", r["task"])
+                            # Keep _current_task updated with last extended task
+                            self._current_task = "Completed: {}".format(
+                                r["task"].replace("_", " ")
+                            )
+                            self._last_activity = time.monotonic()
                 except Exception as e:
                     log.warning("Extended schedule check failed: %s", e)
 
+            # ── 5. Idle monitoring ──
+            # When truly nothing ran this cycle, run background checks
+            # so the Director always has a meaningful status.
+            goal_ran = goal is not None
+            if tasks_completed == 0 and ext_ran == 0 and not goal_ran:
+                self._run_idle_monitoring()
+
             log.info(
-                "Cycle #%d complete  |  scheduled=%d  |  executed=%d  |  %.1fs",
+                "Cycle #%d complete  |  scheduled=%d  |  executed=%d  |"
+                "  ext=%d  |  %.1fs",
                 self._cycle_count,
                 len(due_tasks),
                 tasks_completed,
+                ext_ran,
                 time.monotonic() - cycle_start,
             )
 
