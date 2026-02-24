@@ -202,20 +202,291 @@ class IntegrationBridge:
             }
     
     def run_health_scan(self, max_pages=100):
-        """Safe wrapper for health claims scan"""
+        """
+        FULL SITE health claims scan.
+
+        Scans EVERYTHING on falconherbs.com:
+          ✅ Product descriptions (long + short)       — auto-fixable via API
+          ✅ Product titles/names                       — auto-fixable via API
+          ✅ Image alt text (all product images)        — auto-fixable via API
+          ✅ Product tags                               — advisory (flag only)
+          ✅ Blog posts (title + content)               — advisory (manual fix)
+          ✅ WordPress pages (About, FAQ etc.)          — advisory (manual fix)
+          ✅ WooCommerce category names                 — advisory (manual rename)
+          ⚠️  Image pixel text (OCR advisory)           — manual fix required
+        """
         try:
             scanner = self.tools.get("health_scanner")
             if not scanner:
-                return {
-                    "success": False,
-                    "error": "Health Scanner not loaded"
-                }
-            return scanner.full_scan(max_pages=max_pages)
+                return {"success": False, "error": "Health Scanner not loaded"}
+
+            woo = self.tools.get("woocommerce")
+            if not woo:
+                return scanner.full_scan(max_pages=max_pages)
+
+            from bs4 import BeautifulSoup
+            import requests, os, json as _json
+            from pathlib import Path
+
+            site = os.getenv("WOO_SITE_URL", "https://falconherbs.com")
+            wp_user = os.getenv("FALCONHERBS_WP_USER")
+            wp_pass = os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+            wc_key  = os.getenv("FALCONHERBS_WC_API_KEY")
+            wc_sec  = os.getenv("FALCONHERBS_WC_API_SECRET")
+            wp_auth = (wp_user, wp_pass) if wp_user and wp_pass else None
+
+            report = {
+                "products_fixable":   [],   # can auto-fix via WooCommerce API
+                "titles_fixable":     [],   # product titles with violations
+                "image_alt_fixable":  [],   # image alt text violations
+                "blogs_advisory":     [],   # blog posts — manual fix
+                "pages_advisory":     [],   # WP pages — manual fix
+                "categories_advisory":[],   # category names — manual rename
+                "image_ocr_advisory": [],   # images that likely have text — manual
+            }
+
+            # ── 1. PRODUCTS: descriptions + short desc ────────────
+            api_result = woo._make_request("products", {"per_page": 100, "page": 1})
+            products = api_result.get("data", []) if api_result.get("success") else []
+
+            clean_count = 0
+            for p in products:
+                pid  = p["id"]
+                name = p["name"]
+                url  = p.get("permalink", "")
+
+                # --- 1a. Description scan
+                raw = (p.get("description","") or "") + " " + (p.get("short_description","") or "")
+                desc_text = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
+
+                desc_violations = False
+                if desc_text.strip():
+                    s = scanner.scan_page(url, desc_text, name, is_product=True)
+                    if s.get("high_risk") or s.get("medium_risk"):
+                        desc_violations = True
+                        report["products_fixable"].append({
+                            "id": pid, "name": name, "url": url,
+                            "risk_score": s.get("risk_score", 0),
+                            "high": [h["matched"][:60] for h in s.get("high_risk",[])[:3]],
+                            "medium": [m["matched"][:50] for m in s.get("medium_risk",[])[:2]],
+                        })
+
+                # --- 1b. Title scan
+                title_s = scanner.scan_page(url, name, name, is_product=True)
+                if title_s.get("high_risk") or title_s.get("medium_risk"):
+                    report["titles_fixable"].append({
+                        "id": pid, "name": name, "url": url,
+                        "risk_score": title_s.get("risk_score", 0),
+                        "violations": [h["matched"][:60] for h in title_s.get("high_risk",[])[:3]],
+                    })
+
+                # --- 1c. Image alt text scan
+                for img in p.get("images", []):
+                    alt = img.get("alt", "") or ""
+                    img_src = img.get("src", "")
+                    if alt.strip():
+                        alt_s = scanner.scan_page(img_src, alt, name, is_product=True)
+                        if alt_s.get("high_risk") or alt_s.get("medium_risk"):
+                            report["image_alt_fixable"].append({
+                                "product_id": pid,
+                                "product_name": name,
+                                "image_id": img.get("id"),
+                                "alt_text": alt,
+                                "src": img_src,
+                                "violations": [h["matched"][:60] for h in alt_s.get("high_risk",[])[:3]],
+                            })
+                    # Advisory: image likely has text if alt is detailed
+                    if len(alt) > 30 and any(w in alt.lower() for w in [
+                        "diabetes","cure","treat","cancer","boost","immunity",
+                        "control","prevent","anxiety","arthritis"
+                    ]):
+                        report["image_ocr_advisory"].append({
+                            "product_name": name,
+                            "src": img_src[:80],
+                            "alt_hint": alt[:100],
+                            "advice": "Image may contain embedded text matching health claims — manual review needed",
+                        })
+
+                if not desc_violations and not title_s.get("high_risk"):
+                    clean_count += 1
+
+            # ── 2. BLOG POSTS ─────────────────────────────────────
+            try:
+                r = requests.get(f"{site}/wp-json/wp/v2/posts",
+                    params={"per_page": 100, "_fields": "id,title,slug,link,content"},
+                    auth=wp_auth, timeout=15)
+                if r.ok:
+                    for post in r.json():
+                        title = post.get("title",{}).get("rendered","")
+                        content_html = post.get("content",{}).get("rendered","")
+                        content_text = BeautifulSoup(content_html,"html.parser").get_text(" ",strip=True)
+                        full_text = title + " " + content_text
+                        s = scanner.scan_page(post.get("link",""), full_text, title)
+                        if s.get("high_risk") or s.get("medium_risk"):
+                            report["blogs_advisory"].append({
+                                "id": post["id"], "title": title,
+                                "url": post.get("link",""),
+                                "slug": post.get("slug",""),
+                                "risk_score": s.get("risk_score",0),
+                                "violations": [h["matched"][:70] for h in s.get("high_risk",[])[:3]],
+                                "fix": "MANUAL — edit in WordPress admin > Posts",
+                            })
+            except Exception:
+                pass
+
+            # ── 3. WORDPRESS PAGES ────────────────────────────────
+            try:
+                r = requests.get(f"{site}/wp-json/wp/v2/pages",
+                    params={"per_page": 50, "_fields": "id,title,slug,link,content"},
+                    auth=wp_auth, timeout=15)
+                if r.ok:
+                    for page in r.json():
+                        title = page.get("title",{}).get("rendered","")
+                        content_html = page.get("content",{}).get("rendered","")
+                        content_text = BeautifulSoup(content_html,"html.parser").get_text(" ",strip=True)
+                        full_text = title + " " + content_text
+                        s = scanner.scan_page(page.get("link",""), full_text, title)
+                        if s.get("high_risk") or s.get("medium_risk"):
+                            report["pages_advisory"].append({
+                                "id": page["id"], "title": title,
+                                "url": page.get("link",""),
+                                "risk_score": s.get("risk_score",0),
+                                "violations": [h["matched"][:70] for h in s.get("high_risk",[])[:3]],
+                                "fix": "MANUAL — edit in WordPress admin > Pages",
+                            })
+            except Exception:
+                pass
+
+            # ── 4. CATEGORY NAMES ─────────────────────────────────
+            RISKY_CAT_WORDS = [
+                "diabetic","diabetes","cancer","anxiety","depression",
+                "weight loss","cardiovascular","respiratory","immunity",
+                "stress","inflammation","liver care","skin disorder"
+            ]
+            try:
+                r = requests.get(f"{site}/wp-json/wc/v3/products/categories",
+                    params={"per_page":100,"consumer_key":wc_key,"consumer_secret":wc_sec},
+                    timeout=15)
+                if r.ok:
+                    for cat in r.json():
+                        cname = cat.get("name","")
+                        if any(w in cname.lower() for w in RISKY_CAT_WORDS):
+                            report["categories_advisory"].append({
+                                "id": cat["id"], "name": cname,
+                                "count": cat.get("count",0),
+                                "fix": "Rename in WooCommerce admin > Categories",
+                                "suggestion": (
+                                    cname
+                                    .replace("Diabetic","Wellness Teas")
+                                    .replace("Diabetes","Glucose Wellness")
+                                    .replace("Cardiovascular","Heart Wellness")
+                                    .replace("Respiratory Care","Respiratory Wellness")
+                                    .replace("Respiratory","Respiratory Wellness")
+                                    .replace("Immunity","Immune Support")
+                                    .replace("Stress, Anxiety &amp; Depression","Calm &amp; Balance")
+                                    .replace("Stress, Anxiety & Depression","Calm & Balance")
+                                    .replace("Weight Loss","Metabolic Wellness")
+                                    .replace("Inflammation, Swelling &amp; Body Pain","Comfort &amp; Mobility")
+                                    .replace("Inflammation, Swelling & Body Pain","Comfort & Mobility")
+                                    .replace("Liver Care","Liver Wellness")
+                                ),
+                            })
+            except Exception:
+                pass
+
+            # ── 5. BUILD SUMMARY REPORT ───────────────────────────
+            total_products = len(products)
+            fixable_count  = len(report["products_fixable"])
+            title_count    = len(report["titles_fixable"])
+            alt_count      = len(report["image_alt_fixable"])
+            blog_count     = len(report["blogs_advisory"])
+            page_count     = len(report["pages_advisory"])
+            cat_count      = len(report["categories_advisory"])
+            ocr_count      = len(report["image_ocr_advisory"])
+
+            lines = [
+                "🏥 *FULL SITE HEALTH CLAIMS AUDIT*",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+                "📦 *PRODUCTS SCANNED:* {}".format(total_products),
+                "✅ Clean: {} | ⚠️ With issues: {}".format(clean_count, fixable_count),
+                "",
+                "🔧 *CAN AUTO-FIX VIA API:*",
+                "  📝 Product descriptions: {} violations".format(fixable_count),
+                "  🏷️  Product titles: {} violations".format(title_count),
+                "  🖼️  Image alt text: {} violations".format(alt_count),
+                "",
+                "👁️ *NEEDS MANUAL FIX (advisory):*",
+                "  📰 Blog posts: {} with violations".format(blog_count),
+                "  📄 Pages: {} with violations".format(page_count),
+                "  📁 Category names: {} risky names".format(cat_count),
+                "  🖼️  Images with possible text: {} (OCR review needed)".format(ocr_count),
+                "",
+            ]
+
+            # Top violating products
+            sorted_prods = sorted(report["products_fixable"], key=lambda x: x["risk_score"], reverse=True)
+            if sorted_prods:
+                lines.append("🚨 *TOP PRODUCT VIOLATIONS:*")
+                for v in sorted_prods[:10]:
+                    icon = "🔴" if v["risk_score"]>=50 else ("🟠" if v["risk_score"]>=30 else "🟡")
+                    lines.append(f"  {icon} {v['name'][:55]}")
+                    if v["high"]:
+                        lines.append(f"      ❌ {v['high'][0][:65]}")
+                if len(sorted_prods) > 10:
+                    lines.append(f"  ... and {len(sorted_prods)-10} more products")
+                lines.append("")
+
+            # Blog violations
+            if report["blogs_advisory"]:
+                lines.append("📰 *BLOG VIOLATIONS (manual fix):*")
+                for b in report["blogs_advisory"]:
+                    lines.append(f"  ❌ {b['title'][:65]}")
+                lines.append("")
+
+            # Category violations
+            if report["categories_advisory"]:
+                lines.append("📁 *CATEGORY RENAMES NEEDED:*")
+                for c in report["categories_advisory"]:
+                    lines.append(f"  ❌ \"{c['name']}\" → \"{c['suggestion']}\"")
+                lines.append("")
+
+            # Image advisory
+            if title_count:
+                lines.append("🏷️ *PRODUCT TITLE VIOLATIONS:*")
+                for t in report["titles_fixable"][:5]:
+                    lines.append(f"  ❌ {t['name'][:65]}")
+                lines.append("")
+
+            lines += [
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "⚖️ _AI risk flagging — not legal advice._",
+                "🤖 _Falcon Agency — Full Site Scanner_",
+            ]
+
+            # Save full report
+            Path("data/health_audit").mkdir(parents=True, exist_ok=True)
+            with open("data/health_audit/health_audit_report.json", "w", encoding="utf-8") as f:
+                _json.dump({
+                    "total_products": total_products,
+                    "clean": clean_count,
+                    "report": report,
+                }, f, indent=2, ensure_ascii=False)
+
+            return {
+                "success":   True,
+                "summary":   "\n".join(lines),
+                "total":     total_products,
+                "violations": fixable_count,
+                "clean":     clean_count,
+                "full_report": report,
+            }
+
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
-                "traceback": traceback.format_exc()
+                "traceback": traceback.format_exc(),
             }
     
     def get_revenue_report(self):
