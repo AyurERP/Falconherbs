@@ -165,7 +165,6 @@ class FalconWebhook:
         async def receive_webhook(request: Request) -> JSONResponse:
             """
             Receive incoming WhatsApp messages from Meta.
-
             MUST return 200 within 5 seconds or Meta will retry.
             All processing happens in background threads.
             """
@@ -291,9 +290,14 @@ class FalconWebhook:
 
             # ── Security: validate sender ──
             if not self._is_allowed_sender(sender):
+                norm_s = self._normalize_phone(sender)
+                norm_a = self._normalize_phone(self._allowed_sender)
                 log.warning(
-                    "Webhook: message from UNKNOWN sender %s — IGNORED",
-                    sender[:6] + "…" if sender else "empty",
+                    "Webhook: UNKNOWN sender ignored | from=%s (norm=%s) | expected=%s (norm=%s)",
+                    sender[:12] + "…" if len(str(sender)) > 12 else sender,
+                    norm_s[:12] if norm_s else "?",
+                    self._allowed_sender[:8] + "…" if self._allowed_sender else "?",
+                    norm_a[:12] if norm_a else "?",
                 )
                 return
 
@@ -470,16 +474,32 @@ class FalconWebhook:
             log.warning("WhatsApp media download failed: %s", exc)
             return None
 
+    def _normalize_phone(self, s: str) -> str:
+        """Normalize phone: digits only, ensure 91 prefix for Indian."""
+        if not s:
+            return ""
+        digits = "".join(c for c in str(s) if c.isdigit())
+        if len(digits) == 10 and digits.startswith(("9", "8", "7", "6")):
+            return "91" + digits
+        if len(digits) >= 10:
+            return digits
+        return s
+
     def _is_allowed_sender(self, sender: str) -> bool:
-        """Check if *sender* matches the configured owner phone number."""
+        """Check if *sender* matches the configured owner phone number.
+        Meta may send: 919916322917, 9916322917, or other formats."""
         if not self._allowed_sender:
             log.warning("WHATSAPP_RECIPIENT not set — rejecting all messages")
             return False
-        # Meta may send with or without country code prefix
-        return (
-            sender == self._allowed_sender
-            or sender.endswith(self._allowed_sender[-10:])
-        )
+        norm_sender = self._normalize_phone(sender)
+        norm_allowed = self._normalize_phone(self._allowed_sender)
+        if norm_sender == norm_allowed:
+            return True
+        # Last 10 digits match (handles 91 vs 0 prefix)
+        if len(norm_sender) >= 10 and len(norm_allowed) >= 10:
+            if norm_sender[-10:] == norm_allowed[-10:]:
+                return True
+        return False
 
     # ══════════════════════════════════════════════════════════════════
     #  SERVER LIFECYCLE
