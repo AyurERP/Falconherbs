@@ -362,12 +362,93 @@ class ExtendedIntentClassifier:
                     r"\bimage\s+(?:generate|bana|create|make)\b",
                     r"\bphoto\s+(?:bana|khinch|click)\b",
                     r"\bdesign\s+(?:karo|banao)\b",
+                    r"\bdesign\s+[a-z]",
                     r"\bpicture\s+(?:search|find|bana)\b",
                 ],
                 "handler": "handle_image_generate",
                 "description": "Generate an AI image"
             },
-            
+
+            "ad_creative": {
+                "patterns": [
+                    r"\bad\s+(?:creative|design|bana|karo)\b",
+                    r"\bmeta\s+(?:ad|creative)\b",
+                    r"\bgoogle\s+(?:ad|display)\b",
+                    r"\bfacebook\s+ad\b",
+                    r"\binstagram\s+ad\b",
+                    r"\bcampaign\s+(?:creative|visual)\b",
+                ],
+                "handler": "handle_ad_creative",
+                "description": "Generate Meta/Google ad creative"
+            },
+
+            "blog_banner": {
+                "patterns": [
+                    r"\bblog\s+(?:banner|image|featured)\b",
+                    r"\bbanner\s+(?:bana|create|generate)\b",
+                    r"\bfeatured\s+image\b",
+                ],
+                "handler": "handle_blog_banner",
+                "description": "Generate blog featured image"
+            },
+
+            "carousel_design": {
+                "patterns": [
+                    r"\bcarousel\b",
+                    r"\bslide\s+(?:design|bana)\b",
+                    r"\bmulti\s+slide\b",
+                ],
+                "handler": "handle_carousel_design",
+                "description": "Generate carousel slides"
+            },
+
+            "brand_guidelines": {
+                "patterns": [
+                    r"\bbrand\s+(?:guidelines|guide|kit)\b",
+                    r"\bbranding\b",
+                    r"\bdesign\s+system\b",
+                ],
+                "handler": "handle_brand_guidelines",
+                "description": "Show brand guidelines"
+            },
+
+            "analytics_traffic": {
+                "patterns": [
+                    r"\banalytics\b",
+                    r"\bga4\b",
+                    r"\btraffic\s+(?:report|check|dikhao)\b",
+                    r"\bwebsite\s+traffic\b",
+                    r"\bkitne\s+visitors?\b",
+                    r"\busers?\s+(?:count|kitne)\b",
+                    r"\bpageviews?\b",
+                ],
+                "handler": "handle_analytics_traffic",
+                "description": "GA4 traffic report"
+            },
+
+            "ads_status": {
+                "patterns": [
+                    r"\bads?\s+(?:status|report|check)\b",
+                    r"\bmeta\s+ads?\b",
+                    r"\bgoogle\s+ads?\b",
+                    r"\bpaid\s+(?:ads?|campaign)\b",
+                    r"\bfacebook\s+ads?\s+status\b",
+                ],
+                "handler": "handle_ads_status",
+                "description": "Paid ads status"
+            },
+
+            "video_script": {
+                "patterns": [
+                    r"\b(?:reel|video|short)\s+(?:script|bana|create)\b",
+                    r"\bscript\s+(?:for|of)\s+(?:reel|video|short)\b",
+                    r"\binstagram\s+reel\b",
+                    r"\byoutube\s+short\b",
+                ],
+                "handler": "handle_video_script",
+                "description": "Generate reel/video script"
+            },
+
             # ===== WORDPRESS PUBLISHING (B1) =====
             "list_drafts": {
                 "patterns": [
@@ -513,6 +594,68 @@ class ExtendedIntentClassifier:
                 "description": "Apply approved product rewrite to WooCommerce"
             },
 
+            "push_all_rewrites": {
+                "patterns": [
+                    r"\bpush\s+(?:karo|all|rewrites?)\b",
+                    r"\bpush\s+all\b",
+                    r"\bapply\s+(?:all\s+)?changes?\b",
+                    r"\bhaan\b",
+                    r"\bhaa\b",
+                    r"\byes\s+apply\b",
+                    r"\bsab\s+(?:apply|push|karo)\b",
+                    r"\ball\s+rewrites?\s+(?:apply|push)\b",
+                ],
+                "handler": "handle_push_all_rewrites",
+                "description": "Apply all pending product rewrites to WooCommerce"
+            },
+
+            "push_all_fixes": {
+                "patterns": [
+                    r"\bsab\s+fix\s+karo\b",
+                    r"\bfix\s+all\b",
+                    r"\bsab\s+fix\b",
+                    r"\bfix\s+sab\b",
+                    r"\ball\s+fix\b",
+                    r"\b125\s+fix\b",
+                    r"\bpura\s+fix\b",
+                ],
+                "handler": "handle_push_all_fixes",
+                "description": "Apply ALL fixes: products + blogs + pages + categories"
+            },
+
+            "rewrite_pages": {
+                "patterns": [
+                    r"\brewrite\s+pages?\b",
+                    r"\bpage(?:s)?\s+rewrite\b",
+                    r"\bfix\s+pages?\b",
+                ],
+                "handler": "handle_rewrite_pages",
+                "description": "AI-rewrite flagged page titles"
+            },
+
+            "push_blog_fixes": {
+                "patterns": [
+                    r"\bpush\s+blogs?\b",
+                    r"\bapply\s+blog\s+fixes?\b",
+                    r"\bblog\s+fix\s+push\b",
+                ],
+                "handler": "handle_push_blog_fixes",
+                "description": "Apply all pending blog title rewrites"
+            },
+
+            "changelog_report": {
+                "patterns": [
+                    r"\bchangelog\b",
+                    r"\breport\b",
+                    r"\bsummary\b",
+                    r"\blast\s+(?:changelog|report)\b",
+                    r"\bbefore\s+after\b",
+                    r"\bchanges?\s+report\b",
+                ],
+                "handler": "handle_changelog_report",
+                "description": "Send last changelog/report file"
+            },
+
             "rewrite_status": {
                 "patterns": [
                     r"\brewrite(?:s)?\s+(?:status|pending|dikhao|show|list)\b",
@@ -535,7 +678,56 @@ class ExtendedIntentClassifier:
                 "handler": "handle_disclaimer_injection",
                 "description": "Add FDA disclaimer to all products"
             },
-            
+
+            "scan_blog_posts": {
+                "patterns": [
+                    r"\bscan\s+(?:all\s+)?blog(?:s|[\s_]posts?)?\b",
+                    r"\bblog\s+(?:scan|check|audit)\b",
+                    r"\bblog\s+(?:compliance|violations?|health)\b",
+                    r"\bcheck\s+blog\s+posts?\b",
+                    r"\bblog\s+posts?\s+(?:scan|check)\b",
+                ],
+                "handler": "handle_scan_blog_posts",
+                "description": "Scan blog posts for health claim violations"
+            },
+
+            "rewrite_blogs": {
+                "patterns": [
+                    r"\brewrite\s+(?:flagged\s+)?blogs?\b",
+                    r"\bblog\s+rewrite\b",
+                    r"\bfix\s+blog\s+(?:titles?|posts?)\b",
+                    r"\bblog\s+title\s+fix\b",
+                ],
+                "handler": "handle_rewrite_blogs",
+                "description": "AI-rewrite flagged blog post titles (saves for approval)"
+            },
+
+            "scan_pages": {
+                "patterns": [
+                    r"\bscan\s+(?:wp\s+)?pages?\b",
+                    r"\bpage\s+(?:scan|check|audit)\b",
+                    r"\bcheck\s+pages?\s+(?:compliance|violations?|content)\b",
+                    r"\bwp\s+pages?\s+scan\b",
+                ],
+                "handler": "handle_scan_pages",
+                "description": "Scan WordPress pages for health claim violations"
+            },
+
+            "rename_categories": {
+                "patterns": [
+                    r"\brename\s+categor(?:y|ies)\b",
+                    r"\bcategor(?:y|ies)\s+rename\b",
+                    r"\bfix\s+categor(?:y|ies)\b",
+                    r"\bcategor(?:y|ies)\s+(?:compliance|violations?|fix)\b",
+                    r"\bscan\s+categor(?:y|ies)\b",
+                    r"\bcategor(?:y|ies)\s+(?:scan|check)\b",
+                    # Hindi
+                    r"\bcategory\s+(?:fix|theek|badlo|rename)\s+kar(?:o|en)?\b",
+                ],
+                "handler": "handle_rename_categories",
+                "description": "Scan and rename risky WooCommerce category names"
+            },
+
             "inventory_status": {
                 "patterns": [
                     r"\binventory\s+(?:status|report|check)\b",
@@ -750,7 +942,78 @@ class ExtendedIntentClassifier:
                 domain_match = re.search(r'([a-zA-Z0-9-]+\.(?:com|in|co\.in|net|org))', message)
                 if domain_match:
                     data["competitor_url"] = f"https://{domain_match.group(1)}"
-        
+
+        elif intent == "image_generate":
+            # Extract design/image description from message
+            patterns = [
+                r"(?:image|photo|design|picture)\s+(?:generate|bana|create|make)\s+(.+?)$",
+                r"(?:design|banao|karo)\s+(.+?)$",
+                r"(?:about|for|on|par)\s+[\"']?(.+?)[\"']?\s*$",
+                r"social\s+post\s+(?:about|for)\s+(.+?)$",
+            ]
+            for p in patterns:
+                match = re.search(p, message, re.IGNORECASE)
+                if match:
+                    data["query"] = match.group(1).strip()
+                    break
+            if not data.get("query"):
+                # Fallback: everything after first command word
+                stripped = re.sub(
+                    r"^(image|photo|design|picture)\s+(?:generate|bana|create|make)\s*",
+                    "", message, flags=re.IGNORECASE
+                ).strip()
+                if len(stripped) > 3:
+                    data["query"] = stripped
+
+        elif intent == "ad_creative":
+            for p in [
+                r"(?:ad|creative)\s+(?:for|about)\s+[\"']?(.+?)[\"']?\s*$",
+                r"(?:meta|google|facebook)\s+ad\s+(.+?)$",
+            ]:
+                m = re.search(p, message, re.IGNORECASE)
+                if m and len(m.group(1).strip()) > 2:
+                    data["query"] = m.group(1).strip()
+                    break
+        elif intent in ("blog_banner", "carousel_design"):
+            for p in [
+                r"(?:banner|carousel|slide)\s+(?:for|about)\s+[\"']?(.+?)[\"']?\s*$",
+                r"blog\s+banner\s+(.+?)$",
+            ]:
+                m = re.search(p, message, re.IGNORECASE)
+                if m and len(m.group(1).strip()) > 2:
+                    data["topic"] = m.group(1).strip()
+                    break
+        elif intent == "video_script":
+            for p in [
+                r"(?:reel|video|short)\s+script\s+(?:for|about)\s+[\"']?(.+?)[\"']?\s*$",
+                r"script\s+(?:for|of)\s+(.+?)$",
+            ]:
+                m = re.search(p, message, re.IGNORECASE)
+                if m and len(m.group(1).strip()) > 2:
+                    data["topic"] = m.group(1).strip()
+                    break
+
+        elif intent == "create_social":
+            # Extract topic for social post
+            patterns = [
+                r"(?:social|post|instagram|facebook)\s+(?:post|content|bana|likh)\s+(?:about|on|for)\s+[\"']?(.+?)[\"']?\s*$",
+                r"(?:post|content)\s+(?:bana|likh|create)\s+(?:about|on|for)\s+[\"']?(.+?)[\"']?\s*$",
+                r"(?:about|on|par|topic)\s+[\"']?(.+?)[\"']?\s*$",
+                r"social\s+post\s+[\"']?(.+?)[\"']?\s*$",
+            ]
+            for p in patterns:
+                match = re.search(p, message, re.IGNORECASE)
+                if match:
+                    data["topic"] = match.group(1).strip()
+                    break
+            if not data.get("topic"):
+                stripped = re.sub(
+                    r"^(social|instagram|facebook|pinterest)\s+(?:post|caption|content)\s*",
+                    "", message, flags=re.IGNORECASE
+                ).strip()
+                if len(stripped) > 3:
+                    data["topic"] = stripped
+
         return data
 
 
@@ -1007,28 +1270,37 @@ class IntentResponseHandler:
     def handle_help(self, intent):
         """Show all available commands"""
         response = (
-            "🛠️ *FALCON AGENCY COMMANDS*\n"
-            "─────────────────\n"
+            "🛠️ *FALCON AGENCY — WORLD-CLASS COMMANDS*\n"
+            "─────────────────────────────────\n"
             "🏥 *Health & Compliance*\n"
-            "• \"health scan\" — Full site audit\n"
-            "• \"fix titles\" — Fix risky product names\n"
-            "• \"add disclaimer\" — Add FDA disclaimer\n"
-            "• \"is this safe: [text]\" — Text check\n\n"
+            "• \"health scan\" — Full site audit (125+ areas)\n"
+            "• \"scan products\" — WooCommerce compliance\n"
+            "• \"scan blogs\" / \"scan pages\" — Blog & page scan\n"
+            "• \"push karo\" — Apply product rewrites\n"
+            "• \"sab fix karo\" — Apply ALL (products+blogs+pages+categories)\n"
+            "• \"changelog\" — Last report\n\n"
             "🛒 *Store & Sales*\n"
             "• \"store status\" — Product/API audit\n"
             "• \"order check\" — Recent orders\n"
             "• \"revenue\" — Sales summary\n"
-            "• \"profit report\" — Munafa calculation\n\n"
-            "📝 *Content Pipeline*\n"
-            "• \"write blog on [topic]\" — Draft blog\n"
-            "• \"social posts on [topic]\" — IG/FB/Pin\n"
-            "• \"content status\" — Check drafts\n"
-            "• \"publish [id]\" — Go live\n\n"
-            "🌍 *Marketing*\n"
-            "• \"competitor scan [url]\" — Spy\n"
-            "• \"polish customers\" — Recovery\n\n"
+            "• \"profit report\" — Munafa\n\n"
+            "📝 *Content*\n"
+            "• \"blog likh about [topic]\" — Draft blog\n"
+            "• \"social post about [topic]\" — IG+FB posts\n"
+            "• \"reel script for [topic]\" — Video script\n"
+            "• \"content status\" — Drafts\n"
+            "• \"publish\" — Go live\n\n"
+            "🎨 *Design & Ads*\n"
+            "• \"design [subject]\" — AI image\n"
+            "• \"ad creative [topic]\" — Meta/Google ad\n"
+            "• \"blog banner [topic]\" — Featured image\n"
+            "• \"carousel [topics]\" — Carousel slides\n"
+            "• \"brand guidelines\" — Brand kit\n\n"
+            "📊 *Analytics & Ads*\n"
+            "• \"analytics\" / \"ga4\" — Traffic report\n"
+            "• \"ads status\" — Paid ads info\n\n"
             "⚙️ *System*\n"
-            "• \"status\" — AI workforce update\n"
+            "• \"status\" — Workforce update\n"
             "• \"backup\" — Data snapshot\n"
             "• \"help\" — This menu"
         )
@@ -1058,6 +1330,125 @@ class IntentResponseHandler:
         return {
             "response": f"❌ Injection failed: {result.get('error')}",
             "success": False
+        }
+
+    # ===== BLOG / PAGE / CATEGORY HANDLERS =====
+
+    def handle_scan_blog_posts(self, intent):
+        """Scan all blog posts for health claim violations."""
+        result = self.bridge.scan_blog_posts()
+        if result.get("success"):
+            total = result.get("total", 0)
+            flagged = result.get("flagged", 0)
+            posts = result.get("posts", [])
+            response = (
+                "📰 *BLOG POST COMPLIANCE SCAN*\n"
+                "─────────────────────\n"
+                "📝 Total Posts Scanned: {}\n"
+                "⚠️ Flagged: {}\n"
+                "✅ Clean: {}\n"
+            ).format(total, flagged, total - flagged)
+            if posts:
+                response += "\n🔴 *Flagged Blog Posts:*\n"
+                for p in posts[:15]:
+                    response += "   • {}\n".format(p["title"][:60])
+                if flagged > 15:
+                    response += "   ...and {} more.\n".format(flagged - 15)
+            if flagged > 0:
+                response += "\n💡 Send 'rewrite blogs' to generate title fixes."
+            return {"response": response, "success": True}
+        return {
+            "response": "❌ Blog scan failed: {}".format(result.get("error")),
+            "success": False,
+        }
+
+    def handle_rewrite_blogs(self, intent):
+        """AI-rewrite flagged blog titles. Saves for approval."""
+        result = self.bridge.rewrite_blog_posts()
+        if result.get("success"):
+            count = result.get("rewrites", 0)
+            if count == 0:
+                return {
+                    "response": (
+                        "📝 No flagged blog posts found.\n"
+                        "Run 'scan blogs' first."
+                    ),
+                    "success": True,
+                }
+            return {
+                "response": (
+                    "✅ *Blog Rewrites Generated*\n"
+                    "─────────────────────\n"
+                    "{} title rewrites saved.\n\n"
+                    "📂 Saved to: data/content/product_rewrites/\n"
+                    "Review before applying."
+                ).format(count),
+                "success": True,
+            }
+        return {
+            "response": "❌ Blog rewrite failed: {}".format(result.get("error")),
+            "success": False,
+        }
+
+    def handle_scan_pages(self, intent):
+        """Scan WP pages for health claim violations."""
+        result = self.bridge.scan_pages()
+        if result.get("success"):
+            total = result.get("total", 0)
+            flagged = result.get("flagged", 0)
+            pages = result.get("pages", [])
+            response = (
+                "📄 *PAGES COMPLIANCE SCAN*\n"
+                "─────────────────────\n"
+                "📝 Total Pages: {}\n"
+                "⚠️ Flagged: {}\n"
+                "✅ Clean: {}\n"
+            ).format(total, flagged, total - flagged)
+            if pages:
+                response += "\n🔴 *Flagged Pages:*\n"
+                for p in pages:
+                    response += "   • {} — {}\n".format(
+                        p["title"][:55], p.get("link", "")[:50]
+                    )
+            if flagged == 0:
+                response += "\n✅ All pages are compliant."
+            return {"response": response, "success": True}
+        return {
+            "response": "❌ Page scan failed: {}".format(result.get("error")),
+            "success": False,
+        }
+
+    def handle_rename_categories(self, intent):
+        """Scan and rename risky category names.
+        First call is dry-run preview. Second call applies."""
+        # Check message for confirmation
+        msg = intent.get("message", "").lower()
+        apply_now = any(
+            w in msg
+            for w in ["apply", "haan", "yes", "kar do", "karo", "confirm", "rename now"]
+        )
+        result = self.bridge.rename_risky_categories(dry_run=not apply_now)
+        if result.get("success"):
+            if result.get("dry_run"):
+                return {
+                    "response": result.get("preview", "No risky categories found."),
+                    "success": True,
+                }
+            renamed = result.get("renamed", 0)
+            errors = result.get("errors", [])
+            response = (
+                "✅ *CATEGORIES RENAMED*\n"
+                "─────────────────────\n"
+                "{} categories renamed successfully.\n"
+            ).format(renamed)
+            if errors:
+                response += "\n❌ Errors:\n"
+                for e in errors[:5]:
+                    response += "   • {}\n".format(e)
+            return {"response": response, "success": True}
+        return {
+            "response": "❌ Category rename failed: {}".format(result.get("error")),
+            "success": False,
         }
 
     # ===== HEALTH REWRITER HANDLERS (Phase 3) =====
@@ -1192,6 +1583,79 @@ class IntentResponseHandler:
             "success": True,
         }
 
+    def handle_push_all_rewrites(self, intent):
+        """Apply all pending product rewrites. Returns summary + document_path."""
+        result = self.bridge.run_push_all_rewrites()
+        if result.get("success"):
+            summary = result.get("summary", "Push complete.")
+            report_path = result.get("report_path")
+            return {
+                "response": summary,
+                "success": True,
+                "document_path": report_path,
+            }
+        return {
+            "response": result.get("summary", result.get("error", "Push failed.")),
+            "success": False,
+        }
+
+    def handle_push_all_fixes(self, intent):
+        """Apply ALL fixes: products + blogs + pages + categories."""
+        result = self.bridge.run_push_all()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "Fix all complete."),
+                "success": True,
+                "document_path": result.get("report_path"),
+            }
+        return {
+            "response": result.get("summary", "No pending fixes or error."),
+            "success": True,
+        }
+
+    def handle_rewrite_pages(self, intent):
+        """AI-rewrite flagged page titles. Run scan pages first."""
+        result = self.bridge.run_rewrite_pages()
+        if result.get("success"):
+            count = result.get("rewrites", 0)
+            return {
+                "response": f"Page rewrites saved: {count}. Say 'push all' or 'fix all' to apply.",
+                "success": True,
+            }
+        return {"response": result.get("error", "Failed."), "success": False}
+
+    def handle_push_blog_fixes(self, intent):
+        """Apply all pending blog title rewrites."""
+        result = self.bridge.run_push_all_blog_fixes()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "Blog fixes applied."),
+                "success": True,
+                "document_path": result.get("report_path"),
+            }
+        return {
+            "response": result.get("summary", result.get("error", "No pending blog fixes.")),
+            "success": result.get("applied", 0) > 0,
+            "document_path": result.get("report_path"),
+        }
+
+    def handle_changelog_report(self, intent):
+        """Send last changelog/report file via WhatsApp."""
+        report_path = self.bridge.get_latest_changelog_report()
+        if not report_path:
+            return {
+                "response": (
+                    "📋 Koi changelog/report nahi mila.\n"
+                    "Pehle *'push all'* ya *'apply changes'* karo."
+                ),
+                "success": False,
+            }
+        return {
+            "response": "📋 Last changelog report bhej raha hoon.",
+            "success": True,
+            "document_path": report_path,
+        }
+
     def handle_inventory_status(self, intent):
         """Inventory burn rate report"""
         result = self.bridge.get_burn_rate_report()
@@ -1264,27 +1728,55 @@ class IntentResponseHandler:
         }
     
     def handle_create_social(self, intent):
-        """Create social media posts"""
-        result = self.bridge.tools.get("content")
-        
-        if not result:
+        """Create social media posts — generates when topic provided."""
+        topic = intent.get("extracted_data", {}).get("topic", "")
+        msg = intent.get("message_text", "")
+
+        if not self.bridge.tools.get("content"):
             return {
                 "response": "❌ Content Pipeline not loaded.",
                 "success": False
             }
-        
+
+        if not topic or len(topic) < 3:
+            return {
+                "response": (
+                    "📱 *Social Posts Generator*\n\n"
+                    "Topic batao — main IG + FB posts bana dunga.\n\n"
+                    "Examples:\n"
+                    "• \"Social post about ashwagandha benefits\"\n"
+                    "• \"Instagram post on turmeric morning routine\"\n"
+                    "• \"Facebook post for ayurvedic wellness tips\"\n\n"
+                    "Ya \"Generate weekly content\" — full week batch."
+                ),
+                "success": True
+            }
+
+        result = self.bridge.create_social_single(topic)
+        if result.get("success"):
+            batch = result.get("batch", {})
+            posts = batch.get("posts", [])
+            total = batch.get("total_posts", 0)
+            resp = (
+                f"✅ *SOCIAL POSTS GENERATED*\n"
+                f"─────────────────────\n"
+                f"📌 Topic: {topic}\n"
+                f"📱 Posts: {total}\n"
+            )
+            for p in posts[:3]:
+                platform = p.get("platform", "?")
+                status = p.get("status", "?")
+                content = (p.get("content") or p.get("prompt", ""))[:150]
+                resp += f"\n• *{platform.upper()}* ({status})\n"
+                if content:
+                    resp += f"  {content}…\n"
+            if total > 3:
+                resp += f"\n... +{total - 3} more.\n"
+            resp += f"\n📂 {result.get('file', 'data/content/drafts/')}"
+            return {"response": resp, "success": True}
         return {
-            "response": (
-                "📱 *Social Posts Generator*\n\n"
-                "Options:\n"
-                "1️⃣ \"Generate weekly content\" — "
-                "Full week batch\n"
-                "2️⃣ \"Social post about [topic]\" — "
-                "Single post\n\n"
-                "Current drafts check karo:\n"
-                "\"Content status\" bol do"
-            ),
-            "success": True
+            "response": f"❌ Social generation failed: {result.get('error')}",
+            "success": False
         }
     
     def handle_content_status(self, intent):
@@ -1625,19 +2117,188 @@ class IntentResponseHandler:
             }
             
     def handle_image_generate(self, intent):
-        """Generate an image using MediaAgent"""
+        """Generate an image using bridge ImageGenerator or MediaAgent."""
         try:
+            query = intent.get("extracted_data", {}).get("query", "")
+            msg = intent.get("message_text", "")
+            if not query and msg:
+                query = re.sub(
+                    r"^(image|photo|design|picture)\s+(?:generate|bana|create|make)\s*",
+                    "", msg, flags=re.IGNORECASE
+                ).strip()
+            if not query or len(query) < 2:
+                query = "premium ayurvedic herbal product, wellness theme"
+
+            img_tool = self.bridge.tools.get("image")
+            if img_tool:
+                result = img_tool.generate(query, style="product")
+                if result.get("success"):
+                    return {
+                        "response": result.get(
+                            "message",
+                            f"🎨 Image generated: {result.get('filename', '')}"
+                        ),
+                        "success": True,
+                    }
+                return {
+                    "response": f"❌ {result.get('error', 'Image generation failed')}",
+                    "success": False,
+                }
+
             from agents.media import MediaAgent
             media = MediaAgent()
-            details = intent.get("extracted_data", {}).get("query", "product illustration")
-            result = media.execute("design", details)
+            result = media.execute("design", query)
             return {"response": result, "success": True}
         except Exception as e:
             return {
                 "response": f"❌ Image generation failed: {e}",
                 "success": False
             }
-    
+
+    def handle_ad_creative(self, intent):
+        """Generate Meta/Google ad creative."""
+        topic = intent.get("extracted_data", {}).get("query", "") or intent.get("extracted_data", {}).get("topic", "")
+        msg = intent.get("message_text", "")
+        if not topic:
+            topic = re.sub(r"^(ad|meta|google|facebook|instagram)\s+(?:ad|creative|design)\s*", "", msg, flags=re.IGNORECASE).strip()
+        if not topic or len(topic) < 2:
+            topic = "premium ayurvedic herbal product, wellness"
+        try:
+            from agents.designer import DesignerAgent
+            designer = DesignerAgent()
+            result = designer.create_ad_creative(topic)
+            return {"response": result, "success": "✅" in result}
+        except Exception as e:
+            return {"response": f"❌ Ad creative failed: {e}", "success": False}
+
+    def handle_blog_banner(self, intent):
+        """Generate blog featured image."""
+        topic = intent.get("extracted_data", {}).get("topic", "")
+        msg = intent.get("message_text", "")
+        if not topic:
+            topic = re.sub(r"^(blog|banner|featured)\s+(?:banner|image)\s*", "", msg, flags=re.IGNORECASE).strip()
+        if not topic or len(topic) < 2:
+            topic = "ayurvedic wellness"
+        try:
+            from agents.designer import DesignerAgent
+            designer = DesignerAgent()
+            result = designer.create_blog_banner(topic)
+            return {"response": result, "success": "✅" in result}
+        except Exception as e:
+            return {"response": f"❌ Banner failed: {e}", "success": False}
+
+    def handle_carousel_design(self, intent):
+        """Generate carousel slides."""
+        topics = intent.get("extracted_data", {}).get("topic", "")
+        msg = intent.get("message_text", "")
+        if not topics:
+            topics = re.sub(r"^(carousel|slide)\s+(?:design|bana)\s*", "", msg, flags=re.IGNORECASE).strip()
+        if not topics:
+            topics = "ayurvedic benefits, how to use, buy now"
+        try:
+            from agents.designer import DesignerAgent
+            designer = DesignerAgent()
+            result = designer.create_carousel(topics)
+            return {"response": result, "success": "✅" in result}
+        except Exception as e:
+            return {"response": f"❌ Carousel failed: {e}", "success": False}
+
+    def handle_brand_guidelines(self, intent):
+        """Show brand guidelines."""
+        try:
+            from agents.designer import DesignerAgent
+            designer = DesignerAgent()
+            guidelines = designer.get_brand_guidelines()
+            return {
+                "response": f"📋 *FALCON HERBS BRAND GUIDELINES*\n```\n{guidelines}\n```",
+                "success": True
+            }
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_analytics_traffic(self, intent):
+        """GA4 traffic report - users, sessions, pageviews."""
+        try:
+            ga4 = self.bridge.tools.get("ga4")
+            if not ga4:
+                return {"response": "❌ GA4 not loaded.", "success": False}
+            result = ga4.get_traffic_report(days=7)
+            if result.get("success"):
+                u, s, p = result.get("users", 0), result.get("sessions", 0), result.get("pageviews", 0)
+                return {
+                    "response": (
+                        f"📊 *TRAFFIC REPORT — Last 7 Days*\n"
+                        f"{'─' * 25}\n"
+                        f"👥 Users: {u:,}\n"
+                        f"🔄 Sessions: {s:,}\n"
+                        f"📄 Pageviews: {p:,}\n"
+                        f"\n📅 {result.get('period', '')}"
+                    ),
+                    "success": True,
+                }
+            return {
+                "response": ga4.get_status() + f"\n\n⚠️ {result.get('error', '')}",
+                "success": False,
+            }
+        except Exception as e:
+            return {"response": f"❌ Analytics error: {e}", "success": False}
+
+    def handle_ads_status(self, intent):
+        """Paid ads status — Meta/Google Ads foundation."""
+        return {
+            "response": (
+                "📢 *PAID ADS MODULE*\n"
+                "─────────────────────\n"
+                "🔧 Foundation ready. Full integration coming.\n\n"
+                "Configure in .env:\n"
+                "• META_ADS_TOKEN — Meta Business API\n"
+                "• GOOGLE_ADS_CUSTOMER_ID — Google Ads\n"
+                "• GOOGLE_ADS_DEVELOPER_TOKEN\n\n"
+                "Abhi: Ad creatives generate kar sakte ho — "
+                "\"ad creative ashwagandha\" bol do."
+            ),
+            "success": True,
+        }
+
+    def handle_video_script(self, intent):
+        """Generate reel/video script for short-form content."""
+        topic = intent.get("extracted_data", {}).get("topic", "")
+        msg = intent.get("message_text", "")
+        if not topic:
+            topic = re.sub(
+                r"^(reel|video|short|script)\s+(?:script|bana|create|for)\s*",
+                "", msg, flags=re.IGNORECASE
+            ).strip()
+        if not topic or len(topic) < 2:
+            topic = "ayurvedic morning routine"
+        try:
+            from core.ai_client import call_ai
+            prompt = f"""Create a 30-60 second Instagram Reel / YouTube Short script for Falcon Herbs (Ayurvedic wellness brand).
+
+TOPIC: {topic}
+
+Format:
+- Hook (first 3 sec): Grab attention
+- Body: 2-3 key points, conversational
+- CTA: Soft sell, link in bio
+- Caption: 1-2 lines
+- Hashtags: 5-7 relevant
+
+Keep it punchy, under 150 words. No health claims."""
+            messages = [
+                {"role": "system", "content": "You write viral short-form video scripts. Punchy, hook-first."},
+                {"role": "user", "content": prompt},
+            ]
+            script = call_ai("media", messages)
+            if script:
+                return {
+                    "response": f"🎬 *REEL SCRIPT*\n{'─'*25}\n{script[:1200]}",
+                    "success": True,
+                }
+            return {"response": "❌ Script generation failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
     # ===== WORDPRESS PUBLISHING (B1) =====
     
     def handle_list_drafts(self, intent):

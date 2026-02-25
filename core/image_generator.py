@@ -129,7 +129,13 @@ class ImageGenerator:
                 f"Lifestyle photography showing {prompt}, "
                 "natural lighting, warm tones, wellness theme, "
                 "authentic ayurvedic setting, premium quality"
-            )
+            ),
+            "ad_creative": (
+                f"Premium ad creative for {prompt}, "
+                "conversion-focused, clean composition, "
+                "earthy greens and warm browns, "
+                "ayurvedic wellness brand, professional, no text overlay"
+            ),
         }
         return bases.get(style, f"High quality image of {prompt}, professional, 4K")
     

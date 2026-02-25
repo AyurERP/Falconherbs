@@ -24,9 +24,17 @@ class WooCommerceConnector:
         self.consumer_key = consumer_key or os.getenv("FALCONHERBS_WC_API_KEY")
         self.consumer_secret = consumer_secret or os.getenv("FALCONHERBS_WC_API_SECRET")
         self.api_base = f"{self.site_url}/wp-json/wc/v3"
+        # WordPress REST API auth (blog posts, pages, categories)
+        self.wp_api_base = f"{self.site_url}/wp-json/wp/v2"
+        self.wp_user = os.getenv("FALCONHERBS_WP_USER")
+        # App Password preferred; falls back to regular password
+        self.wp_password = (
+            os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+            or os.getenv("FALCONHERBS_WP_PASSWORD")
+        )
         self.data_dir = Path("data/woocommerce")
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        
+
         if not self.consumer_key or not self.consumer_secret:
             print("⚠️ WooCommerce API keys not set!")
             print("   Set FALCONHERBS_WC_API_KEY and FALCONHERBS_WC_API_SECRET in .env")
@@ -105,8 +113,159 @@ class WooCommerceConnector:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
+    # ==================== WORDPRESS REST API ====================
+
+    def _make_wp_request(self, endpoint, params=None):
+        """WordPress REST API GET — uses Basic Auth (WP user + password)."""
+        import base64
+        url = f"{self.wp_api_base}/{endpoint}"
+        headers = {}
+        if self.wp_user and self.wp_password:
+            token = base64.b64encode(
+                f"{self.wp_user}:{self.wp_password}".encode()
+            ).decode()
+            headers["Authorization"] = f"Basic {token}"
+        try:
+            response = requests.get(
+                url, params=params or {}, headers=headers, timeout=30
+            )
+            response.raise_for_status()
+            return {"success": True, "data": response.json()}
+        except requests.exceptions.ConnectionError:
+            return {"success": False, "error": "Cannot connect to site."}
+        except requests.exceptions.HTTPError as e:
+            code = e.response.status_code
+            if code == 401:
+                return {
+                    "success": False,
+                    "error": (
+                        "HTTP 401: WP auth failed. "
+                        "Generate an Application Password in "
+                        "WP Admin > Users > Profile > Application Passwords "
+                        "and add FALCONHERBS_WP_APP_PASSWORD to .env"
+                    ),
+                }
+            return {"success": False, "error": f"HTTP {code}: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _make_wp_update(self, endpoint, data, method="PUT"):
+        """WordPress REST API write — uses Basic Auth."""
+        import base64
+        url = f"{self.wp_api_base}/{endpoint}"
+        headers = {"Content-Type": "application/json"}
+        if self.wp_user and self.wp_password:
+            token = base64.b64encode(
+                f"{self.wp_user}:{self.wp_password}".encode()
+            ).decode()
+            headers["Authorization"] = f"Basic {token}"
+        try:
+            fn = requests.post if method == "POST" else requests.put
+            response = fn(url, json=data, headers=headers, timeout=30)
+            response.raise_for_status()
+            return {"success": True, "data": response.json()}
+        except requests.exceptions.HTTPError as e:
+            code = e.response.status_code
+            if code == 401:
+                return {
+                    "success": False,
+                    "error": (
+                        "HTTP 401: WP auth failed. "
+                        "Add FALCONHERBS_WP_APP_PASSWORD to .env"
+                    ),
+                }
+            return {"success": False, "error": f"HTTP {code}: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_posts(self, per_page=100, status="publish"):
+        """Fetch all published blog posts via WP REST API."""
+        all_posts = []
+        page = 1
+        while True:
+            result = self._make_wp_request(
+                "posts",
+                {"per_page": per_page, "page": page, "status": status},
+            )
+            if not result["success"]:
+                return result
+            batch = result["data"]
+            if not batch:
+                break
+            all_posts.extend(batch)
+            page += 1
+            if len(batch) < per_page:
+                break
+        return {"success": True, "data": all_posts, "total": len(all_posts)}
+
+    def update_post(self, post_id, data):
+        """Update a blog post via WP REST API.
+        data: dict with 'title', 'content', or 'excerpt' keys."""
+        result = self._make_wp_update(f"posts/{post_id}", data)
+        if result.get("success"):
+            return {
+                "success": True,
+                "post_id": post_id,
+                "updated_fields": list(data.keys()),
+            }
+        return result
+
+    def get_pages(self, status="publish"):
+        """Fetch all WP pages."""
+        result = self._make_wp_request(
+            "pages", {"per_page": 100, "status": status}
+        )
+        if not result["success"]:
+            return result
+        return {
+            "success": True,
+            "data": result["data"],
+            "total": len(result["data"]),
+        }
+
+    def update_page(self, page_id, data):
+        """Update a WP page via REST API."""
+        result = self._make_wp_update(f"pages/{page_id}", data)
+        if result.get("success"):
+            return {
+                "success": True,
+                "page_id": page_id,
+                "updated_fields": list(data.keys()),
+            }
+        return result
+
+    def get_wc_categories(self):
+        """Fetch all WooCommerce product categories."""
+        all_cats = []
+        page = 1
+        while True:
+            result = self._make_request(
+                "products/categories", {"per_page": 100, "page": page}
+            )
+            if not result["success"]:
+                return result
+            batch = result["data"]
+            if not batch:
+                break
+            all_cats.extend(batch)
+            page += 1
+            if len(batch) < 100:
+                break
+        return {"success": True, "data": all_cats, "total": len(all_cats)}
+
+    def update_wc_category(self, cat_id, data):
+        """Rename or update a WooCommerce product category."""
+        result = self._make_update_request(f"products/categories/{cat_id}", data)
+        if result.get("success"):
+            return {
+                "success": True,
+                "category_id": cat_id,
+                "updated_fields": list(data.keys()),
+            }
+        return result
+
     # ==================== PRODUCTS ====================
-    
+
     def get_all_products(self, save=True):
         """Fetch all products with pagination"""
         all_products = []

@@ -249,6 +249,118 @@ class WhatsAppNotifier:
             log.critical("WhatsApp send crashed: %s", exc, exc_info=True)
             return False
 
+    def send_document(
+        self,
+        file_path: str | Path,
+        caption: str = "",
+        filename: str | None = None,
+    ) -> bool:
+        """
+        Upload a file and send it as a WhatsApp document to the owner.
+
+        Parameters
+        ----------
+        file_path : str | Path
+            Local path to the file (TXT, PDF, etc.).
+        caption : str
+            Optional caption text.
+        filename : str | None
+            Display filename. Defaults to the file's basename.
+
+        Returns
+        -------
+        bool
+            True if sent successfully.
+        """
+        if not self._configured:
+            log.warning("WhatsApp not configured — document not sent")
+            return False
+
+        path = Path(file_path)
+        if not path.exists():
+            log.warning("WhatsApp send_document: file not found: %s", path)
+            return False
+
+        display_name = filename or path.name
+        mime_map = {
+            ".txt": "text/plain",
+            ".csv": "text/csv",
+            ".pdf": "application/pdf",
+            ".doc": "application/msword",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }
+        mime_type = mime_map.get(path.suffix.lower(), "application/octet-stream")
+
+        try:
+            # 1. Upload media to Meta
+            upload_url = f"{META_API_BASE}/{self._phone_id}/media"
+            with open(path, "rb") as f:
+                files = {"file": (path.name, f, mime_type)}
+                data = {"messaging_product": "whatsapp", "type": mime_type}
+                resp = requests.post(
+                    upload_url,
+                    headers={"Authorization": f"Bearer {self._access_token}"},
+                    files=files,
+                    data=data,
+                    timeout=60,
+                )
+
+            if resp.status_code != 200:
+                log.warning(
+                    "WhatsApp media upload failed: %d %s",
+                    resp.status_code,
+                    resp.text[:500],
+                )
+                return False
+
+            media_id = resp.json().get("id")
+            if not media_id:
+                log.warning("WhatsApp media upload: no id in response")
+                return False
+
+            # 2. Send document message
+            msg_url = f"{META_API_BASE}/{self._phone_id}/messages"
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": self._recipient,
+                "type": "document",
+                "document": {
+                    "id": media_id,
+                    "filename": display_name,
+                },
+            }
+            if caption:
+                payload["document"]["caption"] = caption[:1024]
+
+            resp2 = requests.post(
+                msg_url,
+                headers={
+                    "Authorization": f"Bearer {self._access_token}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=HTTP_TIMEOUT,
+            )
+
+            if resp2.status_code == 200:
+                log.info("WhatsApp document sent: %s", display_name)
+                return True
+
+            log.warning(
+                "WhatsApp document send failed: %d %s",
+                resp2.status_code,
+                resp2.text[:300],
+            )
+            return False
+
+        except requests.RequestException as exc:
+            log.warning("WhatsApp send_document request error: %s", exc)
+            return False
+        except Exception as exc:
+            log.critical("WhatsApp send_document crashed: %s", exc, exc_info=True)
+            return False
+
     # ══════════════════════════════════════════════════════════════════
     #  APPROVAL SYSTEM
     # ══════════════════════════════════════════════════════════════════

@@ -27,7 +27,11 @@ Security:
 from __future__ import annotations
 
 import os
+import re
 import threading
+import requests
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from fastapi import FastAPI, Request
@@ -39,6 +43,9 @@ from core.whatsapp import WhatsAppNotifier
 
 if TYPE_CHECKING:
     from core.commander import FalconCommander
+
+UPLOADS_DIR = Path("data/uploads")
+META_API_BASE = "https://graph.facebook.com/v18.0"
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -290,6 +297,25 @@ class FalconWebhook:
                 )
                 return
 
+            # ── Handle media/document messages (Task 3) ──
+            if msg_type in ("image", "document", "audio", "video"):
+                saved_path = self._download_whatsapp_media(msg, msg_type)
+                if saved_path:
+                    media_obj = msg.get(msg_type, {}) or msg.get("document", {})
+                    caption = media_obj.get("caption", "") or media_obj.get("filename", "")
+                    text_for_commander = (
+                        f"[File received: {saved_path.name}]\n"
+                        f"Saved to: data/uploads/\n"
+                        f"{caption}".strip()
+                    )
+                    try:
+                        self._commander.handle_message(
+                            text_for_commander, message_id
+                        )
+                    except Exception as exc:
+                        log.warning("Commander handle (file) failed: %s", exc)
+                return
+
             # ── Only process text messages ──
             if msg_type != "text":
                 log.info("Webhook: non-text message (type=%s) — ignoring", msg_type)
@@ -376,6 +402,73 @@ class FalconWebhook:
                 "Webhook: _handle_incoming_message crashed: %s",
                 exc, exc_info=True,
             )
+
+    def _download_whatsapp_media(
+        self, msg: dict, msg_type: str
+    ) -> Optional[Path]:
+        """
+        Download media from WhatsApp Cloud API, save to data/uploads/.
+        Returns Path to saved file or None on failure.
+        """
+        media_obj = msg.get(msg_type) or msg.get("document") or msg.get("image")
+        if not media_obj:
+            return None
+
+        media_id = media_obj.get("id")
+        if not media_id:
+            return None
+
+        token = os.environ.get("WHATSAPP_ACCESS_TOKEN", "")
+        if not token:
+            log.warning("WHATSAPP_ACCESS_TOKEN not set — cannot download media")
+            return None
+
+        try:
+            # 1. Get download URL from Meta
+            url = f"{META_API_BASE}/{media_id}"
+            resp = requests.get(
+                url,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                log.warning("WhatsApp media URL fetch failed: %d", resp.status_code)
+                return None
+
+            data = resp.json()
+            download_url = data.get("url")
+            if not download_url:
+                return None
+
+            # 2. Download file
+            r2 = requests.get(
+                download_url,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=60,
+                stream=True,
+            )
+            r2.raise_for_status()
+
+            # 3. Determine filename and save
+            UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+            filename = media_obj.get("filename") or media_obj.get("sha256", "")[:12]
+            if not filename or filename == "":
+                ext = {"image": "jpg", "document": "pdf", "audio": "ogg", "video": "mp4"}.get(msg_type, "bin")
+                filename = f"upload_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+            else:
+                filename = re.sub(r'[^\w\-\.]', '_', filename)
+
+            saved = UPLOADS_DIR / filename
+            with open(saved, "wb") as f:
+                for chunk in r2.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            log.info("WhatsApp media saved: %s", saved)
+            return saved
+
+        except Exception as exc:
+            log.warning("WhatsApp media download failed: %s", exc)
+            return None
 
     def _is_allowed_sender(self, sender: str) -> bool:
         """Check if *sender* matches the configured owner phone number."""

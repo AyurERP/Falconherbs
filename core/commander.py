@@ -255,6 +255,13 @@ class FalconCommander:
                             memory.add_message(
                                 user_id, "assistant", reply_text
                             )
+                            # If handler returned a document (e.g. changelog report), send it
+                            doc_path = response.get("document_path")
+                            if doc_path and Path(doc_path).exists():
+                                self._whatsapp.send_document(
+                                    doc_path,
+                                    caption="Full before/after report",
+                                )
                             log.info(
                                 "Extended intent: %s (success=%s)",
                                 ext_result["intent"],

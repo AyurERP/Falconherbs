@@ -730,8 +730,10 @@ HEALTH RULES:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(batch, f, indent=2, ensure_ascii=False)
         
-        print(f"📱 Social batch saved: {filepath}")
-        print(f"   Total posts: {batch['total_posts']}")
+        try:
+            print(f"Social batch saved: {filepath} ({batch['total_posts']} posts)")
+        except UnicodeEncodeError:
+            print(f"Social batch saved: {filepath}")
         
         return {"success": True, "batch": batch, "file": str(filepath)}
 

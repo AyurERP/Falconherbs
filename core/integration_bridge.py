@@ -121,6 +121,15 @@ class IntegrationBridge:
             self.status["gsc"] = "loaded"
         except Exception as e:
             self.status["gsc"] = f"failed: {e}"
+
+        # GA4 Analytics
+        try:
+            from core.ga4_connector import ga4_connector
+            self.tools["ga4"] = ga4_connector
+            self.status["ga4"] = "loaded"
+        except Exception as e:
+            self.tools["ga4"] = None
+            self.status["ga4"] = f"failed: {e}"
         
         # Content Workflow (Phase 2)
         try:
@@ -559,6 +568,29 @@ class IntegrationBridge:
                 "success": False,
                 "error": str(e)
             }
+
+    def create_social_single(self, topic, platforms=None):
+        """Generate single-topic social posts (IG, FB, Pinterest)."""
+        try:
+            pipeline = self.tools.get("content")
+            if not pipeline:
+                return {
+                    "success": False,
+                    "error": "Content Pipeline not loaded"
+                }
+            if not platforms:
+                platforms = ["instagram", "facebook"]
+            result = pipeline.create_social_batch(
+                [{"topic": topic, "content_type": "educational"}],
+                platforms=platforms
+            )
+            return result
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "batch": None,
+            }
     
     def check_health_safety(self, text):
         """Quick health claims check on any text"""
@@ -634,6 +666,82 @@ class IntegrationBridge:
         except Exception as e:
             return f"❌ Rewrite status error: {e}"
 
+    def run_push_all_rewrites(self) -> dict:
+        """Apply all pending product rewrites. Returns summary + report_path."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {
+                    "success": False,
+                    "error": "Health Rewriter not loaded",
+                    "summary": "Health Rewriter not loaded.",
+                    "report_path": None,
+                }
+            return rewriter.push_all_rewrites()
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "summary": f"Push failed: {e}",
+                "report_path": None,
+            }
+
+    def run_push_all(self) -> dict:
+        """
+        Apply ALL pending fixes: products + blogs + pages + categories.
+        One command to fix everything. Returns combined summary + report_path.
+        """
+        parts = []
+        report_path = None
+        any_success = False
+        # 1. Products
+        r1 = self.run_push_all_rewrites()
+        if r1.get("applied", 0) > 0:
+            parts.append(f"Products: {r1.get('applied')} updated")
+            any_success = True
+        if r1.get("report_path"):
+            report_path = r1["report_path"]
+        # 2. Blogs
+        r2 = self.run_push_all_blog_fixes()
+        if r2.get("applied", 0) > 0:
+            parts.append(f"Blogs: {r2.get('applied')} updated")
+            any_success = True
+        if r2.get("report_path"):
+            report_path = r2["report_path"]
+        # 3. Pages
+        r3 = self.run_push_all_page_fixes()
+        if r3.get("applied", 0) > 0:
+            parts.append(f"Pages: {r3.get('applied')} updated")
+            any_success = True
+        if r3.get("report_path"):
+            report_path = r3["report_path"]
+        # 4. Categories (no dry run — apply)
+        r4 = self.rename_risky_categories(dry_run=False)
+        if r4.get("renamed", 0) > 0:
+            parts.append(f"Categories: {r4.get('renamed')} renamed")
+            any_success = True
+        summary = " | ".join(parts) if parts else "No pending fixes. Sab clean!"
+        if any_success:
+            summary = "FIX ALL COMPLETE: " + summary
+        return {
+            "success": any_success,
+            "summary": summary,
+            "report_path": report_path,
+            "products": r1.get("applied", 0),
+            "blogs": r2.get("applied", 0),
+            "pages": r3.get("applied", 0),
+            "categories": r4.get("renamed", 0),
+        }
+
+    def get_latest_changelog_report(self) -> str | None:
+        """Path to most recent changelog report file, or None."""
+        from pathlib import Path
+        reports = Path("data/reports")
+        if not reports.exists():
+            return None
+        files = sorted(reports.glob("report_*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+        return str(files[0]) if files else None
+
     def run_bulk_title_fix(self):
         """Scan all products and apply title-only safety fixes"""
         try:
@@ -651,6 +759,104 @@ class IntegrationBridge:
             if not rewriter:
                 return {"success": False, "error": "Health Rewriter not loaded"}
             return rewriter.inject_disclaimer()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # ── Blog Post Wrappers ──────────────────────────────────
+
+    def scan_blog_posts(self) -> dict:
+        """Scan all blog posts for health claim violations."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.scan_blog_posts()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def rewrite_blog_posts(self, post_id=None) -> dict:
+        """AI-rewrite flagged blog post titles.
+        Saves to product_rewrites/blog_{id}.json — never auto-applies."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.rewrite_blog_post(post_id=post_id)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def apply_blog_fix(self, post_id: int) -> dict:
+        """Apply an approved blog post title fix via WP REST API."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.apply_blog_fix(post_id)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def run_push_all_blog_fixes(self) -> dict:
+        """Apply all pending blog title rewrites."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded", "summary": "", "report_path": None}
+            return rewriter.push_all_blog_fixes()
+        except Exception as e:
+            return {"success": False, "error": str(e), "summary": str(e), "report_path": None}
+
+    def run_rewrite_pages(self) -> dict:
+        """AI-rewrite flagged page titles. Run scan_pages first."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.rewrite_pages()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def run_push_all_page_fixes(self) -> dict:
+        """Apply all pending page title rewrites."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded", "summary": "", "report_path": None}
+            return rewriter.push_all_page_fixes()
+        except Exception as e:
+            return {"success": False, "error": str(e), "summary": str(e), "report_path": None}
+
+    # ── Page Wrappers ───────────────────────────────────────
+
+    def scan_pages(self) -> dict:
+        """Scan all WP pages for health claim violations."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.scan_pages()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # ── Category Wrappers ───────────────────────────────────
+
+    def scan_categories(self) -> dict:
+        """Scan WooCommerce categories for risky names."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.scan_categories()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def rename_risky_categories(self, dry_run=True) -> dict:
+        """Rename all risky WooCommerce category names.
+        dry_run=True: preview only. dry_run=False: applies immediately."""
+        try:
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                return {"success": False, "error": "Health Rewriter not loaded"}
+            return rewriter.rename_all_risky_categories(dry_run=dry_run)
         except Exception as e:
             return {"success": False, "error": str(e)}
 
