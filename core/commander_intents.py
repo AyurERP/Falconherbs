@@ -406,6 +406,86 @@ class ExtendedIntentClassifier:
                 "handler": "handle_backup_verify",
                 "description": "Verify backup integrity"
             },
+
+            # ===== PLUGIN MANAGEMENT (BUILD 2) =====
+            "plugin_install": {
+                "patterns": [
+                    r"\bplugin\s+install\b",
+                    r"\binstall\s+plugin\b",
+                    r"\bplugin\s+lagao\b",
+                    r"\bplugin\s+add\b",
+                    r"\brank\s+math\b.*\binstall\b",
+                    r"\binstall\s+rank\s+math\b",
+                    r"\binstall\s+yoast\b",
+                ],
+                "handler": "handle_plugin_install",
+                "description": "Install plugin (approval gate)"
+            },
+            "plugin_list": {
+                "patterns": [
+                    r"\bplugin(?:s)?\s+(?:dikha|list|show|kitne)\b",
+                    r"\bplugins?\s+dikhao\b",
+                    r"\blist\s+plugin\b",
+                    r"\binstalled\s+plugin\b",
+                    r"\bkitne\s+plugin\b",
+                ],
+                "handler": "handle_plugin_list",
+                "description": "List installed plugins"
+            },
+            "plugin_recommend": {
+                "patterns": [
+                    r"\bspeed\s+improve\b",
+                    r"\bsite\s+slow\s+hai\b",
+                    r"\bperformance\s+plugin\b",
+                    r"\brecommend\s+plugin\b",
+                    r"\bplugin\s+recommend\b",
+                    r"\bplugin(?:s)?\s+for\s+(?:speed|performance|seo)\b",
+                    r"\bkaunse\s+plugin\b",
+                ],
+                "handler": "handle_plugin_recommend",
+                "description": "Recommend plugins for need"
+            },
+            "plugin_update": {
+                "patterns": [
+                    r"\bplugin(?:s)?\s+update\b",
+                    r"\bupdate\s+plugin(?:s)?\b",
+                    r"\bplugins?\s+update\s+karo\b",
+                    r"\bplugin\s+upgrade\b",
+                ],
+                "handler": "handle_plugin_update",
+                "description": "Update plugins (backup first)"
+            },
+
+            # ===== ADS MONITORING (BUILD 4) =====
+            "ads_status": {
+                "patterns": [
+                    r"\bgoogle\s+ads\s+ka\s+kya\s+haal\b",
+                    r"\bgoogle\s+ads\s+(?:status|check|dikhao)\b",
+                    r"\bads\s+(?:status|kaisa|kya\s+haal)\b",
+                    r"\bmeta\s+ads\s+(?:status|check)\b",
+                    r"\bfacebook\s+ads\s+status\b",
+                ],
+                "handler": "handle_ads_status",
+                "description": "Google/Meta Ads status (honest not_configured if no API)"
+            },
+            "ads_report": {
+                "patterns": [
+                    r"\bads\s+report\b",
+                    r"\bads\s+report\s+banao\b",
+                    r"\bads\s+summary\b",
+                ],
+                "handler": "handle_ads_report",
+                "description": "Generate ads report for WhatsApp"
+            },
+            "ads_pause": {
+                "patterns": [
+                    r"\bcampaign\s+pause\s+karo\b",
+                    r"\bcampaign\s+pause\b",
+                    r"\bads\s+campaign\s+pause\b",
+                ],
+                "handler": "handle_ads_pause",
+                "description": "Pause campaign (approval gate)"
+            },
             
             "image_generate": {
                 "patterns": [
@@ -2406,6 +2486,163 @@ class IntentResponseHandler:
                 "response": f"❌ Integrity check failed: {e}",
                 "success": False
             }
+
+    def handle_plugin_install(self, intent):
+        """Install plugin — approval gate, backup, verify."""
+        try:
+            msg = (intent.get("message_text") or "").lower()
+            slug_map = {
+                "rank math": "rank-math-seo",
+                "rankmath": "rank-math-seo",
+                "yoast": "wordpress-seo",
+                "yoast seo": "wordpress-seo",
+                "wordfence": "wordfence",
+                "updraft": "updraftplus",
+                "updraftplus": "updraftplus",
+            }
+            slug = intent.get("extracted_data", {}).get("plugin_slug", "").strip()
+            if not slug:
+                for k, v in slug_map.items():
+                    if k in msg:
+                        slug = v
+                        break
+            if not slug:
+                # Try to extract last word or phrase after "install"
+                import re
+                m = re.search(r"install\s+(?:plugin\s+)?([a-z0-9\-]+)", msg, re.I)
+                if m:
+                    slug = m.group(1).replace(" ", "-")
+            if not slug:
+                return {"response": "Kaun sa plugin install karna hai? Batao, e.g. 'plugin install rank math'", "success": False}
+            pm = self.bridge.tools.get("plugin_manager") if self.bridge else None
+            if not pm:
+                from core.plugin_manager import PluginManager
+                pm = PluginManager()
+            result = pm.install_plugin(slug)
+            if result.get("success"):
+                return {"response": f"✅ {result.get('message', 'Plugin installed')}", "success": True}
+            return {"response": f"❌ {result.get('error', 'Install failed')}", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Plugin install failed: {e}", "success": False}
+
+    def handle_plugin_list(self, intent):
+        """List installed plugins."""
+        try:
+            pm = self.bridge.tools.get("plugin_manager") if self.bridge else None
+            if not pm:
+                from core.plugin_manager import list_installed_plugins
+                result = list_installed_plugins({})
+            else:
+                result = list_installed_plugins(pm.site_config)
+            if not result.get("success"):
+                return {"response": f"❌ {result.get('error', 'List failed')}", "success": False}
+            plugins = result.get("plugins", [])
+            if not plugins:
+                return {"response": "Koi plugin nahi mila (ya WP auth configure nahi hai).", "success": True}
+            lines = [f"• {p.get('name', p.get('plugin', ''))} v{p.get('version', '')} {'✅' if p.get('active') else '⏸️'}" for p in plugins[:20]]
+            return {"response": "Installed plugins:\n" + "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_plugin_recommend(self, intent):
+        """Recommend plugins for speed/performance/SEO."""
+        try:
+            msg = (intent.get("message_text") or "").lower()
+            need = "performance"
+            if "seo" in msg:
+                need = "seo"
+            elif "security" in msg or "secure" in msg:
+                need = "security"
+            elif "backup" in msg:
+                need = "backup"
+            pm = self.bridge.tools.get("plugin_manager") if self.bridge else None
+            if not pm:
+                from core.plugin_manager import PluginManager
+                pm = PluginManager()
+            result = pm.recommend_plugins(need)
+            suggestions = result.get("suggestions", [])
+            lines = []
+            for s in suggestions[:5]:
+                status = "✅ installed" if s.get("already_installed") else s.get("safety_detail", "")
+                lines.append(f"• {s.get('name')} ({s.get('slug')}) — {status}")
+            return {"response": f"Suggestions for {need}:\n" + "\n".join(lines) if lines else "Koi suggestion nahi.", "success": True}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_plugin_update(self, intent):
+        """Update plugins — backup first, then update each outdated."""
+        try:
+            pm = self.bridge.tools.get("plugin_manager") if self.bridge else None
+            if not pm:
+                from core.plugin_manager import PluginManager, list_installed_plugins
+                pm = PluginManager()
+                list_result = list_installed_plugins({})
+            else:
+                list_result = list_installed_plugins(pm.site_config)
+            if not list_result.get("success"):
+                return {"response": f"❌ {list_result.get('error', 'Cannot list plugins')}", "success": False}
+            outdated = [p for p in list_result.get("plugins", []) if p.get("update_available")]
+            if not outdated:
+                return {"response": "✅ Sab plugins updated hain. Koi update pending nahi.", "success": True}
+            results = []
+            for p in outdated[:5]:
+                slug = (p.get("plugin", "") or "").split("/")[0]
+                if slug:
+                    r = pm.update_plugin(slug)
+                    results.append(f"• {slug}: {'✅' if r.get('success') else '❌ ' + str(r.get('error', ''))}")
+            return {"response": "Plugin updates:\n" + "\n".join(results), "success": True}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_ads_status(self, intent):
+        """Google Ads / Meta Ads status — honest not_configured if no API."""
+        try:
+            from core.ads_monitor import get_google_ads_summary, get_meta_ads_summary
+            msg = (intent.get("message_text") or "").lower()
+            if "meta" in msg or "facebook" in msg:
+                result = get_meta_ads_summary("today")
+            else:
+                result = get_google_ads_summary("today")
+            status = result.get("status", "unknown")
+            resp = result.get("message", "")
+            if status == "not_configured" and result.get("setup_instructions"):
+                resp += "\n\n" + result.get("setup_instructions", "")
+            return {"response": resp, "success": True}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_ads_report(self, intent):
+        """Generate ads report for WhatsApp."""
+        try:
+            am = self.bridge.tools.get("ads_monitor") if self.bridge else None
+            if not am:
+                from core.ads_monitor import AdsMonitor
+                am = AdsMonitor()
+            result = am.generate_ads_report(period="weekly")
+            return {"response": result.get("report", "No report"), "success": True}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
+
+    def handle_ads_pause(self, intent):
+        """Pause campaign — approval gate."""
+        try:
+            msg = (intent.get("message_text") or "").lower()
+            import re
+            campaign_match = re.search(r"campaign\s*[:\s]*([a-z0-9\-]+)", msg, re.I)
+            campaign_id = campaign_match.group(1) if campaign_match else ""
+            if not campaign_id:
+                return {"response": "Kaun sa campaign pause karna hai? Campaign ID batao.", "success": False}
+            platform = "meta" if "meta" in msg or "facebook" in msg else "google"
+            am = self.bridge.tools.get("ads_monitor") if self.bridge else None
+            if not am:
+                from core.ads_monitor import AdsMonitor
+                am = AdsMonitor()
+            result = am.pause_campaign(campaign_id, platform)
+            if result.get("success"):
+                return {"response": f"✅ {result.get('message', 'Campaign pause requested')}", "success": True}
+            return {"response": f"❌ {result.get('error', 'Pause failed')}", "success": False}
+        except Exception as e:
+            return {"response": f"❌ {e}", "success": False}
             
     def handle_image_generate(self, intent):
         """Generate an image using bridge ImageGenerator or MediaAgent."""

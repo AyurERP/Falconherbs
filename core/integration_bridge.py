@@ -212,6 +212,37 @@ class IntegrationBridge:
         except Exception as e:
             self.status["pricing"] = f"failed: {e}"
 
+        # Plugin Manager (BUILD 2) — with site config
+        try:
+            from core.plugin_manager import PluginManager
+            site_config = self._load_site_config()
+            self.tools["plugin_manager"] = PluginManager(site_config=site_config)
+            self.status["plugin_manager"] = "loaded"
+        except Exception as e:
+            self.tools["plugin_manager"] = None
+            self.status["plugin_manager"] = f"failed: {e}"
+
+        # Ads Monitor (BUILD 4) — structure only, no API keys yet
+        try:
+            from core.ads_monitor import AdsMonitor
+            self.tools["ads_monitor"] = AdsMonitor()
+            has_google = bool(os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN") or os.getenv("GOOGLE_ADS_CLIENT_ID"))
+            has_meta = bool(os.getenv("META_ADS_ACCESS_TOKEN") or os.getenv("META_MARKETING_API_TOKEN"))
+            self.status["ads_monitor"] = "structure_ready" if not (has_google or has_meta) else "active"
+        except Exception as e:
+            self.tools["ads_monitor"] = None
+            self.status["ads_monitor"] = f"failed: {e}"
+
+    def _load_site_config(self):
+        """Load site profile for PluginManager (falconherbs)."""
+        try:
+            path = Path(__file__).parent.parent / "config" / "profiles" / "falconherbs.json"
+            if path.exists():
+                return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+        return {}
+
     def get_status(self):
         """Check which tools are available"""
         return {

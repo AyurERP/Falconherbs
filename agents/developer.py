@@ -161,11 +161,12 @@ class DeveloperAgent(BaseAgent):
         self.ai_role = "developer"
         self.capabilities = [
             "SEO audit and fixes",
-            "Website uptime monitoring", 
+            "Website uptime monitoring",
             "Performance optimization",
             "Code generation and debugging",
             "Security scanning",
-            "Technical troubleshooting"
+            "Technical troubleshooting",
+            "Plugin management (install, update, recommend from wordpress.org)",
         ]
 
         # Preserve legacy properties
@@ -422,6 +423,24 @@ Output JSON: {"issues": [...], "fixes": [...], "priority": "high|medium|low"}"""
                     site=site,
                 )
 
+            elif task == "install_plugin":
+                slug = params.get("plugin_slug", "").strip()
+                data = self._do_plugin_install(slug, profile)
+
+            elif task == "recommend_plugins":
+                need = params.get("need", "performance")
+                data = self._do_recommend_plugins(need, profile)
+
+            elif task == "list_installed_plugins":
+                data = self._do_list_plugins(profile)
+
+            elif task == "update_plugin":
+                slug = params.get("plugin_slug", "").strip()
+                data = self._do_update_plugin(slug, profile)
+
+            elif task == "update_plugins":
+                data = self._do_update_all_plugins(profile)
+
             elif task == "general_task":
                 data = self._handle_general_task(site, profile, params)
 
@@ -447,6 +466,78 @@ Output JSON: {"issues": [...], "fixes": [...], "priority": "high|medium|low"}"""
                 task, site, "failed", {},
                 error=f"{type(exc).__name__}: {str(exc)[:300]}",
             )
+
+    # ══════════════════════════════════════════════════════════════════
+    #  PLUGIN MANAGEMENT (BUILD 2)
+    # ══════════════════════════════════════════════════════════════════
+
+    def _do_plugin_install(self, plugin_slug: str, profile: dict) -> dict:
+        """Install plugin via PluginManager — approval gate, backup, verify."""
+        if not plugin_slug:
+            return {"error": "plugin_slug required", "status": "failed"}
+        try:
+            from core.plugin_manager import PluginManager
+            pm = PluginManager(
+                site_config=profile,
+                approval_system=self._approval,
+            )
+            return pm.install_plugin(plugin_slug, profile)
+        except Exception as exc:
+            log.exception("Plugin install failed: %s", exc)
+            return {"error": str(exc), "status": "failed"}
+
+    def _do_recommend_plugins(self, need: str, profile: dict) -> dict:
+        """Recommend plugins for a need (e.g. performance, seo)."""
+        try:
+            from core.plugin_manager import PluginManager
+            pm = PluginManager(site_config=profile)
+            return pm.recommend_plugins(need, profile)
+        except Exception as exc:
+            log.exception("Recommend plugins failed: %s", exc)
+            return {"error": str(exc), "status": "failed"}
+
+    def _do_list_plugins(self, profile: dict) -> dict:
+        """List installed plugins via WP REST API."""
+        try:
+            from core.plugin_manager import list_installed_plugins
+            return list_installed_plugins(profile)
+        except Exception as exc:
+            log.exception("List plugins failed: %s", exc)
+            return {"error": str(exc), "plugins": [], "success": False}
+
+    def _do_update_plugin(self, plugin_slug: str, profile: dict) -> dict:
+        """Update single plugin — backup first, verify, rollback if broken."""
+        if not plugin_slug:
+            return {"error": "plugin_slug required", "status": "failed"}
+        try:
+            from core.plugin_manager import PluginManager
+            pm = PluginManager(
+                site_config=profile,
+                approval_system=self._approval,
+            )
+            return pm.update_plugin(plugin_slug, profile)
+        except Exception as exc:
+            log.exception("Plugin update failed: %s", exc)
+            return {"error": str(exc), "status": "failed"}
+
+    def _do_update_all_plugins(self, profile: dict) -> dict:
+        """Update all outdated plugins — one by one with backup each."""
+        list_result = self._do_list_plugins(profile)
+        if not list_result.get("success"):
+            return list_result
+        outdated = [p for p in list_result.get("plugins", []) if p.get("update_available")]
+        if not outdated:
+            return {"status": "success", "message": "No plugins need updating", "updated": []}
+        results = []
+        for p in outdated:
+            slug = (p.get("plugin", "") or "").split("/")[0]
+            if slug:
+                r = self._do_update_plugin(slug, profile)
+                results.append({"slug": slug, "success": r.get("success", False), "error": r.get("error")})
+        return {
+            "status": "success" if all(r.get("success") for r in results) else "partial",
+            "updated": results,
+        }
 
     # ══════════════════════════════════════════════════════════════════
     #  1.  SITE AUDIT

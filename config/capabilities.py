@@ -195,6 +195,32 @@ AGENCY_CAPABILITIES: Dict = {
             "intents": ["analytics_traffic", "traffic_dekho"],
             "real": True,
         },
+        "plugin_management": {
+            "description": "Install, update, list, recommend plugins from wordpress.org (approval gate, backup, verify)",
+            "agent": "developer",
+            "tools": [
+                "PluginManager.install_plugin",
+                "PluginManager.recommend_plugins",
+                "PluginManager.list_installed_plugins",
+                "PluginManager.update_plugin",
+            ],
+            "intents": ["plugin_install", "plugin_list", "plugin_recommend", "plugin_update"],
+            "real": True,
+        },
+        "ads_monitoring": {
+            "description": "Google Ads / Meta Ads status and reports (structure ready, API keys pending)",
+            "agent": "sentinel",
+            "status": "structure_ready",
+            "requires_setup": "Owner needs to provide Google Ads API credentials and/or Meta Marketing API token",
+            "tools": [
+                "AdsMonitor.get_google_ads_summary",
+                "AdsMonitor.get_meta_ads_summary",
+                "AdsMonitor.generate_ads_report",
+                "AdsMonitor.pause_campaign",
+            ],
+            "intents": ["ads_status", "ads_report", "ads_pause"],
+            "real": True,
+        },
     },
 
     "out_of_scope": {
@@ -230,8 +256,8 @@ AGENCY_CAPABILITIES: Dict = {
             "reason": "Can backup; cannot migrate hosting",
             "keywords": ["migrate", "hosting change", "server migration", "move to new host"],
         },
-        "custom_plugin_dev": {
-            "reason": "Cannot build WordPress plugins from scratch",
+        "custom_plugin_development": {
+            "reason": "Can install and configure approved plugins from wordpress.org. Cannot BUILD custom plugins from scratch.",
             "keywords": ["custom plugin", "plugin from scratch", "build plugin", "develop plugin"],
         },
     },
@@ -307,8 +333,8 @@ def _get_alternatives(out_key: str) -> List[str]:
         "server_migration": [
             "Daily backup le sakta hoon — restore point ready rahega",
         ],
-        "custom_plugin_dev": [
-            "Existing plugin updates kar sakta hoon (Developer agent)",
+        "custom_plugin_development": [
+            "WordPress.org se approved plugins install kar sakta hoon (approval ke baad)",
         ],
     }
     return mapping.get(out_key, [])
