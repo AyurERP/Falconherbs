@@ -54,24 +54,10 @@ class HealthClaimsRewriter:
                 pid = p.get("id")
                 name = p.get("name", "")
 
-                # Combine description + short_description
-                desc = ""
-                short_desc = ""
-                try:
-                    # get_all_products stores lengths,
-                    # need raw product data for text
-                    raw = woo._make_request(
-                        f"products/{pid}"
-                    )
-                    if raw.get("success"):
-                        desc = raw["data"].get(
-                            "description", ""
-                        )
-                        short_desc = raw["data"].get(
-                            "short_description", ""
-                        )
-                except Exception:
-                    pass
+                # Use descriptions already fetched by get_all_products()
+                # NO individual API call per product (was 87×10s = 14 min!)
+                desc = p.get("description", "")
+                short_desc = p.get("short_description", "")
 
                 combined = f"{name} {desc} {short_desc}".strip()
                 if not combined:

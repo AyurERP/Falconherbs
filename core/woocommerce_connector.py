@@ -272,7 +272,7 @@ class WooCommerceConnector:
         page = 1
         
         while True:
-            result = self._make_request("products", {"page": page, "per_page": 100})
+            result = self._make_request("products", {"page": page, "per_page": 100, "status": "any"})
             if not result["success"]:
                 return result
             
@@ -305,6 +305,8 @@ class WooCommerceConnector:
                 "stock_quantity": p.get("stock_quantity"),
                 "categories": [c["name"] for c in p.get("categories", [])],
                 "tags": [t["name"] for t in p.get("tags", [])],
+                "description": p.get("description", ""),
+                "short_description": p.get("short_description", ""),
                 "description_length": len(p.get("description", "")),
                 "short_description_length": len(p.get("short_description", "")),
                 "images_count": len(p.get("images", [])),
