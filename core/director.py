@@ -1509,17 +1509,14 @@ Respond in JSON:
                     self._site_last_alert[site] = _now_mono_h
                     if _down_n_h >= 3:
                         self._send_alert(
-                            f"🚨 URGENT: {site} has been down for 15+ min\!
-"
-                            f"HTTP {resp.status} | Down checks: {_down_n_h}
-"
+                            f"🚨 URGENT: {site} has been down for 15+ min!\n"
+                            f"HTTP {resp.status} | Down checks: {_down_n_h}\n"
                             f"Time: {_utcnow_iso()}"
                         )
                     else:
                         self._send_alert(
-                            f"🔴 SITE DOWN: {site}
-HTTP {resp.status}
-"
+                            f"🔴 SITE DOWN: {site}\n"
+                            f"HTTP {resp.status}\n"
                             f"Time: {_utcnow_iso()}"
                         )
             else:
@@ -1552,17 +1549,14 @@ HTTP {resp.status}
                     self._site_last_alert[site] = _now_mono_e
                     if _down_n_e >= 3:
                         self._send_alert(
-                            f"🚨 URGENT: {site} has been down for 15+ min\!
-"
-                            f"HTTP {exc.code} | Down checks: {_down_n_e}
-"
+                            f"🚨 URGENT: {site} has been down for 15+ min!\n"
+                            f"HTTP {exc.code} | Down checks: {_down_n_e}\n"
                             f"Time: {_utcnow_iso()}"
                         )
                     else:
                         self._send_alert(
-                            f"🔴 SITE DOWN: {site}
-HTTP {exc.code}
-"
+                            f"🔴 SITE DOWN: {site}\n"
+                            f"HTTP {exc.code}\n"
                             f"Time: {_utcnow_iso()}"
                         )
             else:
@@ -1591,17 +1585,14 @@ HTTP {exc.code}
                 self._site_last_alert[site] = now_mono
                 if _down_n_u >= 3:
                     self._send_alert(
-                        f"🚨 URGENT: {site} has been down for 15+ min\!
-"
-                        f"Error: {str(exc)[:150]}
-"
+                        f"🚨 URGENT: {site} has been down for 15+ min!\n"
+                        f"Error: {str(exc)[:150]}\n"
                         f"Down checks: {_down_n_u} | Time: {_utcnow_iso()}"
                     )
                 else:
                     self._send_alert(
-                        f"🔴 SITE UNREACHABLE: {site}
-Error: {str(exc)[:200]}
-"
+                        f"🔴 SITE UNREACHABLE: {site}\n"
+                        f"Error: {str(exc)[:200]}\n"
                         f"Time: {_utcnow_iso()}"
                     )
             return {
