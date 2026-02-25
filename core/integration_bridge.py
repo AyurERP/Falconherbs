@@ -422,11 +422,13 @@ class IntegrationBridge:
                 "  🏷️  Product titles: {} violations".format(title_count),
                 "  🖼️  Image alt text: {} violations".format(alt_count),
                 "",
-                "👁️ *NEEDS MANUAL FIX (advisory):*",
-                "  📰 Blog posts: {} with violations".format(blog_count),
-                "  📄 Pages: {} with violations".format(page_count),
-                "  📁 Category names: {} risky names".format(cat_count),
+                "🤖 *CAN AUTO-FIX (say 'sab fix karo'):*",
+                "  📰 Blog posts: {} — will rewrite + apply".format(blog_count),
+                "  📄 Pages: {} — will rewrite + apply".format(page_count),
+                "  📁 Category names: {} — will rename via API".format(cat_count),
                 "  🖼️  Images with possible text: {} (OCR review needed)".format(ocr_count),
+                "",
+                "💡 _Say *'sab fix karo'* to generate rewrites + apply all._",
                 "",
             ]
 
@@ -683,14 +685,51 @@ class IntegrationBridge:
                 "report_path": None,
             }
 
-    def run_push_all(self) -> dict:
+    def run_push_all(self, generate_first: bool = True) -> dict:
         """
         Apply ALL pending fixes: products + blogs + pages + categories.
-        One command to fix everything. Returns combined summary + report_path.
+        If generate_first=True, generates rewrites for products/blogs/pages
+        when none exist (so one command fixes everything).
         """
         parts = []
         report_path = None
         any_success = False
+        rewriter = self.tools.get("rewriter")
+        rewrites_dir = getattr(rewriter, "rewrites_dir", None) if rewriter else None
+
+        # Generate rewrites first if none exist (one-command fix)
+        if generate_first and rewriter and rewrites_dir:
+            from pathlib import Path
+            rdir = Path(rewrites_dir)
+            skip = {"last_scan.json", "blog_scan.json", "page_scan.json", "category_scan.json"}
+            has_products = any(
+                f.name not in skip and not f.name.startswith("blog_") and not f.name.startswith("page_")
+                for f in rdir.glob("*.json")
+            )
+            has_blogs = any(f.name != "blog_scan.json" for f in rdir.glob("blog_*.json"))
+            has_pages = any(f.name != "page_scan.json" for f in rdir.glob("page_*.json"))
+            # Products: scan first, then rewrite
+            if not has_products:
+                try:
+                    self.scan_products()
+                    self.rewrite_flagged_products()
+                except Exception:
+                    pass
+            # Blogs: scan + rewrite
+            if not has_blogs:
+                try:
+                    self.scan_blog_posts()
+                    rewriter.rewrite_blog_post()
+                except Exception:
+                    pass
+            # Pages: scan + rewrite
+            if not has_pages:
+                try:
+                    self.scan_pages()
+                    rewriter.rewrite_pages()
+                except Exception:
+                    pass
+
         # 1. Products
         r1 = self.run_push_all_rewrites()
         if r1.get("applied", 0) > 0:
