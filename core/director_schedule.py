@@ -54,6 +54,13 @@ class ExtendedSchedule:
                             "description": "VPS CPU/memory/disk monitoring",
                         }
                         modified = True
+                    if "content_package_weekly" not in tasks:
+                        tasks["content_package_weekly"] = {
+                            "time": "06:00", "day": "monday", "frequency": "weekly",
+                            "enabled": True, "last_run": None,
+                            "description": "Generate weekly content package for HeroPost",
+                        }
+                        modified = True
                     if modified:
                         self._save_schedule(data)
                     return data
@@ -146,6 +153,14 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Generate full week's "
                                    "content batch"
+                },
+                "content_package_weekly": {
+                    "time": "06:00",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost"
                 },
                 "customer_analysis": {
                     "time": "09:00",
@@ -357,6 +372,7 @@ class ExtendedSchedule:
             "full_store_audit": self._task_store_audit,
             "health_claims_scan": self._task_health_scan,
             "weekly_content_batch": self._task_weekly_content,
+            "content_package_weekly": self._task_content_package_weekly,
             "customer_analysis": self._task_customer_analysis,
             "daily_backup": self._task_daily_backup,
             "weekly_seo_digest": self._task_weekly_seo_digest,
@@ -676,7 +692,7 @@ class ExtendedSchedule:
     def _task_weekly_content(self):
         """Weekly content batch generation"""
         result = self.bridge.generate_weekly_content()
-        
+
         if result.get("success"):
             return {
                 "success": True,
@@ -690,8 +706,23 @@ class ExtendedSchedule:
                     "Review → Approve → Publish"
                 )
             }
-        return {"success": False, 
+        return {"success": False,
                "error": result.get("error")}
+
+    def _task_content_package_weekly(self):
+        """Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost."""
+        result = self.bridge.generate_weekly_content_package()
+        if result.get("success"):
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": result.get("summary", "Content package ready."),
+            }
+        return {
+            "success": False,
+            "send_whatsapp": True,
+            "message": f"❌ Content package failed: {result.get('error', 'unknown')}",
+        }
     
     def _task_customer_analysis(self):
         """Weekly customer analysis — uses Win-Back module

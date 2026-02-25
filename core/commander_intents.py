@@ -175,6 +175,18 @@ class ExtendedIntentClassifier:
                 "description": "Content pipeline status"
             },
             
+            "content_package": {
+                "patterns": [
+                    r"\bcontent\s+package\b",
+                    r"\bhafte\s+ka\s+content\b",
+                    r"\bweekly\s+content\s+package\b",
+                    r"\bheropost\b.*\bcontent\b",
+                    r"\bcontent\s+banao\s+heropost\b",
+                    r"\bimages?\s+ke\s+sath\s+content\b",
+                ],
+                "handler": "handle_content_package",
+                "description": "Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost"
+            },
             "generate_weekly": {
                 "patterns": [
                     r"\bweekly\s+content\b",
@@ -187,6 +199,40 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_generate_weekly",
                 "description": "Generate full week's content"
+            },
+            "email_campaign": {
+                "patterns": [
+                    r"\bemail\s+campaign\b",
+                    r"\bemail\s+banao\b",
+                    r"\bemail\s+content\b",
+                    r"\bsale\s+ke\s+liye\s+email\b",
+                    r"\bnetworksolutions\b.*\bemail\b",
+                    r"\bnewsletter\s+content\b",
+                ],
+                "handler": "handle_email_campaign",
+                "description": "Generate email campaign for NetworkSolutions manual send"
+            },
+            "image_banao": {
+                "patterns": [
+                    r"\bimage\s+banao\b",
+                    r"\bgraphic\s+create\b",
+                    r"\bek\s+image\s+banao\b",
+                    r"\bimage\s+generate\b",
+                    r"\bphoto\s+banao\b",
+                ],
+                "handler": "handle_image_banao",
+                "description": "Generate single image for product/topic"
+            },
+            "video_banao": {
+                "patterns": [
+                    r"\bvideo\s+banao\b",
+                    r"\breel\s+banao\b",
+                    r"\breel\s+create\b",
+                    r"\bslideshow\s+video\b",
+                    r"\bke\s+liye\s+reel\b",
+                ],
+                "handler": "handle_video_banao",
+                "description": "Generate product reel / slideshow video"
             },
             
             # ===== REPORTS =====
@@ -1978,6 +2024,67 @@ class IntentResponseHandler:
                        f"{result.get('error')}",
             "success": False
         }
+
+    def handle_content_package(self, intent):
+        """Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost."""
+        try:
+            result = self.bridge.generate_weekly_content_package()
+            if result.get("success"):
+                summary = result.get("summary", "Content package ready.")
+                return {"response": summary, "success": True}
+            return {
+                "response": f"❌ Content package failed: {result.get('error', 'unknown')}",
+                "success": False,
+            }
+        except Exception as e:
+            return {"response": f"❌ Error: {e}", "success": False}
+
+    def handle_email_campaign(self, intent):
+        """Generate email campaign for NetworkSolutions manual send."""
+        try:
+            msg = (intent.get("message_text") or "").lower()
+            campaign_type = "sale" if any(w in msg for w in ["sale", "sale ke", "discount"]) else "newsletter"
+            result = self.bridge.generate_email_campaign(campaign_type=campaign_type)
+            if result.get("success"):
+                return {"response": result.get("summary", "Email campaign ready."), "success": True}
+            return {"response": f"❌ {result.get('error')}", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Error: {e}", "success": False}
+
+    def handle_image_banao(self, intent):
+        """Generate single image for product/topic."""
+        try:
+            msg = intent.get("message_text", "") or intent.get("extracted_data", {}).get("query", "")
+            # Extract product/topic from message (e.g. "Ashwagandha ke liye image banao")
+            product_match = re.search(r"(?:ke\s+liye|for)\s+(.+?)(?:\s+image|\s+graphic|$)", msg, re.I)
+            topic = product_match.group(1).strip() if product_match else "Indian herbal wellness"
+            if not topic or len(topic) < 2:
+                topic = "Falcon Herbs herbal product"
+            img = self.bridge.tools.get("image")
+            if not img:
+                return {"response": "❌ Image generator not loaded.", "success": False}
+            r = img.generate(topic, style="product", width=1080, height=1080)
+            if r.get("success"):
+                return {"response": r.get("message", f"✅ Image saved: {r.get('filepath')}"), "success": True}
+            return {"response": f"❌ {r.get('error')}", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Error: {e}", "success": False}
+
+    def handle_video_banao(self, intent):
+        """Generate product reel / slideshow video."""
+        try:
+            msg = intent.get("message_text", "") or intent.get("extracted_data", {}).get("query", "")
+            # Extract product name (e.g. "Ashwagandha ke liye reel banao", "neem ke product ka reel")
+            product_match = re.search(r"(.+?)\s+ke\s+liye\s+reel", msg, re.I) or re.search(r"(.+?)\s+ka\s+reel", msg, re.I) or re.search(r"reel\s+banao\s+(.+?)(?:\s|$)", msg, re.I)
+            product_name = product_match.group(1).strip() if product_match else "herbal product"
+            if not product_name or len(product_name) < 2:
+                product_name = "Ayurvedic wellness"
+            result = self.bridge.generate_product_reel(product_name)
+            if result.get("success"):
+                return {"response": result.get("summary", f"✅ Reel ready: {result.get('filepath')}"), "success": True}
+            return {"response": f"❌ {result.get('error')}", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Error: {e}", "success": False}
     
     def handle_morning_report(self, intent):
         """Full morning report"""

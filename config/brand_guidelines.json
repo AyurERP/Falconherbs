@@ -1,0 +1,37 @@
+{
+    "brand_name": "Falcon Herbs",
+    "tagline": "",
+    "colors": {
+        "primary": "#2D5016",
+        "secondary": "#8B4513",
+        "accent": "#D4A843",
+        "background": "#F5F0E8",
+        "text": "#1A1A1A"
+    },
+    "logo_path": "assets/logo.png",
+    "tone": "Natural, trustworthy, rooted in Indian herbal tradition",
+    "platforms": {
+        "instagram_post": {"width": 1080, "height": 1080},
+        "instagram_story": {"width": 1080, "height": 1920},
+        "instagram_reel": {"width": 1080, "height": 1920},
+        "facebook_post": {"width": 1200, "height": 630},
+        "facebook_story": {"width": 1080, "height": 1920},
+        "whatsapp_status": {"width": 1080, "height": 1920},
+        "twitter_post": {"width": 1200, "height": 675},
+        "blog_featured": {"width": 1200, "height": 628}
+    },
+    "hashtags": {
+        "always": ["#FalconHerbs", "#HerbalWellness", "#Ayurveda"],
+        "product": ["#HerbalProducts", "#NaturalRemedies", "#OrganicIndia"],
+        "seasonal": {}
+    },
+    "content_rules": [
+        "NEVER use health claims (no cure, no treat, no heal)",
+        "NEVER say FDA approved or clinically proven",
+        "Focus on: ingredients, tradition, lifestyle, wellness journey",
+        "Use warm, conversational Hindi-English mix for Indian audience",
+        "Always mention 'consult your healthcare provider' when relevant"
+    ],
+    "banned_words": ["miracle", "cure", "guaranteed results", "FDA approved", "clinically proven", "treats", "heals disease"],
+    "post_types": ["product_spotlight", "ingredient_education", "customer_lifestyle", "festival_special", "wellness_tip", "behind_the_scenes", "new_arrival"]
+}

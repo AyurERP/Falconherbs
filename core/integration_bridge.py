@@ -29,7 +29,24 @@ class IntegrationBridge:
     def __init__(self):
         self.tools = {}
         self.status = {}
+        self._brand_guidelines = None
         self._load_tools()
+
+    def _load_brand_guidelines(self):
+        """Load brand guidelines from config."""
+        if self._brand_guidelines is not None:
+            return self._brand_guidelines
+        try:
+            from pathlib import Path
+            import json
+            path = Path(__file__).parent.parent / "config" / "brand_guidelines.json"
+            if path.exists():
+                self._brand_guidelines = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                self._brand_guidelines = {}
+        except Exception:
+            self._brand_guidelines = {}
+        return self._brand_guidelines
     
     def _load_tools(self):
         """Load new tools safely"""
@@ -93,10 +110,24 @@ class IntegrationBridge:
         # Image Generator
         try:
             from core.image_generator import ImageGenerator
-            self.tools["image"] = ImageGenerator()
+            brand = self._load_brand_guidelines()
+            self.tools["image"] = ImageGenerator(brand_guidelines=brand)
             self.status["image"] = "loaded"
         except Exception as e:
             self.status["image"] = f"failed: {e}"
+
+        # Content Producer (weekly packages for HeroPost)
+        try:
+            from agents.content_producer import ContentProducer
+            self.tools["content_producer"] = ContentProducer(
+                brand_guidelines=self._load_brand_guidelines(),
+                woo_connector=self.tools.get("woocommerce"),
+                image_generator=self.tools.get("image"),
+            )
+            self.status["content_producer"] = "loaded"
+        except Exception as e:
+            self.tools["content_producer"] = None
+            self.status["content_producer"] = f"failed: {e}"
             
         # Email System
         try:
@@ -537,6 +568,36 @@ class IntegrationBridge:
                 "success": False,
                 "error": str(e)
             }
+
+    def generate_weekly_content_package(self, week_number=None):
+        """Generate full weekly package (images, captions, video, UPLOAD_GUIDE) for HeroPost."""
+        try:
+            producer = self.tools.get("content_producer")
+            if not producer:
+                return {"success": False, "error": "Content Producer not loaded"}
+            return producer.generate_weekly_package(week_number=week_number)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_product_reel(self, product_name: str):
+        """Generate standalone product reel (e.g. 'Ashwagandha ke liye reel banao')."""
+        try:
+            producer = self.tools.get("content_producer")
+            if not producer:
+                return {"success": False, "error": "Content Producer not loaded"}
+            return producer.generate_product_reel(product_name)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_email_campaign(self, campaign_type="sale", products=None):
+        """Generate email content for NetworkSolutions manual send."""
+        try:
+            producer = self.tools.get("content_producer")
+            if not producer:
+                return {"success": False, "error": "Content Producer not loaded"}
+            return producer.generate_email_campaign(campaign_type=campaign_type, products=products)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
     
     def get_content_status(self):
         """Safe wrapper for content status"""

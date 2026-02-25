@@ -60,6 +60,28 @@ AGENCY_CAPABILITIES: Dict = {
             "intents": ["create_blog", "create_social", "generate_weekly", "content_status"],
             "real": True,
         },
+        "graphic_design": {
+            "description": "Generate branded images for social (NVIDIA), product photos, HeroPost-ready graphics",
+            "agent": "content_producer",
+            "tools": [
+                "ContentProducer.generate_weekly_package",
+                "ImageGenerator.generate",
+                "ImageGenerator.generate_product_image",
+                "ImageGenerator.generate_with_text_overlay",
+            ],
+            "intents": ["content_package", "image_banao", "hafte ka content"],
+            "real": True,
+        },
+        "basic_video": {
+            "description": "Slideshow videos from images (moviepy), product reels for HeroPost",
+            "agent": "content_producer",
+            "tools": [
+                "VideoCreator.create_slideshow",
+                "ContentProducer.generate_product_reel",
+            ],
+            "intents": ["video_banao", "reel banao"],
+            "real": True,
+        },
         "backup_restore": {
             "description": "Daily backup, verify integrity, restore on approval",
             "agent": "backup",
@@ -188,13 +210,13 @@ AGENCY_CAPABILITIES: Dict = {
             "reason": "Can generate email drafts (winback) but cannot send campaigns via Mailchimp/SendGrid",
             "keywords": ["mailchimp", "email campaign", "newsletter send", "bulk email", "email blast"],
         },
-        "graphic_design": {
-            "reason": "No Canva/Figma/design tools integrated",
-            "keywords": ["canva", "figma", "design", "logo", "banner design", "graphic"],
+        "advanced_graphic_design": {
+            "reason": "Can generate images via NVIDIA; no Canva/Figma/design tools",
+            "keywords": ["canva", "figma", "logo design", "banner design from scratch"],
         },
-        "video_production": {
-            "reason": "No video editing capability",
-            "keywords": ["video", "reel", "youtube video", "video edit"],
+        "ai_video_generation": {
+            "reason": "Uses slideshow approach. Full AI video generation when budget allows",
+            "keywords": ["ai video", "ai generated video", "sora", "runway"],
         },
         "legal_compliance": {
             "reason": "Can flag health claims risks; cannot give legal advice",
