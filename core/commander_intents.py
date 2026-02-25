@@ -596,14 +596,11 @@ class ExtendedIntentClassifier:
 
             "push_all_rewrites": {
                 "patterns": [
-                    r"\bpush\s+(?:karo|all|rewrites?)\b",
-                    r"\bpush\s+all\b",
-                    r"\bapply\s+(?:all\s+)?changes?\b",
-                    r"\bhaan\b",
-                    r"\bhaa\b",
-                    r"\byes\s+apply\b",
-                    r"\bsab\s+(?:apply|push|karo)\b",
-                    r"\ball\s+rewrites?\s+(?:apply|push)\b",
+                    r"\bpush\s+karo\b",
+                    r"\bpush\s+rewrites?\b",
+                    r"\bapply\s+rewrites?\b",
+                    r"\brewrite\s+apply\b",
+                    r"\bproduct\s+(?:push|apply)\b",
                 ],
                 "handler": "handle_push_all_rewrites",
                 "description": "Apply all pending product rewrites to WooCommerce"
@@ -637,10 +634,24 @@ class ExtendedIntentClassifier:
                 "patterns": [
                     r"\bpush\s+blogs?\b",
                     r"\bapply\s+blog\s+fixes?\b",
-                    r"\bblog\s+fix\s+push\b",
+                    r"\bblog\s+(?:fix|fixes?)\s*(?:karo|push|apply|laga)?\b",
+                    r"\bblogs?\s+fix\s+karo\b",
+                    r"\bblogs?\s+(?:push|apply)\b",
                 ],
                 "handler": "handle_push_blog_fixes",
                 "description": "Apply all pending blog title rewrites"
+            },
+
+            "push_page_fixes": {
+                "patterns": [
+                    r"\bpush\s+pages?\b",
+                    r"\bapply\s+page\s+fixes?\b",
+                    r"\bpage\s+(?:fix|fixes?)\s*(?:karo|push|apply|laga)?\b",
+                    r"\bpages?\s+fix\s+karo\b",
+                    r"\bpages?\s+(?:push|apply)\b",
+                ],
+                "handler": "handle_push_page_fixes",
+                "description": "Apply all pending page title rewrites"
             },
 
             "changelog_report": {
@@ -1635,6 +1646,21 @@ class IntentResponseHandler:
             }
         return {
             "response": result.get("summary", result.get("error", "No pending blog fixes.")),
+            "success": result.get("applied", 0) > 0,
+            "document_path": result.get("report_path"),
+        }
+
+    def handle_push_page_fixes(self, intent):
+        """Apply all pending page title rewrites."""
+        result = self.bridge.run_push_all_page_fixes()
+        if result.get("success"):
+            return {
+                "response": result.get("summary", "✅ Page fixes applied."),
+                "success": True,
+                "document_path": result.get("report_path"),
+            }
+        return {
+            "response": result.get("summary", result.get("error", "No pending page fixes.")),
             "success": result.get("applied", 0) > 0,
             "document_path": result.get("report_path"),
         }
