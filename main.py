@@ -107,7 +107,12 @@ def run_system_check() -> bool:
             log.info("[OK] Goals — auto-created empty goals.json")
         else:
             goals = json.loads(goals_path.read_text())
-            log.info(f"[OK] Goals — {len(goals.get('goals', []))} goals loaded")
+            # Accept both formats: legacy list [] OR new dict {"goals": [...]}
+            if isinstance(goals, list):
+                goal_count = len(goals)
+            else:
+                goal_count = len(goals.get('goals', []))
+            log.info(f"[OK] Goals — {goal_count} goals loaded")
         checks.append(True)
     except Exception as e:
         log.critical(f"[FAIL] Goals file — {e}")
