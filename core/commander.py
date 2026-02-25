@@ -648,6 +648,20 @@ class FalconCommander:
         self._whatsapp.send_message(start_msg)
 
         try:
+            # ── Special case: health_claim_audit → health rewriter, NOT agent ──
+            if task == "health_claim_audit":
+                result = self._run_health_claim_audit()
+                result_json = json.dumps(result, default=str, ensure_ascii=False)[:2000]
+                reply = self._generate_reply(
+                    original_text,
+                    f"Health claim audit completed on {site}.\n\n"
+                    f"REAL DATA FROM SYSTEM (use ONLY these numbers — do NOT invent any):\n{result_json}\n\n"
+                    "Write a short WhatsApp summary in Hinglish. State exact counts. "
+                    "If pending_approval > 0, tell owner to say 'approve all' to apply them live.",
+                )
+                self._whatsapp.send_message(reply)
+                return
+
             # Map task to agent
             agent = self._task_to_agent(task)
 
@@ -666,15 +680,14 @@ class FalconCommander:
             else:
                 result = {"status": "skipped", "message": "Director not connected"}
 
-            # Format result as a natural reply
+            # Format result as a natural reply — STRICT: only use numbers from JSON
             result_json = json.dumps(result, default=str, ensure_ascii=False)[:1500]
 
             reply = self._generate_reply(
                 original_text,
-                f"The owner asked to run task '{task}' on '{site}'. "
-                f"Here are the results:\n{result_json}\n\n"
-                "Summarise the key findings in a short WhatsApp reply. "
-                "Highlight what's good, what needs attention, and any numbers.",
+                f"Task '{task}' ran on '{site}'.\n\n"
+                f"REAL RESULT (use ONLY these facts — NEVER invent or estimate numbers):\n{result_json}\n\n"
+                "Summarise in short WhatsApp-style Hinglish. Only report what is in the result above.",
             )
 
             self._whatsapp.send_message(reply)
@@ -691,7 +704,15 @@ class FalconCommander:
 
 
     def _handle_approve(self, original_text: str = "") -> None:
-        """Route an approval to the pending request."""
+        """Route an approval to the pending request.
+
+        Priority:
+        1. Active WhatsApp approval gate (approval system)
+        2. Pending product rewrites in data/content/product_rewrites/
+        3. Any pending_action stored in memory (confirmation flow)
+        4. Nothing pending → tell owner clearly
+        """
+        # 1. Active WhatsApp approval gate
         pending = self._whatsapp.latest_pending_id
         if pending:
             self._whatsapp.receive_reply("latest", "YES")
@@ -702,14 +723,74 @@ class FalconCommander:
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
-        else:
-            raw = "No pending approval. When an action needs approval, I'll ask."
-            reply = director_brain.wrap_raw_response(
-                original_text or "approve", raw, "approve_none",
-                recent_messages=self._get_recent_for_wrap(),
-            )
-            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            return
+
+        # 2. Pending product rewrites — check the real files
+        try:
+            rewrites_dir = Path("data/content/product_rewrites")
+            pending_rewrites = []
+            if rewrites_dir.exists():
+                for f in rewrites_dir.glob("*.json"):
+                    try:
+                        data = json.loads(f.read_text(encoding="utf-8"))
+                        if data.get("status") == "pending_approval":
+                            pending_rewrites.append(data)
+                    except Exception:
+                        pass
+
+            if pending_rewrites:
+                # Route to push_all_rewrites via extended handler
+                if self._extended_handler is not None:
+                    ext_intent = {
+                        "intent": "push_all_rewrites",
+                        "handler": "handle_push_all_rewrites",
+                        "message_text": original_text or "approve all",
+                        "confirmed": True,   # user explicitly approved
+                        "extracted_data": {},
+                    }
+                    response = self._extended_handler.handle(ext_intent)
+                    raw_reply = response.get("response", "")
+                    if raw_reply:
+                        self._whatsapp.send_message(raw_reply)
+                    else:
+                        self._whatsapp.send_message(
+                            f"✅ Applying {len(pending_rewrites)} pending rewrites to live site..."
+                        )
+                else:
+                    self._whatsapp.send_message(
+                        f"⚠️ Found {len(pending_rewrites)} pending rewrites but handler unavailable. "
+                        "Say 'push all rewrites' to try again."
+                    )
+                return
+        except Exception as e:
+            log.warning("Approve pending-rewrites check failed: %s", e)
+
+        # 3. Memory-stored pending_action (confirmation flow from extended intents)
+        user_id = str(self._whatsapp._recipient or "owner")
+        pending_action = memory.get_context(user_id, "pending_action")
+        if pending_action and self._extended_handler is not None:
+            ext_intent = {
+                "intent": pending_action,
+                "handler": f"handle_{pending_action}",
+                "message_text": original_text or "yes",
+                "confirmed": True,
+                "extracted_data": {},
+            }
+            response = self._extended_handler.handle(ext_intent)
+            memory.set_context(user_id, "pending_action", None)
+            raw_reply = response.get("response", "")
+            if raw_reply:
+                self._whatsapp.send_message(raw_reply)
+            return
+
+        # 4. Nothing pending anywhere
+        raw = "Koi pending action nahi hai abhi. Jab koi action approve karna hoga, main khud puchhunga."
+        reply = director_brain.wrap_raw_response(
+            original_text or "approve", raw, "approve_none",
+            recent_messages=self._get_recent_for_wrap(),
+        )
+        self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
+        self._whatsapp.send_message(reply)
 
     def _handle_deny(self, original_text: str = "") -> None:
         """Route a denial to the pending request."""
@@ -1211,6 +1292,72 @@ class FalconCommander:
     # ══════════════════════════════════════════════════════════════════
     #  UTILITY
     # ══════════════════════════════════════════════════════════════════
+
+    def _run_health_claim_audit(self) -> dict:
+        """Run health claim audit via HealthRewriter and return REAL counts.
+
+        Returns a grounded dict with exact numbers from the filesystem and
+        WooCommerce — never invented. Called by _handle_run_task() when
+        task == 'health_claim_audit'.
+        """
+        result = {
+            "source": "health_rewriter",
+            "applied": 0,
+            "pending_approval": 0,
+            "scanned": 0,
+            "rewrite_files": 0,
+        }
+
+        # Count existing rewrite files by status
+        rewrites_dir = Path("data/content/product_rewrites")
+        if rewrites_dir.exists():
+            for f in rewrites_dir.glob("*.json"):
+                if f.name == "last_scan.json":
+                    continue
+                try:
+                    data = json.loads(f.read_text(encoding="utf-8"))
+                    result["rewrite_files"] += 1
+                    status = data.get("status", "unknown")
+                    if status == "applied":
+                        result["applied"] += 1
+                    elif status == "pending_approval":
+                        result["pending_approval"] += 1
+                except Exception:
+                    pass
+
+        # Check last_scan.json for total product count
+        last_scan = rewrites_dir / "last_scan.json"
+        if last_scan.exists():
+            try:
+                scan_data = json.loads(last_scan.read_text(encoding="utf-8"))
+                result["scanned"] = scan_data.get("total_products", scan_data.get("total", 0))
+                result["flagged"] = scan_data.get("flagged", 0)
+                result["scan_date"] = scan_data.get("scan_date", "")
+            except Exception:
+                pass
+
+        # Try to trigger a fresh scan via health_rewriter (non-blocking if slow)
+        try:
+            if self._bridge is not None:
+                hr = self._bridge.tools.get("health_rewriter")
+                if hr is not None:
+                    scan = hr.scan_all_products()
+                    result["fresh_scan"] = True
+                    result["scanned"] = scan.get("total", result["scanned"])
+                    result["flagged"] = scan.get("flagged", result.get("flagged", 0))
+                    new_pending = scan.get("pending_approval", 0)
+                    if new_pending:
+                        result["pending_approval"] = new_pending
+        except Exception as e:
+            result["scan_error"] = str(e)[:120]
+            result["fresh_scan"] = False
+
+        result["message"] = (
+            f"Scanned {result['scanned']} products. "
+            f"Applied: {result['applied']}. "
+            f"Pending your approval: {result['pending_approval']}."
+        )
+        return result
 
     @staticmethod
     def _task_to_agent(task: str) -> str:
