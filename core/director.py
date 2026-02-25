@@ -102,7 +102,7 @@ CYCLE_SECONDS: int          = 60     # main loop period
 CYCLE_TIME_BUDGET: float    = 25.0   # max seconds of work per cycle
 IDLE_ALERT_SECONDS: int     = 3600   # 60 minutes → "Director idle" alert
 MAX_TASKS_PER_CYCLE: int    = 10     # cap to avoid monopolising the loop
-UPTIME_CHECK_TIMEOUT: int   = 5      # seconds for lightweight HEAD request
+UPTIME_CHECK_TIMEOUT: int   = 20     # seconds; SSL handshake from VPS can be slow
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -234,6 +234,7 @@ class Director:
         self._running: bool = False              # main-loop flag
         self._last_activity: float = time.monotonic()
         self._idle_alert_sent: bool = False       # prevent alert spam
+        self._last_unreachable_alert: Dict[str, float] = {}  # site -> monotonic time; cooldown 30 min
         self._cycle_count: int = 0
         self._current_task: Optional[str] = None
         self._current_site: Optional[str] = None
@@ -1470,7 +1471,7 @@ Respond in JSON:
         Lightweight HTTP HEAD check.
 
         Uses ``urllib`` from stdlib — no external dependency — with a
-        5-second timeout.  Good enough for a 5-minute heartbeat probe.
+        20-second timeout (SSL handshake from VPS can be slow).
         """
         url = site if site.startswith("http") else f"https://{site}"
         start = time.monotonic()
@@ -1521,10 +1522,15 @@ Respond in JSON:
         except Exception as exc:
             elapsed_ms = round((time.monotonic() - start) * 1000, 1)
             log.warning("Site UNREACHABLE  |  %s  |  %s", site, exc)
-            self._send_alert(
-                f"🔴 SITE UNREACHABLE: {site}\nError: {str(exc)[:200]}\n"
-                f"Time: {_utcnow_iso()}"
-            )
+            # Cooldown: don't spam alerts; max 1 per site per 30 min
+            now_mono = time.monotonic()
+            last = self._last_unreachable_alert.get(site, 0)
+            if now_mono - last >= 1800:  # 30 min
+                self._last_unreachable_alert[site] = now_mono
+                self._send_alert(
+                    f"🔴 SITE UNREACHABLE: {site}\nError: {str(exc)[:200]}\n"
+                    f"Time: {_utcnow_iso()}"
+                )
             return {
                 "status": "down",
                 "response_time_ms": elapsed_ms,

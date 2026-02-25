@@ -61,7 +61,7 @@ from core.logger import log
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # ── HTTP probing ──
-_HTTP_TIMEOUT: int = 10                    # seconds; fail fast
+_HTTP_TIMEOUT: int = 25                    # seconds; SSL handshake from VPS can be slow
 _SLOW_RESPONSE_THRESHOLD: float = 3.0      # seconds; triggers MEDIUM alert
 _USER_AGENT: str = "FalconAgency-Sentinel/2.0 (Internal Security Scanner)"
 
@@ -232,6 +232,7 @@ class Sentinel:
 
     def __init__(self, approval_system: ApprovalSystem) -> None:
         self._approval: ApprovalSystem = approval_system
+        self._last_unreachable_scan_alert: Dict[str, float] = {}  # site -> monotonic; cooldown 30 min
 
         # Runtime state
         self._blocked_ips: Set[str] = set()            # IPs we've already alerted about
@@ -1412,6 +1413,16 @@ class Sentinel:
     ) -> None:
         """Send a concise WhatsApp alert for HIGH / CRITICAL findings."""
         try:
+            # Cooldown: if ONLY finding is "Site Unreachable", max 1 per site per 30 min
+            critical_titles = [f.get("title", "") for f in findings if f.get("severity") == "CRITICAL"]
+            if critical_titles == ["Site Unreachable"] and counts.get("CRITICAL", 0) == 1:
+                now_mono = time.monotonic()
+                last = self._last_unreachable_scan_alert.get(site_url, 0)
+                if now_mono - last < 1800:  # 30 min
+                    log.info("Skipping Site Unreachable scan alert (cooldown)  |  %s", site_url)
+                    return
+                self._last_unreachable_scan_alert[site_url] = now_mono
+
             # Build a bullet list of the worst findings
             bullet_lines: List[str] = []
             for f in findings:
