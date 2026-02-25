@@ -93,6 +93,12 @@ class ConversationMemory:
             finally:
                 conn.close()
     
+    def get_recent_messages(
+        self, user_id: str, limit: int = 8
+    ) -> List[Dict]:
+        """Get recent messages for AI context. Alias for get_history."""
+        return self.get_history(user_id, last_n=limit)
+
     def get_history(self, user_id: str, last_n: int = 10) -> List[Dict]:
         """Get recent conversation history."""
         with self._lock:

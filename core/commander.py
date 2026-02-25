@@ -708,6 +708,30 @@ class FalconCommander:
             status = self._get_director_status()
             status_text = self._get_status_message(status)
 
+            # Inject health audit data if user asks about claims/numbers
+            extra_context = ""
+            lower = original_text.lower()
+            if any(w in lower for w in ["claims", "violations", "numbers", "kitne", "how many", "count"]):
+                audit_path = PROJECT_ROOT / "data" / "health_audit" / "health_audit_report.json"
+                if audit_path.exists():
+                    try:
+                        import json as _json
+                        data = _json.loads(audit_path.read_text(encoding="utf-8"))
+                        report = data.get("report", {})
+                        extra_context = (
+                            "\n\n=== LATEST HEALTH AUDIT (use this for numbers) ===\n"
+                            f"Products scanned: {data.get('total_products', 0)}\n"
+                            f"Clean: {data.get('clean', 0)} | With issues: {len(report.get('products_fixable', []))}\n"
+                            f"Product description violations: {len(report.get('products_fixable', []))}\n"
+                            f"Product title violations: {len(report.get('titles_fixable', []))}\n"
+                            f"Blog violations: {len(report.get('blogs_advisory', []))}\n"
+                            f"Page violations: {len(report.get('pages_advisory', []))}\n"
+                            f"Category renames needed: {len(report.get('categories_advisory', []))}\n"
+                            "========================================\n"
+                        )
+                    except Exception:
+                        pass
+
             reply = self._generate_reply(
                 original_text,
                 f"The owner is asking a question about their business/sites.\n"
@@ -715,6 +739,7 @@ class FalconCommander:
                 f"Site in question: {site}\n"
                 f"Business: Indian herbal products (falconherbs.com), "
                 f"markets: Australia, UAE, USA, UK.\n\n"
+                f"{extra_context}"
                 "Answer the question based on available data. "
                 "If you don't have the specific data, say so honestly and "
                 "suggest running a relevant task. Keep it short — WhatsApp reply.",
