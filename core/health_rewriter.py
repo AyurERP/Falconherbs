@@ -5,6 +5,7 @@ AI-rewrites them using safe Ayurvedic language,
 saves for approval. NEVER auto-applies.
 """
 
+import html as html_module
 import json
 from datetime import datetime
 from pathlib import Path
@@ -543,19 +544,19 @@ class HealthClaimsRewriter:
             for post in posts:
                 pid = post.get("id")
                 title_raw = post.get("title", {})
-                title = (
+                title = html_module.unescape(
                     title_raw.get("rendered", "")
                     if isinstance(title_raw, dict)
                     else str(title_raw)
                 )
                 content_raw = post.get("content", {})
-                content = (
+                content = html_module.unescape(
                     content_raw.get("rendered", "")
                     if isinstance(content_raw, dict)
                     else str(content_raw)
                 )
                 excerpt_raw = post.get("excerpt", {})
-                excerpt = (
+                excerpt = html_module.unescape(
                     excerpt_raw.get("rendered", "")
                     if isinstance(excerpt_raw, dict)
                     else str(excerpt_raw)
@@ -971,21 +972,33 @@ class HealthClaimsRewriter:
 
     # Risky category name → safe replacement
     RISKY_CATEGORY_NAMES = {
+        # Medical condition names (direct disease references)
         "Diabetic Teas": "Wellness Teas",
         "Diabetic Tea": "Wellness Teas",
         "Diabetes Management": "Wellness Support",
         "Blood Sugar Control": "Metabolic Wellness",
+        "Diabetic": "Wellness",
+        # Cardiovascular
         "Heart Health": "Cardiovascular Wellness",
+        "Cardiovascular": "Cardiovascular Wellness",
+        # Immunity
         "Immune Boost": "Immunity Support",
         "Immune Booster": "Immunity Support",
+        # Weight
         "Weight Loss": "Weight Management",
         "Fat Burner": "Wellness Blends",
+        # Detox / cure / treatment
         "Detox": "Cleansing Blends",
         "Cure": "Natural Remedies",
         "Treatment": "Traditional Support",
+        # Mental health condition names
         "Stress, Anxiety & Depression": "Calm & Balance",
         "Stress Anxiety Depression": "Calm & Balance",
-        "Diabetic": "Wellness",
+        # Inflammation / pain (medical claim)
+        "Inflammation, Swelling & Body Pain": "Joint & Muscle Wellness",
+        "Inflammation": "Natural Wellness",
+        # Digestion problems
+        "Digestion Problems": "Digestive Wellness",
     }
 
     def scan_categories(self):
@@ -1003,13 +1016,15 @@ class HealthClaimsRewriter:
             flagged = []
             for cat in cats:
                 cid = cat.get("id")
-                name = cat.get("name", "")
+                raw_name = cat.get("name", "")
+                # Decode HTML entities (&amp; → &, etc.)
+                name = html_module.unescape(raw_name)
                 # Check exact and partial match
                 suggested = None
                 for risky, safe in self.RISKY_CATEGORY_NAMES.items():
                     if risky.lower() in name.lower():
                         suggested = name.lower().replace(
-                            risky.lower(), safe
+                            risky.lower(), safe.lower()
                         ).title()
                         break
                 if suggested:
