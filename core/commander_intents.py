@@ -12,6 +12,8 @@ import re
 import json
 from datetime import datetime
 
+from core.task_verifier import verify_task_result, append_verification_to_response
+
 
 class ExtendedIntentClassifier:
     """
@@ -533,7 +535,6 @@ class ExtendedIntentClassifier:
             "help": {
                 "patterns": [
                     r"\bhelp\b",
-                    r"\bkya\s+karsakte\b",
                     r"\bcommands?\b",
                     r"\bhelp\s+me\b",
                     r"\bguide\b",
@@ -542,6 +543,18 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_help",
                 "description": "Show all available commands"
+            },
+            "capabilities": {
+                "patterns": [
+                    r"\bkya\s+kar\s+sakte\b",
+                    r"\bkya\s+karsakte\b",
+                    r"\bcapabilities\b",
+                    r"\bscope\s+kya\s+hai\b",
+                    r"\bwhat\s+can\s+you\s+do\b",
+                    r"\bmera\s+scope\b",
+                ],
+                "handler": "handle_capabilities",
+                "description": "Show in-scope vs out-of-scope capabilities"
             },
             
             "bulk_title_fix": {
@@ -1333,6 +1346,30 @@ class IntentResponseHandler:
         )
         return {"response": response, "success": True}
 
+    def handle_capabilities(self, intent):
+        """Return structured capability map (in-scope vs out-of-scope)."""
+        try:
+            from config.capabilities import get_in_scope_capabilities, get_out_of_scope_reasons
+            in_scope = get_in_scope_capabilities()
+            out_scope = get_out_of_scope_reasons()
+            lines = [
+                "📋 *FALCON AGENCY — MERA SCOPE*",
+                "─────────────────────────────",
+                "",
+                "✅ *IN SCOPE (yeh kar sakta hoon):*",
+            ]
+            for c in in_scope:
+                lines.append(f"  • {c['description']} ({c['agent']})")
+            lines.append("")
+            lines.append("❌ *OUT OF SCOPE:*")
+            for name, reason in out_scope:
+                lines.append(f"  • {name}: {reason}")
+            lines.append("")
+            lines.append("_Scope check: Agar kuch scope ke bahar maango, honestly bataunga._")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"Capabilities load failed: {e}", "success": False}
+
     def handle_bulk_title_fix(self, intent):
         """Scan and fix all risky titles"""
         if not intent.get("confirmed"):
@@ -1605,17 +1642,22 @@ class IntentResponseHandler:
         product_id = int(id_match.group(1))
         result = self.bridge.apply_product_rewrite(product_id)
         if result.get("success"):
-            return {
-                "response": (
-                    "✅ *REWRITE APPLIED*\n"
-                    "Product ID: {}\n"
-                    "{}"
-                ).format(
-                    product_id,
-                    result.get("message", "Updated on WooCommerce.")
-                ),
-                "success": True,
-            }
+            resp = (
+                "✅ *REWRITE APPLIED*\n"
+                "Product ID: {}\n"
+                "{}"
+            ).format(
+                product_id,
+                result.get("message", "Updated on WooCommerce.")
+            )
+            # GAP 3: Verify WooCommerce actually updated
+            verification = verify_task_result(
+                "health_rewrite",
+                {**result, "applied_ids": [product_id]},
+                bridge=self.bridge,
+            )
+            resp = append_verification_to_response(resp, verification)
+            return {"response": resp, "success": True}
         return {
             "response": "❌ Apply failed: {}".format(
                 result.get("error", "unknown")
@@ -1651,6 +1693,11 @@ class IntentResponseHandler:
         if result.get("success"):
             summary = result.get("summary", "Push complete.")
             report_path = result.get("report_path")
+            # GAP 3: Verify task actually worked — check WooCommerce has updated
+            verification = verify_task_result(
+                "health_rewrite", result, bridge=self.bridge
+            )
+            summary = append_verification_to_response(summary, verification)
             return {
                 "response": summary,
                 "success": True,
@@ -2509,32 +2556,24 @@ Keep it punchy, under 150 words. No health claims."""
                 as_draft=as_draft
             )
             if result.get("success"):
-                url = result.get("url", "")
-                if as_draft:
-                    msg_text = (
-                        "✅ Published as WordPress DRAFT"
-                    )
-                    if url:
-                        msg_text += (
-                            "\n🔗 Review at: {}".format(url)
-                        )
-                    msg_text += (
-                        "\n\n📝 Say 'publish live karo' "
-                        "to make it public."
-                    )
-                else:
-                    msg_text = (
-                        "🚀 Published LIVE!"
-                    )
-                    if url:
-                        msg_text += (
-                            "\n🔗 View at: {}".format(url)
-                        )
-                return {
-                    "response": result.get(
-                        "message", msg_text),
-                    "success": True
-                }
+                # GAP 3: Verify page actually loads
+                verification = verify_task_result(
+                    "content_publish", result, bridge=self.bridge
+                )
+                msg = result.get("message", "")
+                if not msg:
+                    url = result.get("post_url", result.get("url", ""))
+                    if as_draft:
+                        msg = "✅ Published as WordPress DRAFT"
+                        if url:
+                            msg += "\n🔗 Review at: {}".format(url)
+                        msg += "\n\n📝 Say 'publish live karo' to make it public."
+                    else:
+                        msg = "🚀 Published LIVE!"
+                        if url:
+                            msg += "\n🔗 View at: {}".format(url)
+                msg = append_verification_to_response(msg, verification)
+                return {"response": msg, "success": True}
             return {
                 "response": "❌ Publish failed: {}".format(
                     result.get("error", "unknown")),

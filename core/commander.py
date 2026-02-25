@@ -52,6 +52,7 @@ from core.goal_tracker import goal_tracker
 from core.profit_tracker import profit_tracker
 from core.content_generator import content_generator
 from core.director_brain import director_brain
+from core.state_aggregator import get_client_state_summary, format_for_director_context
 
 if TYPE_CHECKING:
     from core.director import Director
@@ -224,6 +225,29 @@ class FalconCommander:
                 return self._handle_direct_agent(text, message_id)
 
             lower_text = text.lower().strip()
+
+            # ── Step 0.5: Scope check (GAP 1) — honest "not in scope" before routing ──
+            try:
+                from config.capabilities import check_scope
+                scope_result = check_scope(text)
+                if scope_result:
+                    ctx = (
+                        f"Owner asked for something OUT OF SCOPE.\n"
+                        f"Request matched: {scope_result.get('out_of_scope', '')}\n"
+                        f"Reason: {scope_result.get('reason', '')}\n"
+                        f"Alternatives you CAN do:\n"
+                        + "\n".join(f"  • {a}" for a in scope_result.get("alternatives", []))
+                        + "\n\n"
+                        "Generate an honest WhatsApp reply. Say 'mere scope mein nahi hai' + reason. "
+                        "Then offer the alternatives. Match owner's language (Hinglish/English). "
+                        "Be direct — a real director, not a yes-man."
+                    )
+                    reply = self._generate_reply(text, ctx)
+                    self._whatsapp.send_message(reply)
+                    memory.add_message(user_id, "assistant", reply)
+                    return
+            except Exception as exc:
+                log.warning("Scope check failed (continuing): %s", exc)
 
             # ── Step 0: Try new extended intents first ──
             if self._extended_classifier:
@@ -532,37 +556,22 @@ class FalconCommander:
     # ══════════════════════════════════════════════════════════════════
 
     def _handle_status_check(self, original_text: str) -> None:
-        """Gather system status and send a rich smart-status reply."""
+        """Gather system status via get_client_state_summary — ONE function, real data."""
         try:
-            # Use bridge smart status if available — it shows tools,
-            # content queue, upcoming schedule, and pending actions.
-            if self._bridge and hasattr(self._bridge, "generate_smart_status"):
-                try:
-                    smart = self._bridge.generate_smart_status()
-                    # Append current Director task for live context
-                    current = getattr(self._director, "_current_task", None)
-                    if current and "Monitoring" not in current:
-                        smart += "\n\n\u23F1 *Active:* {}".format(current)
-                    # Route through DirectorBrain for human tone
-                    reply = director_brain.wrap_raw_response(
-                        original_text, smart, "status_check",
-                        recent_messages=self._get_recent_for_wrap(),
-                    )
-                    self._whatsapp.send_message(reply)
-                    return
-                except Exception as e:
-                    log.warning("Smart status failed, falling back: %s", e)
+            # GAP 2: Single source of truth — state_aggregator knows everything
+            state = get_client_state_summary(
+                site_id="falconherbs.com",
+                director=self._director,
+                bridge=self._bridge,
+            )
+            status_text = format_for_director_context(state)
 
-            # Fallback: legacy Director status
-            status = self._get_director_status()
-            status_summary = self._get_status_message(status)
             reply = self._generate_reply(
                 original_text,
-                "The owner asked for status. Current system data:\n"
-                "{}\n\nGenerate a short WhatsApp reply. Include the "
-                "key numbers but keep it conversational.".format(
-                    status_summary
-                ),
+                "The owner asked for status / 'website ka kya haal hai'.\n"
+                "Use this REAL data to answer. Keep it conversational, Hinglish.\n\n"
+                f"{status_text}\n\n"
+                "Generate a short WhatsApp reply with key numbers.",
             )
             self._whatsapp.send_message(reply)
 
@@ -701,12 +710,44 @@ class FalconCommander:
         )
         self._whatsapp.send_message(reply)
 
+    def _search_serper(self, query: str) -> str:
+        """Live Google search via Serper.dev. Returns formatted text or empty."""
+        api_key = os.getenv("SERPER_API_KEY", "")
+        if not api_key:
+            return ""
+        try:
+            import requests as _req
+            r = _req.post(
+                "https://google.serper.dev/search",
+                headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+                json={"q": query, "gl": "in", "hl": "en"},
+                timeout=12,
+            )
+            if r.status_code != 200:
+                return ""
+            data = r.json()
+            parts = []
+            for i, o in enumerate(data.get("organic", [])[:8], 1):
+                parts.append(f"{i}. {o.get('title','')}\n   {o.get('snippet','')}")
+            for p in data.get("peopleAlsoAsk", [])[:3]:
+                parts.append(f"PAA: {p.get('question','')}\n   {p.get('snippet','')}")
+            ab = data.get("answerBox", {})
+            if ab:
+                parts.append(f"Featured: {ab.get('title','')}\n   {ab.get('snippet','')}")
+            return "\n\n".join(parts) if parts else ""
+        except Exception:
+            return ""
+
     def _handle_question(self, original_text: str, site: str) -> None:
         """Answer a question using Claude with business context."""
         try:
-            # Gather context
-            status = self._get_director_status()
-            status_text = self._get_status_message(status)
+            # GAP 2: Full client state — one function, real data for any question
+            state = get_client_state_summary(
+                site_id=site or "falconherbs.com",
+                director=self._director,
+                bridge=self._bridge,
+            )
+            status_text = format_for_director_context(state)
 
             # Inject health audit data if user asks about claims/numbers
             extra_context = ""
@@ -731,6 +772,24 @@ class FalconCommander:
                         )
                     except Exception:
                         pass
+
+            # Live Google search via Serper when question needs current data
+            serper_trigger = any(w in lower for w in [
+                "trending", "latest", "current", "market", "competitor",
+                "google", "search", "what's hot", "kya chal raha", "abhi kya",
+                "competition", "prices", "demand", "ayurveda trend",
+                "herbal trend", "real time", "realtime", "dhoondo",
+                "search karo", "google pe", "kya chal raha"
+            ])
+            if serper_trigger:
+                search_text = self._search_serper(original_text)
+                if search_text:
+                    extra_context += (
+                        "\n\n=== LIVE GOOGLE SEARCH (Serper.dev) ===\n"
+                        "Use this real-time data to answer. Cite sources if relevant.\n\n"
+                        f"{search_text[:2500]}\n"
+                        "========================================\n"
+                    )
 
             reply = self._generate_reply(
                 original_text,
@@ -926,6 +985,8 @@ class FalconCommander:
                 context=full_context,
                 recent_messages=recent_msgs,
                 system_status=system_status,
+                director=getattr(self, "_director", None),
+                bridge=getattr(self, "_bridge", None),
             )
             log.log_action(
                 action="reply_generated",

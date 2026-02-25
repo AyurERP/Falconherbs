@@ -60,15 +60,8 @@ YOUR BUSINESS:
 • Content rule: NEVER say "cures/treats/heals" — say "traditionally used", "may support"
 • Revenue goal: Grow monthly sales, improve SEO ranking, build brand trust
 
-YOUR TOOLS (what your agents can do):
-• Status Check → system overview, goals, tasks
-• SEO Audit → keywords, rankings, content gaps
-• Security Scan → vulnerabilities, WordPress issues
-• Performance Check → page speed, Lighthouse score
-• Sales Analysis → WooCommerce revenue, order trends
-• Content Generation → blog posts, product descriptions, social posts
-• Health Claims Audit → FDA/FSSAI compliance check
-• Competitor Analysis → price & positioning research
+YOUR TOOLS: See IN SCOPE / OUT OF SCOPE blocks below (real capability registry).
+Never claim capabilities not listed there.
 
 LANGUAGE RULES (CRITICAL):
 • Mirror the owner's language EXACTLY
@@ -140,6 +133,8 @@ class DirectorBrain:
         context: str = "",
         recent_messages: Optional[List[Dict]] = None,
         system_status: Optional[Dict] = None,
+        director=None,
+        bridge=None,
     ) -> str:
         """
         Generate a natural-language WhatsApp reply from the Director.
@@ -154,6 +149,10 @@ class DirectorBrain:
             Recent conversation history (from memory).
         system_status : dict | None
             Current system status dict (goals, tools, spend, etc.).
+        director : Director | None
+            If provided, enriches client state with live task/budget.
+        bridge : IntegrationBridge | None
+            If provided, enriches client state with revenue, content.
 
         Returns
         -------
@@ -161,7 +160,9 @@ class DirectorBrain:
             Director's reply, ready to send via WhatsApp.
         """
         # Build the system prompt with live business context
-        system_prompt = self._build_system_prompt(system_status)
+        system_prompt = self._build_system_prompt(
+            system_status, director=director, bridge=bridge
+        )
 
         # Build messages: history + current message
         messages = self._build_messages(
@@ -286,16 +287,43 @@ class DirectorBrain:
 
     # ── Context builders ───────────────────────────────────────────────────
 
-    def _build_system_prompt(self, system_status: Optional[Dict] = None) -> str:
-        """Build the full system prompt with live business context."""
+    def _build_system_prompt(
+        self,
+        system_status: Optional[Dict] = None,
+        director=None,
+        bridge=None,
+    ) -> str:
+        """Build the full system prompt with live business context.
+        GAP 4: Injects REAL capabilities (Gap 1) + REAL client state (Gap 2).
+        Director knows itself — grounded in reality, not fiction."""
         parts = [DIRECTOR_PERSONA]
 
-        # Add live system status
+        # GAP 4: WHAT YOU CAN ACTUALLY DO (real tools exist)
+        try:
+            from config.capabilities import format_for_director_brain
+            parts.append("\n" + format_for_director_brain())
+        except Exception:
+            pass
+
+        # GAP 4: CURRENT CLIENT STATE (real data — never make up numbers)
+        try:
+            from core.state_aggregator import get_client_state_summary, format_for_director_context
+            state = get_client_state_summary(
+                site_id="falconherbs.com",
+                director=director,
+                bridge=bridge,
+            )
+            state_block = format_for_director_context(state)
+            parts.append(f"\n{state_block}")
+        except Exception as exc:
+            log.debug("Could not load client state for DirectorBrain: %s", exc)
+
+        # Add live system status (if caller passed it — may overlap with state)
         status_block = self._format_status(system_status)
         if status_block:
             parts.append(f"\n=== LIVE SYSTEM STATUS ===\n{status_block}\n========================")
 
-        # Add goals
+        # Add goals (state_aggregator may include; keep for backward compat)
         goals_block = self._load_goals_summary()
         if goals_block:
             parts.append(f"\n=== CURRENT GOALS ===\n{goals_block}\n====================")
@@ -305,6 +333,14 @@ class DirectorBrain:
         if schedule_block:
             parts.append(f"\n=== TODAY'S SCHEDULE ===\n{schedule_block}\n=======================")
 
+        # GAP 4: Explicit grounding rules
+        parts.append("""
+=== GROUNDING RULES (ABSOLUTE) ===
+• Never claim you can do something not in your IN SCOPE list
+• When asked about OUT OF SCOPE items, say honestly "Mere scope mein nahi hai" + reason, then suggest IN SCOPE alternatives
+• When reporting status, use CURRENT CLIENT STATE data above — NEVER make up numbers
+• If data is missing in context, say "I don't have that data — should I run [task]?"
+================================""")
         return "\n".join(parts)
 
     def _build_intent_prompt(self, context: str = "") -> str:

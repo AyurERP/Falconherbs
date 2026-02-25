@@ -337,6 +337,7 @@ class HealthClaimsRewriter:
             applied = 0
             failed = 0
             errors = []
+            applied_ids = []  # GAP 3: for task verification
 
             for pid, data in pending:
                 try:
@@ -389,6 +390,7 @@ class HealthClaimsRewriter:
                         with open(rfile, "w", encoding="utf-8") as fh:
                             json.dump(data, fh, indent=2, ensure_ascii=False)
                         applied += 1
+                        applied_ids.append(pid)
                     else:
                         errors.append(f"{name}: {result.get('error', 'update failed')}")
                         failed += 1
@@ -416,6 +418,7 @@ class HealthClaimsRewriter:
                 "applied": applied,
                 "failed": failed,
                 "errors": errors,
+                "applied_ids": applied_ids,  # GAP 3: for task verification
             }
 
         except Exception as e:
