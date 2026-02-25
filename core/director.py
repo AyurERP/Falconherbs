@@ -145,13 +145,20 @@ SENSITIVE_TASKS: frozenset[str] = frozenset({
 # Keyword → agent mapping for goal inference
 _GOAL_AGENT_KEYWORDS: Dict[str, List[str]] = {
     "sentinel":   ["security", "scan", "vulnerability", "uptime", "monitor",
-                   "ssl", "firewall", "intrusion", "brute", "malware"],
+                   "ssl", "firewall", "intrusion", "brute", "malware",
+                   "health", "login", "threat", "block"],
     "developer":  ["code", "deploy", "develop", "fix", "update", "css",
-                   "html", "javascript", "bug", "patch", "refactor", "build"],
+                   "html", "javascript", "bug", "patch", "refactor", "build",
+                   "performance", "speed", "load", "target", "slow", "fast",
+                   "plugin", "theme", "backup", "restore", "inventory", "stock"],
     "strategist": ["seo", "ranking", "keyword", "strategy", "analytics",
-                   "traffic", "serp", "backlink", "competitor", "audit"],
+                   "traffic", "serp", "backlink", "competitor", "audit",
+                   "revenue", "sales", "woocommerce", "order", "customer",
+                   "conversion", "revenue", "sync", "data", "report",
+                   "growth", "market", "product", "pricing", "profit"],
     "media":      ["content", "media", "image", "video", "photo", "design",
-                   "social", "post", "graphic", "thumbnail", "copy"],
+                   "social", "post", "graphic", "thumbnail", "copy",
+                   "blog", "draft", "publish", "queue", "caption", "review"],
 }
 
 # Default schedule template for a new site

@@ -294,10 +294,13 @@ class HealthClaimsRewriter:
 
     def push_all_rewrites(self):
         """
-        Apply all pending rewrites to WooCommerce.
+        Apply all pending rewrites — both WooCommerce products AND blog posts.
         Records every change in ChangelogManager.
         Returns { success, summary, report_path, applied, failed, errors }.
         """
+        # Excluded meta-files that are scan summaries, not rewrite files
+        _EXCLUDED = {"last_scan.json", "blog_scan.json", "category_scan.json", "page_scan.json"}
+
         try:
             from core.changelog_manager import ChangelogManager
 
@@ -311,15 +314,31 @@ class HealthClaimsRewriter:
 
             files = [
                 f for f in self.rewrites_dir.glob("*.json")
-                if f.name != "last_scan.json"
+                if f.name not in _EXCLUDED
             ]
+
+            # Build pending list — read item_id and type from the DATA,
+            # NOT from the filename (filenames like blog_7919 are not ints)
             pending = []
             for f in files:
                 try:
                     with open(f, encoding="utf-8") as fh:
                         data = json.load(fh)
-                    if data.get("status") != "applied":
-                        pending.append((int(f.stem), data))
+                    if data.get("status") == "applied":
+                        continue
+                    content_type = data.get("type", "product")
+                    if content_type == "blog_post":
+                        item_id = data.get("post_id")
+                    else:
+                        item_id = data.get("product_id")
+                        if item_id is None:
+                            # legacy files: try parsing from filename
+                            try:
+                                item_id = int(f.stem)
+                            except ValueError:
+                                continue
+                    if item_id:
+                        pending.append((item_id, content_type, data, f))
                 except Exception:
                     continue
 
@@ -337,66 +356,83 @@ class HealthClaimsRewriter:
             applied = 0
             failed = 0
             errors = []
-            applied_ids = []  # GAP 3: for task verification
+            applied_ids = []
 
-            for pid, data in pending:
+            for item_id, content_type, data, rfile in pending:
                 try:
-                    # Get BEFORE from WooCommerce
-                    raw = woo._make_request(f"products/{pid}")
-                    if not raw.get("success"):
-                        errors.append(f"Product {pid}: fetch failed")
-                        failed += 1
-                        continue
-
-                    prod = raw["data"]
-                    name = prod.get("name", "")
-                    before_desc = prod.get("description", "")
-                    before_name = prod.get("name", "")
-
-                    new_desc = data.get("rewritten_description", "")
-                    new_name = data.get("rewritten_name", "")
-
-                    update_fields = {}
-                    if new_desc:
-                        update_fields["description"] = new_desc
-                    if new_name:
-                        update_fields["name"] = new_name
-
-                    if not update_fields:
-                        errors.append(f"{name}: no rewritten content")
-                        failed += 1
-                        continue
-
-                    result = woo.update_product(pid, update_fields)
-
-                    if result.get("success"):
-                        if "description" in update_fields:
+                    if content_type == "blog_post":
+                        # ── Blog post: update title via WP REST API ──
+                        rewritten_title = data.get("rewritten_title", "")
+                        original_title = data.get("original_title", "")
+                        if not rewritten_title:
+                            errors.append(f"Blog {item_id}: no rewritten title")
+                            failed += 1
+                            continue
+                        result = woo.update_post(item_id, {"title": rewritten_title})
+                        if result.get("success"):
                             cm.record(
-                                "product", pid, name,
-                                field="description",
-                                before=before_desc,
-                                after=new_desc,
+                                "blog_post", item_id, original_title or f"Post {item_id}",
+                                field="title",
+                                before=original_title,
+                                after=rewritten_title,
                             )
-                        if "name" in update_fields:
-                            cm.record(
-                                "product", pid, name,
-                                field="name",
-                                before=before_name,
-                                after=new_name,
-                            )
-                        data["status"] = "applied"
-                        data["applied_at"] = datetime.now().isoformat()
-                        rfile = self.rewrites_dir / f"{pid}.json"
-                        with open(rfile, "w", encoding="utf-8") as fh:
-                            json.dump(data, fh, indent=2, ensure_ascii=False)
-                        applied += 1
-                        applied_ids.append(pid)
+                            data["status"] = "applied"
+                            data["applied_at"] = datetime.now().isoformat()
+                            with open(rfile, "w", encoding="utf-8") as fh:
+                                json.dump(data, fh, indent=2, ensure_ascii=False)
+                            applied += 1
+                            applied_ids.append(item_id)
+                        else:
+                            errors.append(f"Blog {item_id}: {result.get('error', 'update failed')}")
+                            failed += 1
+
                     else:
-                        errors.append(f"{name}: {result.get('error', 'update failed')}")
-                        failed += 1
+                        # ── WooCommerce product: update description/name ──
+                        raw = woo._make_request(f"products/{item_id}")
+                        if not raw.get("success"):
+                            errors.append(f"Product {item_id}: fetch failed")
+                            failed += 1
+                            continue
+
+                        prod = raw["data"]
+                        name = prod.get("name", "")
+                        before_desc = prod.get("description", "")
+                        before_name = prod.get("name", "")
+
+                        new_desc = data.get("rewritten_description", "")
+                        new_name = data.get("rewritten_name", "")
+
+                        update_fields = {}
+                        if new_desc:
+                            update_fields["description"] = new_desc
+                        if new_name:
+                            update_fields["name"] = new_name
+
+                        if not update_fields:
+                            errors.append(f"{name}: no rewritten content")
+                            failed += 1
+                            continue
+
+                        result = woo.update_product(item_id, update_fields)
+                        if result.get("success"):
+                            if "description" in update_fields:
+                                cm.record("product", item_id, name, field="description",
+                                          before=before_desc, after=new_desc)
+                            if "name" in update_fields:
+                                cm.record("product", item_id, name, field="name",
+                                          before=before_name, after=new_name)
+                            data["status"] = "applied"
+                            data["applied_at"] = datetime.now().isoformat()
+                            with open(rfile, "w", encoding="utf-8") as fh:
+                                json.dump(data, fh, indent=2, ensure_ascii=False)
+                            applied += 1
+                            applied_ids.append(item_id)
+                        else:
+                            errors.append(f"{name}: {result.get('error', 'update failed')}")
+                            failed += 1
 
                 except Exception as e:
-                    errors.append(f"Product {pid}: {str(e)[:100]}")
+                    errors.append(f"{content_type} {item_id}: {str(e)[:100]}")
                     failed += 1
 
             report_path = None
