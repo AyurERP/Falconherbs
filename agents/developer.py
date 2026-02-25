@@ -227,34 +227,119 @@ Output JSON: {"issues": [...], "fixes": [...], "priority": "high|medium|low"}"""
         self.report_to_owner(f"SEO Task completed: {action}")
         return response
     
-    def _do_uptime_check(self, site: str) -> str:
-        """Check website uptime"""
-        import requests
+    def _do_uptime_check(self, details: str) -> str:
+        """Actually check if site is reachable."""
+        import requests, os, time
+        site = os.getenv("FALCONHERBS_SITE_URL", "https://falconherbs.com")
+        results = []
+        for attempt in range(2):
+            try:
+                t0 = time.time()
+                r = requests.head(site, timeout=10, allow_redirects=True)
+                elapsed = round((time.time() - t0) * 1000)
+                results.append({
+                    "status": r.status_code,
+                    "response_ms": elapsed,
+                    "ok": r.status_code < 400
+                })
+            except requests.exceptions.ConnectionError:
+                results.append({"status": 0, "ok": False, "error": "connection refused"})
+            except requests.exceptions.Timeout:
+                results.append({"status": 0, "ok": False, "error": "timeout"})
+            except Exception as e:
+                results.append({"status": 0, "ok": False, "error": str(e)[:50]})
+            time.sleep(1)
+
+        all_ok = all(r.get("ok") for r in results)
+        avg_ms = sum(r.get("response_ms", 0) for r in results if r.get("response_ms")) // max(len(results), 1)
+
+        if all_ok:
+            return json.dumps({"status": "up", "site": site, "response_ms": avg_ms, "checks": results})
+        else:
+            errors = [r.get("error", f"HTTP {r.get('status')}") for r in results if not r.get("ok")]
+            return json.dumps({"status": "down", "site": site, "errors": errors, "checks": results})
+
+    def _do_security_scan(self, details: str) -> str:
+        """Check security headers and basic vulnerabilities."""
+        import requests, os
+        site = os.getenv("FALCONHERBS_SITE_URL", "https://falconherbs.com")
+        findings = []
+        score = 100
+
         try:
-            r = requests.get(f"https://{site}", timeout=10)
-            status = f"✅ {site} is UP (Status: {r.status_code}, Time: {r.elapsed.total_seconds():.2f}s)"
+            r = requests.get(site, timeout=15, allow_redirects=True)
+            headers = {k.lower(): v for k, v in r.headers.items()}
+
+            security_headers = {
+                "x-frame-options": "Clickjacking protection missing",
+                "x-content-type-options": "MIME sniffing protection missing",
+                "strict-transport-security": "HSTS not set (HTTPS enforcement missing)",
+                "content-security-policy": "CSP not set (XSS protection weak)",
+                "referrer-policy": "Referrer policy not set",
+            }
+
+            for header, description in security_headers.items():
+                if header not in headers:
+                    findings.append({"issue": description, "severity": "medium", "header": header})
+                    score -= 10
+
+            # Check HTTPS
+            if not r.url.startswith("https://"):
+                findings.append({"issue": "Site not using HTTPS", "severity": "critical"})
+                score -= 30
+
+            # Check for server info disclosure
+            if "server" in headers and len(headers["server"]) > 5:
+                findings.append({"issue": f"Server info exposed: {headers['server']}", "severity": "low"})
+                score -= 5
+
+            return json.dumps({
+                "status": "scanned",
+                "site": site,
+                "score": max(0, score),
+                "findings_count": len(findings),
+                "findings": findings[:10],
+                "verdict": "Good" if score >= 80 else "Needs attention" if score >= 50 else "Critical issues"
+            })
         except Exception as e:
-            status = f"❌ {site} is DOWN: {str(e)}"
-            self.escalate(f"Website DOWN: {site}")
-        return status
-    
-    def _do_performance_check(self, site: str) -> str:
-        """AI-analyzed performance check"""
-        messages = [
-            {"role": "system", "content": "Analyze website performance and suggest improvements. Be specific."},
-            {"role": "user", "content": f"Analyze performance for: {site}"}
-        ]
-        return call_ai("developer", messages)
-    
-    def _do_security_scan(self, site: str) -> str:
-        """AI-powered security analysis"""
-        messages = [
-            {"role": "system", "content": "Perform security analysis. Identify vulnerabilities and fixes."},
-            {"role": "user", "content": f"Security scan for: {site}"}
-        ]
-        response = call_ai("developer", messages)
-        self.report_to_owner(f"🔒 Security scan completed for {site}", priority="high")
-        return response
+            return json.dumps({"status": "error", "error": str(e)[:100]})
+
+    def _do_performance_check(self, details: str) -> str:
+        """Check page load time and basic performance metrics."""
+        import requests, os, time
+        site = os.getenv("FALCONHERBS_SITE_URL", "https://falconherbs.com")
+
+        try:
+            # Measure load time for 3 pages
+            pages = [site, site + "/shop/", site + "/about/"]
+            results = []
+
+            for url in pages:
+                try:
+                    t0 = time.time()
+                    r = requests.get(url, timeout=20, allow_redirects=True)
+                    elapsed_ms = round((time.time() - t0) * 1000)
+                    size_kb = round(len(r.content) / 1024, 1)
+                    results.append({
+                        "url": url,
+                        "status": r.status_code,
+                        "load_ms": elapsed_ms,
+                        "size_kb": size_kb,
+                        "verdict": "fast" if elapsed_ms < 2000 else "slow" if elapsed_ms < 5000 else "very slow"
+                    })
+                except Exception as e:
+                    results.append({"url": url, "error": str(e)[:50]})
+
+            avg_ms = sum(r.get("load_ms", 0) for r in results if r.get("load_ms")) // max(len(results), 1)
+
+            return json.dumps({
+                "status": "checked",
+                "avg_load_ms": avg_ms,
+                "verdict": "Good" if avg_ms < 2000 else "Needs optimization" if avg_ms < 5000 else "Too slow",
+                "pages": results
+            })
+        except Exception as e:
+            return json.dumps({"status": "error", "error": str(e)[:100]})
     
     def _do_code_task(self, action: str, details: str, plan: dict) -> str:
         """AI code generation/debugging"""

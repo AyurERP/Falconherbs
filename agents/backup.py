@@ -223,12 +223,20 @@ class BackupAgent(BaseAgent):
             return self._do_generic_backup(action, details)
     
     def _do_backup(self, action: str, details: str) -> str:
-        """Perform backup — integrate with your cPanel/hosting API"""
-        self.report_to_owner(f"🔄 Starting backup: {action}", priority="high")
-        # TODO: Add actual cPanel backup API call here
-        result = f"Backup initiated for: {details}"
-        self.report_to_owner(f"✅ Backup completed", priority="high")
-        return result
+        """Perform backup via run_daily_backup (cPanel DB + files if configured)."""
+        try:
+            self.report_to_owner(f"🔄 Starting backup: {action}", priority="high")
+            results = self.run_daily_backup("falconherbs.com", {})
+            status = results.get("overall_status", "unknown")
+            errors = results.get("errors", [])
+            if errors:
+                self.report_to_owner(f"⚠️ Backup had issues: {errors[0][:100]}", priority="high")
+            else:
+                self.report_to_owner("✅ Backup completed", priority="high")
+            return f"Backup {status}: DB + files. See manifest for details."
+        except Exception as exc:
+            self.report_to_owner(f"❌ Backup failed: {exc}", priority="high")
+            return f"Backup failed: {exc}"
     
     def _do_restore(self, action: str, details: str) -> str:
         """Restore from backup — DANGEROUS, always escalate first"""
@@ -582,8 +590,8 @@ class BackupAgent(BaseAgent):
                     log.warning("cPanel dump write failed: %s", exc)
                     try:
                         tmp_path.unlink(missing_ok=True)
-                    except OSError:
-                        pass
+                    except OSError as exc:
+                        log.warning("backup: temp file cleanup failed: %s", exc)
 
         # ── Fallback: local mysqldump simulation via cPanel Backup API ──
         if self._cpanel_configured:
@@ -786,8 +794,8 @@ class BackupAgent(BaseAgent):
                     log.warning("cPanel file archive write failed: %s", exc)
                     try:
                         output_path.with_suffix(".tmp").unlink(missing_ok=True)
-                    except OSError:
-                        pass
+                    except OSError as exc:
+                        log.warning("backup: temp file cleanup failed: %s", exc)
 
         # ── Fallback: local WordPress directory archive ──
         # Look for common WordPress locations
@@ -932,8 +940,8 @@ class BackupAgent(BaseAgent):
             log.critical("Local archive creation failed: %s", exc, exc_info=True)
             try:
                 output_path.with_suffix(".tmp").unlink(missing_ok=True)
-            except OSError:
-                pass
+            except OSError as exc:
+                log.warning("backup: temp file cleanup failed: %s", exc)
             return None
 
     # ══════════════════════════════════════════════════════════════════
@@ -1789,8 +1797,8 @@ class BackupAgent(BaseAgent):
                 except Exception:
                     try:
                         ftp.close()
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        log.warning("backup: FTP close failed: %s", exc)
 
         duration = time.monotonic() - start
 
@@ -1830,8 +1838,8 @@ class BackupAgent(BaseAgent):
                 try:
                     ftp.mkd(current)
                     ftp.cwd(current)
-                except ftplib.error_perm:
-                    pass
+                except ftplib.error_perm as exc:
+                    log.warning("backup: FTP mkdir/cwd failed for %s: %s", current, exc)
 
     # ══════════════════════════════════════════════════════════════════
     #  9.  list_backups
@@ -1878,8 +1886,8 @@ class BackupAgent(BaseAgent):
                     if exp.tzinfo is None:
                         exp = exp.replace(tzinfo=timezone.utc)
                     expires_in_days = max(0, (exp - _utcnow()).days)
-                except (ValueError, TypeError):
-                    pass
+                except (ValueError, TypeError) as exc:
+                    log.warning("backup: expires_at parse failed: %s", exc)
 
             entry = {
                 "backup_id": b.get("backup_id", ""),
@@ -1967,8 +1975,8 @@ class BackupAgent(BaseAgent):
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
             age_hours = round((_utcnow() - ts).total_seconds() / 3600, 1)
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as exc:
+            log.warning("backup: latest backup timestamp parse failed: %s", exc)
 
         # Oldest backup age
         oldest_days = 0
@@ -1978,8 +1986,8 @@ class BackupAgent(BaseAgent):
                 if oldest_ts.tzinfo is None:
                     oldest_ts = oldest_ts.replace(tzinfo=timezone.utc)
                 oldest_days = (_utcnow() - oldest_ts).days
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as exc:
+                log.warning("backup: oldest backup timestamp parse failed: %s", exc)
 
         # Last FTP upload
         last_ftp = None
@@ -2200,8 +2208,8 @@ class BackupAgent(BaseAgent):
             log.critical("JSON write failed  |  %s  |  %s", path, exc)
             try:
                 tmp.unlink(missing_ok=True)
-            except OSError:
-                pass
+            except OSError as exc:
+                log.warning("backup: temp file cleanup failed: %s", exc)
 
     def _resolve_credential(self, value: str) -> str:
         """Resolve ``{{ENV:VAR}}`` placeholders from environment."""

@@ -8,6 +8,7 @@ Import in director.py to add new capabilities.
 """
 
 import json
+import os
 from datetime import datetime, time
 from pathlib import Path
 
@@ -25,11 +26,57 @@ class ExtendedSchedule:
         self.schedule = self._load_schedule()
     
     def _load_schedule(self):
-        """Load or create schedule state"""
+        """Load schedule state with corruption recovery."""
         if self.schedule_file.exists():
-            with open(self.schedule_file) as f:
-                return json.load(f)
-        
+            try:
+                with open(self.schedule_file) as f:
+                    data = json.load(f)
+                # Validate structure
+                if isinstance(data, dict) and "tasks" in data:
+                    # Gap #11: Ensure sentry_daily_scan auto-starts (migration)
+                    tasks = data.get("tasks", {})
+                    modified = False
+                    if "sentry_daily_scan" not in tasks:
+                        tasks["sentry_daily_scan"] = {
+                            "time": "11:00", "frequency": "daily",
+                            "enabled": True, "last_run": None,
+                            "description": "Scan recent FB/IG comments for compliance risks",
+                        }
+                        modified = True
+                    elif not tasks["sentry_daily_scan"].get("enabled", True):
+                        tasks["sentry_daily_scan"]["enabled"] = True
+                        modified = True
+                    if "vps_health_check" not in tasks:
+                        tasks["vps_health_check"] = {
+                            "time": "00:00", "frequency": "interval",
+                            "interval_minutes": 30, "enabled": True,
+                            "last_run": None,
+                            "description": "VPS CPU/memory/disk monitoring",
+                        }
+                        modified = True
+                    if modified:
+                        self._save_schedule(data)
+                    return data
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Schedule file corrupted, resetting: %s", e
+                )
+                # Back up corrupted file
+                try:
+                    self.schedule_file.rename(
+                        self.schedule_file.with_suffix(".json.bak")
+                    )
+                except Exception:
+                    pass
+        return self._default_schedule()
+
+    def _default_schedule(self) -> dict:
+        """Return the default schedule structure."""
+        return self._build_default_tasks()
+
+    def _build_default_tasks(self) -> dict:
+        """Build default task schedule (extracted to avoid duplication)."""
         default = {
             "tasks": {
                 "morning_report": {
@@ -135,7 +182,7 @@ class ExtendedSchedule:
                 "sentry_daily_scan": {
                     "time": "11:00",
                     "frequency": "daily",
-                    "enabled": False,
+                    "enabled": True,
                     "last_run": None,
                     "description": "Scan recent FB/IG comments for compliance risks"
                 },
@@ -170,20 +217,40 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Unified daily digest — orders, content, pricing, goals"
                 },
+                "vps_health_check": {
+                    "time": "00:00",
+                    "frequency": "interval",
+                    "interval_minutes": 30,
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "VPS CPU/memory/disk monitoring"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
         
         self._save_schedule(default)
         return default
-    
+
     def _save_schedule(self, data=None):
-        """Save schedule state"""
+        """Save schedule state atomically to prevent corruption."""
         if data is None:
             data = self.schedule
         self.schedule_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.schedule_file, "w") as f:
-            json.dump(data, f, indent=2)
+        tmp = self.schedule_file.with_suffix(".json.tmp")
+        try:
+            with open(tmp, "w") as f:
+                json.dump(data, f, indent=2, default=str)
+            tmp.replace(self.schedule_file)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(
+                "Failed to save schedule: %s", e
+            )
+            try:
+                tmp.unlink(missing_ok=True)
+            except Exception:
+                pass
     
     def should_run_task(self, task_name):
         """
@@ -203,6 +270,19 @@ class ExtendedSchedule:
         frequency = task.get("frequency", "daily")
         last_run = task.get("last_run")
         
+        # Interval tasks: run every N minutes regardless of day/time slots
+        if frequency == "interval":
+            interval_min = task.get("interval_minutes", 30)
+            if last_run:
+                try:
+                    from datetime import datetime as _dt
+                    last_dt = _dt.fromisoformat(last_run)
+                    elapsed_min = (now - last_dt).total_seconds() / 60
+                    return elapsed_min >= interval_min
+                except Exception:
+                    pass
+            return True  # Never run before
+
         # Already ran today?
         if last_run and last_run.startswith(today_date):
             return False
@@ -285,6 +365,7 @@ class ExtendedSchedule:
             "weekly_influencer_scan": self._task_influencer_scan,
             "monthly_aeo_scan":   self._task_aeo_scan,
             "weekly_price_scan":  self._task_price_scan,
+            "vps_health_check":    self._task_vps_health_check,
         }
         
         handler = handlers.get(task_name)
@@ -340,9 +421,68 @@ class ExtendedSchedule:
             "message": report
         }
     
-    def _task_daily_backup(self):
-        """Execute and return daily backup result"""
-        return self.bridge.run_backup()
+    def _task_daily_backup(self) -> dict:
+        """Execute daily backup and verify it actually succeeded."""
+        try:
+            result = self.bridge.run_backup()
+            if not result.get("success"):
+                return {
+                    "success": False,
+                    "send_whatsapp": True,
+                    "message": (
+                        "❌ *BACKUP FAILED*\n"
+                        "Error: {}\n"
+                        "Check backup tool!".format(
+                            result.get("error", "unknown")
+                        )
+                    )
+                }
+
+            # Verify backup file exists and has content
+            from pathlib import Path
+            import time as _btime
+            backup_dir = Path("data/backups")
+            if backup_dir.exists():
+                now_ts = _btime.time()
+                recent = [
+                    f for f in backup_dir.glob("**/*")
+                    if f.is_file() and (now_ts - f.stat().st_mtime) < 600
+                ]
+                if not recent:
+                    return {
+                        "success": False,
+                        "send_whatsapp": True,
+                        "message": (
+                            "❌ *BACKUP WARNING*\n"
+                            "Backup ran but no recent files found. "
+                            "Verify manually!"
+                        )
+                    }
+                largest = max(
+                    recent, key=lambda f: f.stat().st_size, default=None
+                )
+                if largest and largest.stat().st_size < 100:
+                    return {
+                        "success": False,
+                        "send_whatsapp": True,
+                        "message": (
+                            "❌ *BACKUP WARNING*\n"
+                            "Backup file suspiciously small ({} bytes). "
+                            "Verify!".format(largest.stat().st_size)
+                        )
+                    }
+
+            return {
+                "success": True,
+                "send_whatsapp": False,
+                "message": result.get("message", "Backup completed")
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "send_whatsapp": True,
+                "message": "❌ *BACKUP EXCEPTION*\n{}".format(str(e)[:100])
+            }
     
     def _task_evening_report(self):
         """Generate and return evening report"""
@@ -407,8 +547,8 @@ class ExtendedSchedule:
             if result["success"]:
                 total = result["data"]["total_orders"]
                 revenue = result["data"]["revenue"]["total"]
-                
-                if total > 0:
+
+                if total > 0 and revenue > 0:
                     return {
                         "success": True,
                         "send_whatsapp": True,
@@ -624,6 +764,112 @@ class ExtendedSchedule:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
+    def _task_vps_health_check(self) -> dict:
+        """Check VPS CPU, memory, disk. Alert if any threshold exceeded."""
+        try:
+            import shutil
+            import os
+            alerts = []
+            stats = {}
+
+            # Prefer psutil when available (cross-platform, cleaner)
+            try:
+                import psutil
+                disk_pct = psutil.disk_usage("/").percent
+                stats["disk_percent"] = round(disk_pct, 1)
+                stats["disk_free_gb"] = round(
+                    psutil.disk_usage("/").free / (1024 ** 3), 1
+                )
+                if disk_pct > 85:
+                    alerts.append(
+                        "⚠️ Disk {}% full ({}GB free)".format(
+                            stats["disk_percent"], stats["disk_free_gb"]
+                        )
+                    )
+                vm = psutil.virtual_memory()
+                mem_pct = vm.percent
+                stats["memory_percent"] = round(mem_pct, 1)
+                stats["memory_free_mb"] = round(vm.available / (1024 ** 2), 0)
+                if mem_pct > 85:
+                    alerts.append(
+                        "⚠️ Memory {}% used ({}MB free)".format(
+                            mem_pct, stats["memory_free_mb"]
+                        )
+                    )
+                try:
+                    load1 = psutil.getloadavg()[0]
+                except (AttributeError, OSError):
+                    load1 = 0.0
+                stats["cpu_load_1m"] = load1
+                cpu_count = psutil.cpu_count() or 1
+                if load1 > cpu_count * 1.5:
+                    alerts.append(
+                        "⚠️ CPU load {} (cores: {})".format(load1, cpu_count)
+                    )
+            except ImportError:
+                # Fallback: /proc and shutil (Linux VPS)
+                usage = shutil.disk_usage("/")
+                disk_pct = round(usage.used / usage.total * 100, 1)
+                stats["disk_percent"] = disk_pct
+                stats["disk_free_gb"] = round(usage.free / (1024 ** 3), 1)
+                if disk_pct > 85:
+                    alerts.append(
+                        "⚠️ Disk {}% full ({}GB free)".format(
+                            disk_pct, stats["disk_free_gb"]
+                        )
+                    )
+                try:
+                    mem = {}
+                    with open("/proc/meminfo") as _mf:
+                        for line in _mf:
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                mem[parts[0].rstrip(":")] = int(parts[1])
+                    total_kb = mem.get("MemTotal", 1)
+                    avail_kb = mem.get("MemAvailable", total_kb)
+                    mem_pct = round((1 - avail_kb / total_kb) * 100, 1)
+                    stats["memory_percent"] = mem_pct
+                    stats["memory_free_mb"] = round(avail_kb / 1024, 0)
+                    if mem_pct > 85:
+                        alerts.append(
+                            "⚠️ Memory {}% used ({}MB free)".format(
+                                mem_pct, stats["memory_free_mb"]
+                            )
+                        )
+                except Exception:
+                    pass
+                try:
+                    with open("/proc/loadavg") as _lf:
+                        load1 = float(_lf.read().split()[0])
+                    stats["cpu_load_1m"] = load1
+                    cpu_count = os.cpu_count() or 1
+                    if load1 > cpu_count * 1.5:
+                        alerts.append(
+                            "⚠️ CPU load {} (cores: {})".format(
+                                load1, cpu_count
+                            )
+                        )
+                except Exception:
+                    pass
+
+            if alerts:
+                msg = "🖥️ *VPS ALERT*\n" + "\n".join(alerts)
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": msg,
+                    "stats": stats
+                }
+
+            return {
+                "success": True,
+                "send_whatsapp": False,
+                "message": "VPS healthy",
+                "stats": stats
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)[:100]}
+
     # ========= DIRECTOR LOOP INTEGRATION =========
     
     def check_and_execute(self, whatsapp_sender=None):
@@ -650,9 +896,9 @@ class ExtendedSchedule:
                 "result": result
             })
             
-            # Send WhatsApp if needed
-            if (result.get("send_whatsapp") and 
-                    whatsapp_sender and 
+            # Send WhatsApp if task requested it
+            if (result.get("send_whatsapp") and
+                    whatsapp_sender and
                     result.get("message")):
                 try:
                     whatsapp_sender(result["message"])
@@ -660,6 +906,23 @@ class ExtendedSchedule:
                           f"{task['name']}")
                 except Exception as e:
                     print(f"  ❌ WhatsApp failed: {e}")
+
+            # Critical tasks: always alert on failure regardless of send_whatsapp flag
+            _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check"}
+            if (result.get("success") is False and
+                    task["name"] in _CRITICAL_TASKS and
+                    not result.get("send_whatsapp") and
+                    whatsapp_sender):
+                _err_msg = result.get("message") or result.get("error", "unknown error")
+                _alert = "⚠️ *TASK FAILURE: {}*\n{}".format(
+                    task["name"].upper().replace("_", " "),
+                    str(_err_msg)[:200]
+                )
+                try:
+                    whatsapp_sender(_alert)
+                    print(f"  🚨 Critical failure alert sent for: {task['name']}")
+                except Exception as e:
+                    print(f"  ❌ Critical alert WhatsApp failed: {e}")
         
         return results
     
@@ -937,25 +1200,29 @@ class ExtendedSchedule:
     
     def _task_sentry_scan(self):
         """
-        Phase 2: Routine social media compliance scan.
-        Currently a placeholder until Meta Graph API is connected.
+        Routine social media compliance scan.
+        Requires Meta Graph API (META_ACCESS_TOKEN) for comments.
+        When not configured: logs and returns honest status.
         """
-        # from agents.social_sentry import SocialSentry
-        # from core.ai_client import call_ai
-        # sentry = SocialSentry(llm_caller=call_ai)
-        
-        # In the future:
-        # comments = meta_api.get_recent_comments(hours=24)
-        # risky = [sentry.analyze(c) for c in comments if sentry.analyze(c)["action_needed"]]
-        # for r in risky:
-        #     self.whatsapp.send(sentry.format_whatsapp_alert(r))
-        
-        return {
-            "success": True, 
-            "send_whatsapp": False,
-            "message": "Social Sentry daily scan placeholder executed. "
-                       "Waiting for Meta API integration."
-        }
+        try:
+            token = os.environ.get("META_ACCESS_TOKEN") or os.environ.get("WHATSAPP_ACCESS_TOKEN")
+            if not token:
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": (
+                        "🔒 *Social Sentry* — Skipped (no API)\n"
+                        "Add META_ACCESS_TOKEN to .env for Facebook/IG comment monitoring."
+                    ),
+                }
+            # TODO: Meta Graph API — fetch comments, run SocialSentry.analyze
+            return {
+                "success": True,
+                "send_whatsapp": False,
+                "message": "Social Sentry: API ready. Comment fetch not yet implemented.",
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def _task_aeo_scan(self):
         """

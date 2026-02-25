@@ -641,8 +641,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
                     f"Issues: {', '.join(score_result.get('improvement_areas', [])[:3])}\n"
                     f"File: {saved_path}"
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                log.warning("media: notify failed (product): %s", exc)
 
         log.log_action(
             action="product_description_created",
@@ -851,8 +851,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
                     f"Words: {content_data['word_count']}\n"
                     f"File: {saved_path}"
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                log.warning("media: notify failed (blog): %s", exc)
 
         log.log_action(
             action="blog_post_created",
@@ -1566,8 +1566,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
                     f"File: heropost_queue/{filename}\n"
                     "Open HeroPost to import and add visuals 🎨"
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                log.warning("media: notify failed (social): %s", exc)
 
         log.log_action(
             action="heropost_export",
@@ -1932,8 +1932,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
         try:
             if HEROPOST_DIR.exists():
                 heropost_files = [f.name for f in HEROPOST_DIR.glob("*.json")]
-        except OSError:
-            pass
+        except OSError as exc:
+            log.warning("media: heropost dir listing failed: %s", exc)
 
         avg_score = round(sum(scores) / len(scores), 1) if scores else 0
 
@@ -2257,8 +2257,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
             try:
                 parsed_meta = json.loads(json_str)
                 metadata.update(parsed_meta)
-            except json.JSONDecodeError:
-                pass
+            except (json.JSONDecodeError, ValueError) as exc:
+                log.warning("media: JSON parse failed, skipping entry: %s", exc)
 
         # Also try after --- separator
         if "---" in raw:
@@ -2271,8 +2271,8 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
                     if isinstance(parsed, dict) and "suggested_slug" in parsed:
                         article = possible_article
                         metadata.update(parsed)
-                except json.JSONDecodeError:
-                    pass
+                except (json.JSONDecodeError, ValueError) as exc:
+                    log.warning("media: JSON parse failed, skipping entry: %s", exc)
 
         # Clean markdown artifacts from article
         article = article.rstrip("-").rstrip().rstrip("METADATA").rstrip()
@@ -2298,24 +2298,24 @@ Output JSON: {"primary": [...], "secondary": [...], "niche": [...], "avoid": [..
         # Try direct parse
         try:
             return json.loads(cleaned)
-        except json.JSONDecodeError:
-            pass
+        except (json.JSONDecodeError, ValueError) as exc:
+            log.warning("media: JSON parse failed, skipping entry: %s", exc)
 
         # Try to find JSON array
         array_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
         if array_match:
             try:
                 return json.loads(array_match.group())
-            except json.JSONDecodeError:
-                pass
+            except (json.JSONDecodeError, ValueError) as exc:
+                log.warning("media: JSON parse failed, skipping entry: %s", exc)
 
         # Try to find JSON object
         obj_match = re.search(r'\{.*\}', cleaned, re.DOTALL)
         if obj_match:
             try:
                 return json.loads(obj_match.group())
-            except json.JSONDecodeError:
-                pass
+            except (json.JSONDecodeError, ValueError) as exc:
+                log.warning("media: JSON parse failed, skipping entry: %s", exc)
 
         return None
 

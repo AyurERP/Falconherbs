@@ -7,6 +7,7 @@ This file EXTENDS the Commander's intent classification.
 Import this in commander.py to add new capabilities.
 """
 
+import os
 import re
 import json
 from datetime import datetime
@@ -349,7 +350,8 @@ class ExtendedIntentClassifier:
             "backup_verify": {
                 "patterns": [
                     r"\bdata\s+verify\b",
-                    r"\bbackup\s+(?:verify|check|integrity)\b",
+                    r"\bbackup\s+(?:verify|check|integrity|theek\s+hai)\b",
+                    r"\bbackup\s+theek\s+hai\??\b",
                     r"\bintegrity\s+check\b",
                     r"\bdata\s+(?:safe|check)\b",
                 ],
@@ -416,7 +418,8 @@ class ExtendedIntentClassifier:
                 "patterns": [
                     r"\banalytics\b",
                     r"\bga4\b",
-                    r"\btraffic\s+(?:report|check|dikhao)\b",
+                    r"\btraffic\s+(?:report|check|dikhao|dekho)\b",
+                    r"\btraffic\s+dekho\b",
                     r"\bwebsite\s+traffic\b",
                     r"\bkitne\s+visitors?\b",
                     r"\busers?\s+(?:count|kitne)\b",
@@ -428,7 +431,8 @@ class ExtendedIntentClassifier:
 
             "ads_status": {
                 "patterns": [
-                    r"\bads?\s+(?:status|report|check)\b",
+                    r"\bads?\s+(?:status|report|check|check\s+karo)\b",
+                    r"\bads?\s+check\s+karo\b",
                     r"\bmeta\s+ads?\b",
                     r"\bgoogle\s+ads?\b",
                     r"\bpaid\s+(?:ads?|campaign)\b",
@@ -846,6 +850,18 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_price_update",
                 "description": "Manually update a competitor price"
+            },
+            "keyword_analysis": {
+                "patterns": [
+                    r"\bkeyword\s*(?:analysis|check|report|dekho|dikhao)\b",
+                    r"\bkeywords?\s+kya\s+hain\b",
+                    r"\bseo\s+keywords?\b",
+                    r"\brank\s+check\b",
+                    r"\bkaunse\s+keywords?\b",
+                    r"\bkeyword\s+analysis\b",
+                ],
+                "handler": "handle_analyse_keywords",
+                "description": "Keyword analysis and rank check",
             },
         }
     
@@ -1319,6 +1335,16 @@ class IntentResponseHandler:
 
     def handle_bulk_title_fix(self, intent):
         """Scan and fix all risky titles"""
+        if not intent.get("confirmed"):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye saare risky product titles ko scan karke LIVE site par fix karega. "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "bulk_title_fix",
+            }
         result = self.bridge.run_bulk_title_fix()
         if result.get("success"):
             return {
@@ -1332,6 +1358,16 @@ class IntentResponseHandler:
 
     def handle_disclaimer_injection(self, intent):
         """Add FDA disclaimer to all products"""
+        if not intent.get("confirmed"):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye FDA disclaimer saare products mein inject karega (LIVE site update). "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "disclaimer_injection",
+            }
         result = self.bridge.run_disclaimer_injection()
         if result.get("success"):
             return {
@@ -1594,8 +1630,23 @@ class IntentResponseHandler:
             "success": True,
         }
 
+    def _is_confirmation(self, intent: dict) -> bool:
+        """Check if message is a confirmation (haan karo, yes do it, etc)."""
+        msg = (intent.get("message_text") or "").lower()
+        return any(w in msg for w in ["haan", "yes", "karo", "confirm", "do it", "theek", "apply"])
+
     def handle_push_all_rewrites(self, intent):
         """Apply all pending product rewrites. Returns summary + document_path."""
+        if not intent.get("confirmed") and not self._is_confirmation(intent):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye saare pending product rewrites ko LIVE WooCommerce site par update karega. "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "push_all_rewrites",
+            }
         result = self.bridge.run_push_all_rewrites()
         if result.get("success"):
             summary = result.get("summary", "Push complete.")
@@ -1612,6 +1663,16 @@ class IntentResponseHandler:
 
     def handle_push_all_fixes(self, intent):
         """Apply ALL fixes: products + blogs + pages + categories."""
+        if not intent.get("confirmed") and not self._is_confirmation(intent):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye ALL pending fixes (products + blogs + pages + categories) ko LIVE site par apply karega. "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "push_all_fixes",
+            }
         result = self.bridge.run_push_all()
         if result.get("success"):
             return {
@@ -1637,6 +1698,16 @@ class IntentResponseHandler:
 
     def handle_push_blog_fixes(self, intent):
         """Apply all pending blog title rewrites."""
+        if not intent.get("confirmed") and not self._is_confirmation(intent):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye saare pending blog title rewrites ko LIVE WordPress site par update karega. "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "push_blog_fixes",
+            }
         result = self.bridge.run_push_all_blog_fixes()
         if result.get("success"):
             return {
@@ -1652,6 +1723,16 @@ class IntentResponseHandler:
 
     def handle_push_page_fixes(self, intent):
         """Apply all pending page title rewrites."""
+        if not intent.get("confirmed") and not self._is_confirmation(intent):
+            return {
+                "response": (
+                    "⚠️ *Confirm karein:* Ye saare pending page title rewrites ko LIVE WordPress site par update karega. "
+                    "Type *'haan karo'* ya *'yes do it'* to confirm."
+                ),
+                "success": True,
+                "needs_confirmation": True,
+                "pending_action": "push_page_fixes",
+            }
         result = self.bridge.run_push_all_page_fixes()
         if result.get("success"):
             return {
@@ -2050,6 +2131,36 @@ class IntentResponseHandler:
                 "success": False
             }
     
+    def handle_analyse_keywords(self, intent):
+        """Keyword coverage analysis via StrategistAgent"""
+        try:
+            from agents.strategist import StrategistAgent
+            strat = StrategistAgent()
+            site = "falconherbs.com"
+            profile = strat._load_profile(site)
+            data = strat.analyse_keywords(site, profile)
+            if data.get("error"):
+                return {"response": f"❌ Keyword analysis failed: {data['error']}", "success": False}
+            total = data.get("total_keywords", 0)
+            avg = data.get("average_score", 0)
+            gaps = data.get("gaps", [])
+            recs = data.get("recommendations", [])
+            lines = [
+                f"📊 *KEYWORD ANALYSIS* — {site}",
+                "─" * 22,
+                f"Keywords checked: {total}",
+                f"Average score: {avg}/5",
+            ]
+            if gaps:
+                lines.append(f"\n⚠️ Gaps: {len(gaps)}")
+                for g in gaps[:3]:
+                    lines.append(f"  • {g.get('keyword', '?')}")
+            if recs:
+                lines.append("\n" + recs[0][:200])
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Keyword analysis failed: {e}", "success": False}
+
     def handle_full_seo_audit(self, intent):
         """Full multi-page SEO audit via DeveloperAgent"""
         try:
@@ -2270,18 +2381,29 @@ class IntentResponseHandler:
             return {"response": f"❌ Analytics error: {e}", "success": False}
 
     def handle_ads_status(self, intent):
-        """Paid ads status — Meta/Google Ads foundation."""
+        """Paid ads status — honest status, no fake data."""
+        meta = bool(os.environ.get("META_ADS_TOKEN") or os.environ.get("META_ACCESS_TOKEN"))
+        google = bool(os.environ.get("GOOGLE_ADS_CUSTOMER_ID") and os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"))
+        if meta or google:
+            configured = "Meta ✅" if meta else "Meta ❌"
+            configured += " | Google ✅" if google else " | Google ❌"
+            return {
+                "response": (
+                    f"📢 *PAID ADS*\n{'─' * 22}\n"
+                    f"Status: {configured}\n\n"
+                    "Ad creatives generate kar sakte ho:\n"
+                    "\"ad creative ashwagandha\" bol do."
+                ),
+                "success": True,
+            }
         return {
             "response": (
-                "📢 *PAID ADS MODULE*\n"
+                "📢 *PAID ADS* — Not configured\n"
                 "─────────────────────\n"
-                "🔧 Foundation ready. Full integration coming.\n\n"
-                "Configure in .env:\n"
+                "Add to .env:\n"
                 "• META_ADS_TOKEN — Meta Business API\n"
-                "• GOOGLE_ADS_CUSTOMER_ID — Google Ads\n"
-                "• GOOGLE_ADS_DEVELOPER_TOKEN\n\n"
-                "Abhi: Ad creatives generate kar sakte ho — "
-                "\"ad creative ashwagandha\" bol do."
+                "• GOOGLE_ADS_CUSTOMER_ID + GOOGLE_ADS_DEVELOPER_TOKEN\n\n"
+                "Abhi: \"ad creative [topic]\" se creatives bana sakte ho."
             ),
             "success": True,
         }

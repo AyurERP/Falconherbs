@@ -92,6 +92,58 @@ class ProfitTracker:
         """WhatsApp-friendly profit report"""
         return self._tracker.generate_whatsapp_report()
 
+    def get_profit_report(self, days_back: int = 30) -> dict:
+        """
+        Returns {success, report} dict for commander_intents handlers.
+        Pulls live WooCommerce orders + estimates costs.
+        """
+        try:
+            from core.woocommerce_connector import WooCommerceConnector
+            woo = WooCommerceConnector()
+            result = woo.get_orders(days_back=days_back, save=False)
+            if not result.get("success"):
+                return {"success": False,
+                        "error": result.get("error", "WooCommerce unavailable")}
+
+            data   = result["data"]
+            revenue = data["revenue"]["total"]
+            orders  = data["total_orders"]
+
+            # Estimated cost split (can be customised later)
+            cogs_pct     = 40   # 40% of revenue
+            shipping_avg = 80   # Rs per order
+            fee_pct      = 2    # Platform fee %
+
+            cogs          = revenue * cogs_pct / 100
+            shipping      = orders  * shipping_avg
+            platform_fees = revenue * fee_pct / 100
+            total_costs   = cogs + shipping + platform_fees
+            gross_profit  = revenue - total_costs
+            margin_pct    = round(gross_profit / revenue * 100, 1) if revenue > 0 else 0
+
+            report = "\n".join([
+                "*PROFIT REPORT — Last {} Days*".format(days_back),
+                "─" * 22,
+                "Orders:  {}".format(orders),
+                "Revenue: Rs {:,.0f}".format(revenue),
+                "",
+                "*Estimated Costs:*",
+                "  COGS ({}%):    Rs {:,.0f}".format(cogs_pct, cogs),
+                "  Shipping:       Rs {:,.0f}".format(shipping),
+                "  Platform ({}%): Rs {:,.0f}".format(fee_pct, platform_fees),
+                "  Total costs:    Rs {:,.0f}".format(total_costs),
+                "",
+                "*Gross Profit: Rs {:,.0f}*".format(gross_profit),
+                "Margin: {}%".format(margin_pct),
+                "",
+                "_Costs are estimates. Actual may differ._",
+            ])
+            return {"success": True, "report": report,
+                    "revenue": revenue, "gross_profit": gross_profit,
+                    "margin_percent": margin_pct}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)[:200]}
+
     @staticmethod
     def _extract_order_id(source: str) -> str:
         """Extract order_id from source strings like

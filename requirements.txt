@@ -12,3 +12,4 @@ google-analytics-data>=0.17.0
 google-auth>=2.0.0
 pyyaml>=6.0
 python-multipart>=0.0.6
+psutil>=5.9.0

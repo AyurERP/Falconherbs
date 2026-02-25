@@ -2418,11 +2418,24 @@ Output JSON: {"trends": [...], "relevance": "...", "action_items": [...]}"""},
     def _deep_competitor_analysis(self, competitor_url: str, site: str = "falconherbs.com") -> str:
         """Deep competitor analysis using website_tools crawl"""
         from core.ai_client import call_ai
+        from urllib.parse import urlparse
         import json
+
+        # Gap #27: URL validation before crawl_all_pages
+        url = competitor_url.strip()
+        if not url:
+            return "❌ Competitor URL is empty."
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return "❌ Invalid URL: scheme must be http or https."
+        if not parsed.netloc or "." not in parsed.netloc:
+            return "❌ Invalid URL: missing or invalid hostname."
+        if parsed.netloc.lower() in ("localhost", "127.0.0.1", "0.0.0.0"):
+            return "❌ Invalid URL: localhost not allowed for competitor crawl."
 
         self._send_telegram_summary(f"🔍 Deep analysis of competitor: {competitor_url}...")
 
-        website_tools.set_site(competitor_url)
+        website_tools.set_site(url)
         pages = website_tools.crawl_all_pages(max_pages=15)
 
         competitor_data = {

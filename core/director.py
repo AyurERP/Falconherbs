@@ -233,9 +233,12 @@ class Director:
         """
         self._running: bool = False              # main-loop flag
         self._last_activity: float = time.monotonic()
-        self._idle_alert_sent: bool = False       # prevent alert spam
-        self._last_unreachable_alert: Dict[str, float] = {}  # site -> monotonic time; cooldown 30 min
+        self._last_idle_alert_time: float = 0.0  # monotonic time of last idle alert
+        self._last_unreachable_alert: Dict[str, float] = {}  # site -> monotonic time; cooldown
+        self._site_down_count: Dict[str, int] = {}    # consecutive down count per site
+        self._site_last_alert: Dict[str, float] = {}  # monotonic time of last down alert per site
         self._cycle_count: int = 0
+        self._retry_queue: List[Dict[str, Any]] = []  # tasks deferred when Director busy
         self._current_task: Optional[str] = None
         self._current_site: Optional[str] = None
 
@@ -1425,16 +1428,26 @@ Respond in JSON:
             return {"status": "skipped", "message": f"Module {module_path} not available"}
 
         # ── Find agent class ──
+        # Look for the canonical class name first (e.g. "StrategistAgent"),
+        # then fall back to any *Agent class — but never pick BaseAgent since
+        # it raises NotImplementedError from execute().
+        target_class_name = agent_name.title() + "Agent"  # e.g. "StrategistAgent"
         agent_class = None
-        for attr_name in dir(module):
-            obj = getattr(module, attr_name, None)
-            if (
-                isinstance(obj, type)
-                and attr_name.lower().endswith("agent")
-                and hasattr(obj, "execute")
-            ):
-                agent_class = obj
-                break
+        canonical = getattr(module, target_class_name, None)
+        if canonical and isinstance(canonical, type) and hasattr(canonical, "execute"):
+            agent_class = canonical
+        else:
+            for attr_name in dir(module):
+                if attr_name == "BaseAgent":
+                    continue
+                obj = getattr(module, attr_name, None)
+                if (
+                    isinstance(obj, type)
+                    and attr_name.lower().endswith("agent")
+                    and hasattr(obj, "execute")
+                ):
+                    agent_class = obj
+                    break
 
         if agent_class is None:
             log.warning(
@@ -1488,11 +1501,34 @@ Respond in JSON:
 
             if status == "down":
                 log.warning("Site DOWN  |  %s  |  HTTP %d", site, resp.status)
-                self._send_alert(
-                    f"🔴 SITE DOWN: {site}\nHTTP {resp.status}\nTime: {_utcnow_iso()}"
-                )
+                self._site_down_count[site] = self._site_down_count.get(site, 0) + 1
+                _now_mono_h = time.monotonic()
+                _last_alert_h = self._site_last_alert.get(site, 0)
+                _down_n_h = self._site_down_count[site]
+                if _now_mono_h - _last_alert_h >= 600:  # 10-min cooldown
+                    self._site_last_alert[site] = _now_mono_h
+                    if _down_n_h >= 3:
+                        self._send_alert(
+                            f"🚨 URGENT: {site} has been down for 15+ min\!
+"
+                            f"HTTP {resp.status} | Down checks: {_down_n_h}
+"
+                            f"Time: {_utcnow_iso()}"
+                        )
+                    else:
+                        self._send_alert(
+                            f"🔴 SITE DOWN: {site}
+HTTP {resp.status}
+"
+                            f"Time: {_utcnow_iso()}"
+                        )
             else:
-                log.info("Uptime OK  |  %s  |  %dms", site, elapsed_ms)
+                if self._site_down_count.get(site, 0) > 0:
+                    log.info("Site RECOVERED  |  %s  |  %dms", site, elapsed_ms)
+                    self._site_down_count[site] = 0
+                    self._site_last_alert[site] = 0
+                else:
+                    log.info("Uptime OK  |  %s  |  %dms", site, elapsed_ms)
 
             return {
                 "status": status,
@@ -1508,9 +1544,32 @@ Respond in JSON:
 
             if not is_up:
                 log.warning("Site DOWN  |  %s  |  HTTP %d", site, exc.code)
-                self._send_alert(
-                    f"🔴 SITE DOWN: {site}\nHTTP {exc.code}\nTime: {_utcnow_iso()}"
-                )
+                self._site_down_count[site] = self._site_down_count.get(site, 0) + 1
+                _now_mono_e = time.monotonic()
+                _last_alert_e = self._site_last_alert.get(site, 0)
+                _down_n_e = self._site_down_count[site]
+                if _now_mono_e - _last_alert_e >= 600:  # 10-min cooldown
+                    self._site_last_alert[site] = _now_mono_e
+                    if _down_n_e >= 3:
+                        self._send_alert(
+                            f"🚨 URGENT: {site} has been down for 15+ min\!
+"
+                            f"HTTP {exc.code} | Down checks: {_down_n_e}
+"
+                            f"Time: {_utcnow_iso()}"
+                        )
+                    else:
+                        self._send_alert(
+                            f"🔴 SITE DOWN: {site}
+HTTP {exc.code}
+"
+                            f"Time: {_utcnow_iso()}"
+                        )
+            else:
+                if self._site_down_count.get(site, 0) > 0:
+                    log.info("Site RECOVERED (HTTPError)  |  %s", site)
+                    self._site_down_count[site] = 0
+                    self._site_last_alert[site] = 0
 
             return {
                 "status": level,
@@ -1522,15 +1581,29 @@ Respond in JSON:
         except Exception as exc:
             elapsed_ms = round((time.monotonic() - start) * 1000, 1)
             log.warning("Site UNREACHABLE  |  %s  |  %s", site, exc)
-            # Cooldown: don't spam alerts; max 1 per site per 30 min
+            # Cooldown: 10-min repeat alerts; escalate after 3 consecutive checks
             now_mono = time.monotonic()
-            last = self._last_unreachable_alert.get(site, 0)
-            if now_mono - last >= 1800:  # 30 min
+            self._site_down_count[site] = self._site_down_count.get(site, 0) + 1
+            _down_n_u = self._site_down_count[site]
+            _last_alert_u = self._site_last_alert.get(site, 0)
+            if now_mono - _last_alert_u >= 600:  # 10-min cooldown
                 self._last_unreachable_alert[site] = now_mono
-                self._send_alert(
-                    f"🔴 SITE UNREACHABLE: {site}\nError: {str(exc)[:200]}\n"
-                    f"Time: {_utcnow_iso()}"
-                )
+                self._site_last_alert[site] = now_mono
+                if _down_n_u >= 3:
+                    self._send_alert(
+                        f"🚨 URGENT: {site} has been down for 15+ min\!
+"
+                        f"Error: {str(exc)[:150]}
+"
+                        f"Down checks: {_down_n_u} | Time: {_utcnow_iso()}"
+                    )
+                else:
+                    self._send_alert(
+                        f"🔴 SITE UNREACHABLE: {site}
+Error: {str(exc)[:200]}
+"
+                        f"Time: {_utcnow_iso()}"
+                    )
             return {
                 "status": "down",
                 "response_time_ms": elapsed_ms,
@@ -1579,20 +1652,23 @@ Respond in JSON:
                 status="success",
             )
 
-            # ── Idle detection ──
+            # ── Idle detection (repeat every 60 min, not once total) ──
             idle_seconds = now - self._last_activity
-            if idle_seconds > IDLE_ALERT_SECONDS and not self._idle_alert_sent:
-                idle_min = round(idle_seconds / 60, 1)
-                log.warning(
-                    "Director idle for %.1f minutes — sending alert", idle_min,
-                )
-                self._send_alert(
-                    f"⏳ FALCON AGENCY — Director Idle\n\n"
-                    f"No task activity for {idle_min} minutes.\n"
-                    f"Last heartbeat: {_utcnow_iso()}\n"
-                    f"Daily spend: ${spend.get('daily_total', 0.0):.2f}"
-                )
-                self._idle_alert_sent = True
+            if idle_seconds > IDLE_ALERT_SECONDS:
+                # Repeat alert every IDLE_ALERT_SECONDS (60 min)
+                time_since_last = now - self._last_idle_alert_time
+                if time_since_last >= IDLE_ALERT_SECONDS or self._last_idle_alert_time == 0:
+                    idle_min = round(idle_seconds / 60, 1)
+                    log.warning(
+                        "Director idle for %.1f minutes — sending alert", idle_min,
+                    )
+                    self._send_alert(
+                        f"⏳ FALCON AGENCY — Director Idle\n\n"
+                        f"No task activity for {idle_min} minutes.\n"
+                        f"Last heartbeat: {_utcnow_iso()}\n"
+                        f"Daily spend: ${spend.get('daily_total', 0.0):.2f}"
+                    )
+                    self._last_idle_alert_time = now
 
         except Exception as exc:
             log.warning("Heartbeat failed: %s", exc, exc_info=True)
@@ -1626,27 +1702,46 @@ Respond in JSON:
             # ── 1. Heartbeat ──
             self.run_heartbeat()
 
-            # ── 2. Scheduled tasks ──
+            # ── 2. Scheduled tasks (merge retry queue + newly due) ──
             due_tasks = self.check_schedule()
+            # Process retry queue first (tasks deferred when Director was busy)
+            if self._retry_queue:
+                retry_items = self._retry_queue[:MAX_TASKS_PER_CYCLE]
+                self._retry_queue = self._retry_queue[MAX_TASKS_PER_CYCLE:]
+                due_tasks = retry_items + due_tasks
+                log.info("Retry queue: %d items this cycle", len(retry_items))
             if due_tasks:
                 log.info("Due tasks this cycle: %d", len(due_tasks))
 
             tasks_completed = 0
+            _MAX_RETRY_QUEUE = 20  # cap to avoid unbounded growth
 
-            for task_info in due_tasks:
+            for idx, task_info in enumerate(due_tasks):
                 # Time budget guard
                 if time.monotonic() - cycle_start > CYCLE_TIME_BUDGET:
-                    log.warning(
-                        "Cycle time budget (%.0fs) exceeded — "
-                        "deferring %d remaining tasks",
-                        CYCLE_TIME_BUDGET,
-                        len(due_tasks) - tasks_completed,
-                    )
+                    remaining = due_tasks[idx:]
+                    if remaining and len(self._retry_queue) < _MAX_RETRY_QUEUE:
+                        self._retry_queue = (
+                            self._retry_queue + remaining
+                        )[-_MAX_RETRY_QUEUE:]
+                        log.warning(
+                            "Cycle time budget (%.0fs) exceeded — "
+                            "queued %d tasks for retry",
+                            CYCLE_TIME_BUDGET, len(remaining),
+                        )
                     break
 
                 # Max tasks per cycle guard
                 if tasks_completed >= MAX_TASKS_PER_CYCLE:
-                    log.info("Task-per-cycle cap (%d) reached", MAX_TASKS_PER_CYCLE)
+                    remaining = due_tasks[idx:]
+                    if remaining and len(self._retry_queue) < _MAX_RETRY_QUEUE:
+                        self._retry_queue = (
+                            self._retry_queue + remaining
+                        )[-_MAX_RETRY_QUEUE:]
+                        log.info(
+                            "Task-per-cycle cap (%d) reached — "
+                            "queued %d for retry", MAX_TASKS_PER_CYCLE, len(remaining),
+                        )
                     break
 
                 task_name = task_info["task"]
@@ -1656,6 +1751,11 @@ Respond in JSON:
                 # Budget check
                 estimated_cost = TASK_ESTIMATED_COST.get(task_name, 0.0)
                 if estimated_cost > 0 and not self.check_budget(estimated_cost):
+                    remaining = due_tasks[idx:]
+                    if remaining and len(self._retry_queue) < _MAX_RETRY_QUEUE:
+                        self._retry_queue = (
+                            self._retry_queue + remaining
+                        )[-_MAX_RETRY_QUEUE:]
                     log.critical("Budget exhausted — halting all scheduled tasks")
                     break
 
@@ -1682,7 +1782,6 @@ Respond in JSON:
 
                 tasks_completed += 1
                 self._last_activity = time.monotonic()
-                self._idle_alert_sent = False
 
             # ── 3. Goal processing (if time remains) ──
             goal = None
@@ -1697,7 +1796,6 @@ Respond in JSON:
 
                     self._process_goal(goal)
                     self._last_activity = time.monotonic()
-                    self._idle_alert_sent = False
 
             cycle_duration = time.monotonic() - cycle_start
 

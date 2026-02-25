@@ -369,7 +369,7 @@ class IntegrationBridge:
             # ── 4. CATEGORY NAMES ─────────────────────────────────
             RISKY_CAT_WORDS = [
                 "diabetic","diabetes","cancer","anxiety","depression",
-                "weight loss","cardiovascular","respiratory","immunity",
+                "weight loss","cardiovascular","respiratory",
                 "stress","inflammation","liver care","skin disorder"
             ]
             try:
@@ -378,7 +378,8 @@ class IntegrationBridge:
                     timeout=15)
                 if r.ok:
                     for cat in r.json():
-                        cname = cat.get("name","")
+                        import html as _html
+                        cname = _html.unescape(cat.get("name",""))
                         if any(w in cname.lower() for w in RISKY_CAT_WORDS):
                             report["categories_advisory"].append({
                                 "id": cat["id"], "name": cname,
@@ -390,12 +391,8 @@ class IntegrationBridge:
                                     .replace("Diabetes","Glucose Wellness")
                                     .replace("Cardiovascular","Heart Wellness")
                                     .replace("Respiratory Care","Respiratory Wellness")
-                                    .replace("Respiratory","Respiratory Wellness")
-                                    .replace("Immunity","Immune Support")
-                                    .replace("Stress, Anxiety &amp; Depression","Calm &amp; Balance")
                                     .replace("Stress, Anxiety & Depression","Calm & Balance")
                                     .replace("Weight Loss","Metabolic Wellness")
-                                    .replace("Inflammation, Swelling &amp; Body Pain","Comfort &amp; Mobility")
                                     .replace("Inflammation, Swelling & Body Pain","Comfort & Mobility")
                                     .replace("Liver Care","Liver Wellness")
                                 ),
@@ -1208,17 +1205,17 @@ class IntegrationBridge:
             "\u2550" * 30,
         ]
 
-        # LIVE orders from WooCommerce
+        # LIVE orders from WooCommerce (last 7 days for context)
         woo = self.tools.get("woocommerce")
         if woo:
             try:
                 today_orders = woo.get_orders(
-                    days_back=1, save=False
+                    days_back=7, save=False
                 )
                 if today_orders.get("success"):
                     data = today_orders["data"]
                     lines.append(
-                        "\n\U0001F4E6 *ORDERS (Last 24h):*"
+                        "\n\U0001F4E6 *ORDERS (Last 7 Days):*"
                     )
                     lines.append(
                         "   Orders: {}".format(
@@ -1295,17 +1292,17 @@ class IntegrationBridge:
             "\u2550" * 30,
         ]
 
-        # LIVE today's orders
+        # LIVE orders (last 7 days)
         woo = self.tools.get("woocommerce")
         if woo:
             try:
                 today_orders = woo.get_orders(
-                    days_back=1, save=False
+                    days_back=7, save=False
                 )
                 if today_orders.get("success"):
                     data = today_orders["data"]
                     lines.append(
-                        "\n\U0001F4E6 *TODAY'S ORDERS:* {}".format(
+                        "\n\U0001F4E6 *ORDERS (Last 7 Days):* {}".format(
                             data['total_orders']
                         )
                     )
@@ -1316,7 +1313,7 @@ class IntegrationBridge:
                     )
                     if data['total_orders'] == 0:
                         lines.append(
-                            "   \u26A0\uFE0F No orders today"
+                            "   \u26A0\uFE0F No orders this week"
                         )
             except Exception:
                 pass

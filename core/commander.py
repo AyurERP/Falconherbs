@@ -228,10 +228,41 @@ class FalconCommander:
             # ── Step 0: Try new extended intents first ──
             if self._extended_classifier:
                 try:
+                    # Check for confirmation of pending action (haan karo, yes do it)
+                    confirm_words = ["haan", "yes", "karo", "confirm", "do it", "theek", "apply"]
+                    if any(w in lower_text for w in confirm_words) and len(lower_text) < 30:
+                        pending = memory.get_context(user_id, "pending_action")
+                        if pending:
+                            handler_name = pending if pending.startswith("handle_") else f"handle_{pending.replace('-', '_')}"
+                            ext_result = {
+                                "intent": pending,
+                                "handler": handler_name,
+                                "message_text": text,
+                                "confirmed": True,
+                            }
+                            response = self._extended_handler.handle(ext_result)
+                            if response.get("success"):
+                                memory.set_context(user_id, "pending_action", None)  # clear
+                            raw_reply = response.get("response", "")
+                            if raw_reply:
+                                try:
+                                    recent_msgs = memory.get_recent_messages(user_id, limit=8)
+                                except Exception:
+                                    recent_msgs = []
+                                reply_text = director_brain.wrap_raw_response(
+                                    text, raw_reply, "confirm",
+                                    recent_messages=recent_msgs,
+                                )
+                                self._whatsapp.send_message(reply_text)
+                                memory.add_message(user_id, "assistant", reply_text)
+                                return
                     ext_result = self._extended_classifier.classify(text)
                     if ext_result:
                         ext_result["message_text"] = text
                         response = self._extended_handler.handle(ext_result)
+                        # Store pending_action for confirmation flow
+                        if response.get("needs_confirmation") and response.get("pending_action"):
+                            memory.set_context(user_id, "pending_action", response["pending_action"])
                         # ALWAYS send if intent was classified — even on errors.
                         # Previously fell through on success=False which caused
                         # old keyword classifier to misroute (e.g. "price scan"
@@ -270,6 +301,16 @@ class FalconCommander:
                             return
                 except Exception as e:
                     log.warning("Extended intent failed (falling through): %s", e)
+                    # Gap #25: Notify owner when intent classifier crashes
+                    try:
+                        self._whatsapp.send_message(
+                            "⚠️ *Falcon Agency Alert*\n\n"
+                            "Intent classifier crashed. Error: {}\n\n"
+                            "Falling back to basic classifier. "
+                            "Check logs if this repeats.".format(str(e)[:150])
+                        )
+                    except Exception:
+                        pass
 
             # Step 3: no pending plan → normal intent classification
             # ── Step 1: Classify intent ──
@@ -708,8 +749,12 @@ class FalconCommander:
             self._whatsapp.send_message(reply)
         except Exception:
             raw = (
-                "Didn't catch that. Try: 'status', 'sales report', "
-                "'seo check', 'write blog about [topic]', or ask anything."
+                "Samajh nahi aaya. Try karo:\n"
+                "• \"status\" / \"kya ho raha hai\" — update\n"
+                "• \"order check\" / \"revenue\" — sales\n"
+                "• \"health scan\" — compliance\n"
+                "• \"keyword analysis\" — SEO\n"
+                "• \"help\" — sab commands"
             )
             reply = director_brain.wrap_raw_response(
                 original_text, raw, "unknown_fallback",
