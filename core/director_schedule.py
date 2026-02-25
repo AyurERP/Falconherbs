@@ -711,18 +711,29 @@ class ExtendedSchedule:
 
     def _task_content_package_weekly(self):
         """Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost."""
-        result = self.bridge.generate_weekly_content_package()
-        if result.get("success"):
+        try:
+            result = self.bridge.generate_weekly_content_package()
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": result.get("summary", "Content package ready."),
+                }
             return {
-                "success": True,
+                "success": False,
                 "send_whatsapp": True,
-                "message": result.get("summary", "Content package ready."),
+                "message": f"❌ Content package failed: {result.get('error', 'unknown')}",
             }
-        return {
-            "success": False,
-            "send_whatsapp": True,
-            "message": f"❌ Content package failed: {result.get('error', 'unknown')}",
-        }
+        except Exception as e:
+            err_str = str(e)[:200]
+            return {
+                "success": False,
+                "send_whatsapp": True,
+                "message": (
+                    f"⚠️ Content package generate nahi ho paya. "
+                    f"Error: {err_str}. Main check karunga aur retry karunga."
+                ),
+            }
     
     def _task_customer_analysis(self):
         """Weekly customer analysis — uses Win-Back module
@@ -939,7 +950,7 @@ class ExtendedSchedule:
                     print(f"  ❌ WhatsApp failed: {e}")
 
             # Critical tasks: always alert on failure regardless of send_whatsapp flag
-            _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check"}
+            _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check", "content_package_weekly", "generate_weekly_content_package"}
             if (result.get("success") is False and
                     task["name"] in _CRITICAL_TASKS and
                     not result.get("send_whatsapp") and

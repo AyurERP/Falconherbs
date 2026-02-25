@@ -66,6 +66,15 @@ PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 IDEAS_FILE: Path = PROJECT_ROOT / "data" / "ideas.json"
 HTTP_TIMEOUT: int = 30    # Claude can take longer than a web request
 
+# Budget: estimated cost per AI call (USD)
+NVIDIA_CHAT_COST: float = 0.003   # DirectorBrain reply/wrap
+NVIDIA_IMAGE_COST: float = 0.02   # Image generation
+BUDGET_EXHAUSTED_MSG: str = (
+    "Boss, aaj ka AI budget khatam ho gaya hai. "
+    "Kal subah se normal responses milenge. "
+    "Emergency ho toh 'override' bolein."
+)
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  SYSTEM PROMPTS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -164,7 +173,9 @@ class FalconCommander:
         try:
             self._bridge = IntegrationBridge()
             self._extended_classifier = ExtendedIntentClassifier(self._bridge)
-            self._extended_handler = IntentResponseHandler(self._bridge)
+            self._extended_handler = IntentResponseHandler(
+                self._bridge, director=getattr(self, "_director", None)
+            )
             log.info("Extended intents loaded (bridge OK)")
         except Exception as e:
             self._bridge = None
@@ -213,6 +224,13 @@ class FalconCommander:
         # Store user message in memory
         memory.add_message(user_id, "user", text)
         memory.track_topic(user_id, text)
+
+        # Budget check: typical message = classify + wrap + maybe generate (~0.01)
+        if self._director and hasattr(self._director, "check_budget"):
+            if not self._director.check_budget(0.01):
+                self._whatsapp.send_message(BUDGET_EXHAUSTED_MSG)
+                memory.add_message(user_id, "assistant", BUDGET_EXHAUSTED_MSG)
+                return
 
         log.info(
             "Commander processing  |  msg_id=%s  |  text='%s'",
@@ -277,6 +295,7 @@ class FalconCommander:
                                     text, raw_reply, "confirm",
                                     recent_messages=recent_msgs,
                                 )
+                                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                                 self._whatsapp.send_message(reply_text)
                                 memory.add_message(user_id, "assistant", reply_text)
                                 return
@@ -306,6 +325,7 @@ class FalconCommander:
                                 intent=ext_result.get("intent", ""),
                                 recent_messages=recent_msgs,
                             )
+                            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                             self._whatsapp.send_message(reply_text)
                             memory.add_message(
                                 user_id, "assistant", reply_text
@@ -374,6 +394,7 @@ class FalconCommander:
                     text, clarifying_question, "clarify",
                     recent_messages=self._get_recent_for_wrap(),
                 )
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
                 return
             elif intent == "plan_task" and task:
@@ -382,6 +403,7 @@ class FalconCommander:
                     text, f"Plan proposed: {plan_text}", "plan_proposed",
                     recent_messages=self._get_recent_for_wrap(),
                 )
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
                 
                 def _trigger_approval():
@@ -398,6 +420,7 @@ class FalconCommander:
                                 text, raw, "plan_cancelled",
                                 recent_messages=self._get_recent_for_wrap(),
                             )
+                            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                             self._whatsapp.send_message(r)
                     except Exception as e:
                         raw = f"Task planning failed: {task}. Error: {str(e)[:200]}"
@@ -405,6 +428,7 @@ class FalconCommander:
                             text, raw, "plan_error",
                             recent_messages=self._get_recent_for_wrap(),
                         )
+                        self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                         self._whatsapp.send_message(r)
                         
                 # request_approval is blocking (poll_for_reply loops with timeout),
@@ -448,6 +472,7 @@ class FalconCommander:
                     text, raw, "crash_fallback",
                     recent_messages=self._get_recent_for_wrap(),
                 )
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
             except Exception:
                 pass
@@ -469,6 +494,7 @@ class FalconCommander:
                 text, raw, "director_offline",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
             return
 
@@ -495,6 +521,7 @@ class FalconCommander:
                 text, raw, "direct_agent_start",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
             plan = director.think(query)
             plan_str = json.dumps(plan, indent=2)[:2000]
@@ -502,6 +529,7 @@ class FalconCommander:
                 text, f"Director's response: {plan_str}", "director_response",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply2)
             return
         
@@ -514,6 +542,7 @@ class FalconCommander:
                 text, raw, "unknown_agent",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
             return
         
@@ -523,6 +552,7 @@ class FalconCommander:
             text, raw_start, "direct_agent_start",
             recent_messages=self._get_recent_for_wrap(),
         )
+        self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
         self._whatsapp.send_message(reply)
         
         try:
@@ -534,6 +564,7 @@ class FalconCommander:
                     text, raw_result, "agent_result",
                     recent_messages=self._get_recent_for_wrap(),
                 )
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
             else:
                 thought_str = json.dumps(thought, indent=2)[:1500]
@@ -542,6 +573,7 @@ class FalconCommander:
                     text, raw_analysis, "agent_analysis",
                     recent_messages=self._get_recent_for_wrap(),
                 )
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
         except Exception as e:
             raw_err = f"{agent.name} error: {str(e)[:500]}"
@@ -549,6 +581,7 @@ class FalconCommander:
                 text, raw_err, "agent_error",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     # ══════════════════════════════════════════════════════════════════
@@ -582,6 +615,7 @@ class FalconCommander:
                 original_text, raw, "status_error",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     def _handle_run_task(
@@ -610,6 +644,7 @@ class FalconCommander:
             original_text, raw_start, "task_start",
             recent_messages=self._get_recent_for_wrap(),
         )
+        self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
         self._whatsapp.send_message(start_msg)
 
         try:
@@ -651,6 +686,7 @@ class FalconCommander:
                 original_text, raw_err, "task_error",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(err_msg)
 
 
@@ -664,6 +700,7 @@ class FalconCommander:
                 original_text or "yes", raw, "approve",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
         else:
             raw = "No pending approval. When an action needs approval, I'll ask."
@@ -671,6 +708,7 @@ class FalconCommander:
                 original_text or "approve", raw, "approve_none",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     def _handle_deny(self, original_text: str = "") -> None:
@@ -683,6 +721,7 @@ class FalconCommander:
                 original_text or "no", raw, "deny",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
         else:
             raw = "No pending approval."
@@ -690,6 +729,7 @@ class FalconCommander:
                 original_text or "deny", raw, "deny_none",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     def _handle_idea_capture(
@@ -708,6 +748,7 @@ class FalconCommander:
             original_text, raw, "idea_capture",
             recent_messages=self._get_recent_for_wrap(),
         )
+        self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
         self._whatsapp.send_message(reply)
 
     def _search_serper(self, query: str) -> str:
@@ -816,6 +857,7 @@ class FalconCommander:
                 original_text, raw, "question_error",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     def _reply_unknown(self, original_text: str) -> None:
@@ -844,6 +886,7 @@ class FalconCommander:
                 original_text, raw, "unknown_fallback",
                 recent_messages=self._get_recent_for_wrap(),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             self._whatsapp.send_message(reply)
 
     # ══════════════════════════════════════════════════════════════════
@@ -866,6 +909,7 @@ class FalconCommander:
         # Try DirectorBrain first (reasoning model = better JSON output)
         result = director_brain.classify_intent(text, context=context)
         if result:
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             log.info("Intent classified via DirectorBrain (DeepSeek R1)")
             return result
 
@@ -945,6 +989,14 @@ class FalconCommander:
         return {"intent": "unknown", "task": None, "site": "falconherbs.com",
                 "params": {}, "reply_needed": True, "idea_text": None}
 
+    def _maybe_log_ai_spend(self, reason: str, amount: float) -> None:
+        """Log AI spend if Director is available."""
+        if self._director and hasattr(self._director, "log_spend"):
+            try:
+                self._director.log_spend(amount, reason, "falconherbs.com")
+            except Exception:
+                pass
+
     def _generate_reply(self, owner_message: str, context: str) -> str:
         """
         Generate a natural-language reply using DirectorBrain.
@@ -988,6 +1040,7 @@ class FalconCommander:
                 director=getattr(self, "_director", None),
                 bridge=getattr(self, "_bridge", None),
             )
+            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
             log.log_action(
                 action="reply_generated",
                 agent="commander",

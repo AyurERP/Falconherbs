@@ -1189,8 +1189,9 @@ class IntentResponseHandler:
     Each handler returns a WhatsApp-ready response.
     """
     
-    def __init__(self, integration_bridge):
+    def __init__(self, integration_bridge, director=None):
         self.bridge = integration_bridge
+        self._director = director
     
     def handle(self, intent_result):
         """Route to appropriate handler"""
@@ -2145,6 +2146,8 @@ class IntentResponseHandler:
                 return {"response": "❌ Image generator not loaded.", "success": False}
             r = img.generate(topic, style="product", width=1080, height=1080)
             if r.get("success"):
+                if self._director and hasattr(self._director, "log_spend"):
+                    self._director.log_spend(0.02, "nvidia_image", "falconherbs.com")
                 return {"response": r.get("message", f"✅ Image saved: {r.get('filepath')}"), "success": True}
             return {"response": f"❌ {r.get('error')}", "success": False}
         except Exception as e:

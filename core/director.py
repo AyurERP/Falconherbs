@@ -46,6 +46,7 @@ Python Version   : 3.11+
 
 from __future__ import annotations
 
+import concurrent.futures
 import importlib
 import json
 import signal
@@ -80,6 +81,7 @@ from core.revenue_tracker import RevenueTracker
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent   # F:/FALCON AGENCY
+AGENT_TIMEOUT: int = 300  # 5 minutes max per agent task
 DATA_DIR:     Path = PROJECT_ROOT / "data"
 GOALS_FILE:   Path = DATA_DIR / "goals.json"
 SCHEDULE_FILE: Path = DATA_DIR / "schedule.json"
@@ -1283,19 +1285,40 @@ Respond in JSON:
             agent, task, site,
         )
 
-        try:
-            # ── Route to handler ──
+        _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check", "content_package_weekly", "generate_weekly_content_package"}
+
+        def _do_dispatch() -> dict:
             if agent == "sentinel":
-                result = self._dispatch_sentinel(task, site, params)
-            elif agent in ("developer", "strategist", "media"):
-                result = self._dispatch_dynamic_agent(agent, task, site, params)
+                return self._dispatch_sentinel(task, site, params)
+            elif agent in ("developer", "strategist", "media", "backup"):
+                return self._dispatch_dynamic_agent(agent, task, site, params)
             elif agent == "internal":
-                result = self._dispatch_internal(task, site, params)
+                return self._dispatch_internal(task, site, params)
             else:
-                result = {
-                    "status": "error",
-                    "message": f"Unknown agent: {agent}",
-                }
+                return {"status": "error", "message": f"Unknown agent: {agent}"}
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_do_dispatch)
+                try:
+                    result = future.result(timeout=AGENT_TIMEOUT)
+                except concurrent.futures.TimeoutError:
+                    error_msg = f"Agent {agent} timed out after {AGENT_TIMEOUT}s on task: {task}"
+                    log.critical(error_msg)
+                    log.log_action(
+                        action="agent_timeout",
+                        details={"agent": agent, "task": task, "site": site},
+                        agent=agent,
+                        status="timeout",
+                    )
+                    if task in _CRITICAL_TASKS:
+                        self._send_alert(
+                            f"⚠️ {agent} agent {AGENT_TIMEOUT}s mein complete nahi hua. "
+                            f"Task: {task}. Retry queue mein daal diya hai."
+                        )
+                    if len(self._retry_queue) < 20:
+                        self._retry_queue.append({"task": task, "site": site, "agent": agent})
+                    result = {"status": "timeout", "error": error_msg}
 
             duration = time.monotonic() - dispatch_start
 

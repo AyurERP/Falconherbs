@@ -35,13 +35,17 @@ class ContentProducer:
         woo_connector=None,
         image_generator=None,
         video_creator=None,
+        health_scanner=None,
     ):
         self.brand = self._load_brand_guidelines(brand_guidelines)
         self.woo = woo_connector
         self.image_gen = image_generator
         self.video_creator = video_creator or self._video_creator_default()
+        self._health_scanner = health_scanner
         self._images_today = 0
         self._MAX_IMAGES_PER_DAY = 50
+        if not health_scanner:
+            log.warning("ContentProducer: HealthClaimsScanner not available — banned_words only")
 
     def _load_brand_guidelines(self, brand: Optional[Dict]) -> Dict:
         """Load brand guidelines from file or dict."""
@@ -253,8 +257,11 @@ Return JSON only:
             if "```" in clean:
                 clean = clean.split("```")[1].replace("json", "").strip()
             data = json.loads(clean)
+            caption = data.get("caption", "")
+            product_name = product.get("name", "") if product else None
+            caption = self._validate_caption(caption, product_name, platform, post_type, theme)
             return {
-                "caption": data.get("caption", ""),
+                "caption": caption,
                 "hashtags": data.get("hashtags", []),
                 "cta": data.get("cta", "Shop now at falconherbs.com"),
                 "platform": platform,
@@ -263,6 +270,64 @@ Return JSON only:
         except Exception as e:
             log.warning("Caption generation failed: %s", e)
             return {"caption": f"Discover {self.brand.get('brand_name', 'Falcon Herbs')} — authentic Ayurvedic wellness.", "hashtags": self.brand.get("hashtags", {}).get("always", []), "cta": "Shop now", "platform": platform}
+
+    def _validate_caption(self, caption: str, product_name: Optional[str], platform: str, post_type: str, theme: Optional[str]) -> str:
+        """Run banned_words check and HealthClaimsScanner on caption. Regenerate if needed."""
+        if not caption:
+            return caption
+        banned = self.brand.get("banned_words", [])
+        for word in banned:
+            if word.lower() in caption.lower():
+                caption = self._regenerate_clean(caption, [word], product_name, platform, post_type, theme)
+                break
+        if self._health_scanner:
+            try:
+                findings = self._health_scanner.scan_page("", caption, "", is_product=False)
+                claims = []
+                for item in findings.get("high_risk", []) + findings.get("medium_risk", []):
+                    claims.append(item.get("matched", ""))
+                if claims:
+                    caption = self._regenerate_clean(caption, claims, product_name, platform, post_type, theme)
+            except Exception as e:
+                log.warning("Health scan on caption failed: %s", e)
+        return caption
+
+    def _regenerate_clean(
+        self,
+        original: str,
+        claims_found: List[str],
+        product_name: Optional[str],
+        platform: str,
+        post_type: str,
+        theme: Optional[str],
+    ) -> str:
+        """Regenerate caption explicitly avoiding health claims."""
+        prod = product_name or "herbal product"
+        prompt = f"""Rewrite this caption for {prod}.
+
+REMOVE these health claims (they violate FSSAI rules):
+{chr(10).join('- ' + c for c in claims_found)}
+
+ORIGINAL: {original}
+
+RULES:
+- NO health claims whatsoever
+- Focus on: ingredients, tradition, lifestyle, aroma, taste
+- Keep the same tone and platform style ({platform}, {post_type})
+- Keep hashtags if present
+
+REWRITTEN (caption only, no JSON):"""
+        try:
+            reply = call_ai("media", [{"role": "user", "content": prompt}], max_tokens=400)
+            if reply.startswith("AI_ERROR"):
+                return original
+            clean = re.sub(r"<think>.*?</think>", "", reply, flags=re.DOTALL).strip()
+            if "```" in clean:
+                clean = clean.split("```")[1].replace("json", "").replace("caption", "").strip()
+            return clean[:1500] if clean else original
+        except Exception as e:
+            log.warning("Caption regenerate failed: %s", e)
+            return original
 
     def _generate_post_image(
         self,

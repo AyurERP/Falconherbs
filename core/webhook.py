@@ -327,6 +327,13 @@ class FalconWebhook:
 
             text_body = msg.get("text", {}).get("body", "").strip()
             if not text_body:
+                try:
+                    self._whatsapp.send_message(
+                        "Boss, empty message aaya. Kya karna hai? "
+                        "'help' bolein toh commands dikha doon."
+                    )
+                except Exception:
+                    pass
                 return
 
             # ── Extract quote-reply context ──

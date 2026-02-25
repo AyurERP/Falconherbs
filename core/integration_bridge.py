@@ -123,6 +123,7 @@ class IntegrationBridge:
                 brand_guidelines=self._load_brand_guidelines(),
                 woo_connector=self.tools.get("woocommerce"),
                 image_generator=self.tools.get("image"),
+                health_scanner=self.tools.get("health_scanner"),
             )
             self.status["content_producer"] = "loaded"
         except Exception as e:
