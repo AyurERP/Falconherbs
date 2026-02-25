@@ -657,6 +657,18 @@ class Director:
                     "Director idle-monitoring: site ping failed"
                 )
 
+        # 4. Ads monitor status (BUILD 4) — lightweight check
+        if self._cycle_count % 20 == 0:
+            try:
+                from core.ads_monitor import get_google_ads_summary
+                g = get_google_ads_summary("today")
+                if g.get("status") == "active":
+                    status_parts.append("ads: connected")
+                elif g.get("status") == "not_configured":
+                    status_parts.append("ads: setup pending")
+            except Exception:
+                pass
+
         summary = (
             "Monitoring: " + " | ".join(status_parts)
             if status_parts
