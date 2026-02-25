@@ -2898,7 +2898,21 @@ Keep it punchy, under 150 words. No health claims."""
                 ]
             )
             as_draft = not is_live
-            
+
+            # SAFETY: Live publish requires explicit confirmation
+            if is_live and not intent.get("confirmed") and not self._is_confirmation(intent):
+                return {
+                    "response": (
+                        "⚠️ *Live Publish Confirmation*\n\n"
+                        "Yeh blog post live ho jayegi — sab visitors dekh sakte hain.\n\n"
+                        "Confirm karne ke liye:\n"
+                        "✅ *'haan publish karo'* ya *'yes live karo'*"
+                    ),
+                    "success": True,
+                    "awaiting_confirmation": True,
+                    "pending_action": "live_publish"
+                }
+
             result = workflow.approve_and_publish(
                 as_draft=as_draft
             )
