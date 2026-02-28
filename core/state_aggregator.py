@@ -48,6 +48,7 @@ def get_client_state_summary(
         Unified state summary for DirectorBrain context.
     """
     state: Dict[str, Any] = {
+        "north_star": _get_north_star(),
         "website_health": _load_latest_health_audit(),
         "last_backup": _get_last_backup_status(site_id),
         "revenue_today": _get_today_revenue(bridge),
@@ -60,6 +61,8 @@ def get_client_state_summary(
         "security_status": _get_latest_security_scan(),
         "last_owner_message": _get_last_interaction(),
         "schedule_summary": _get_schedule_summary(),
+        "serper_usage": _get_serper_usage(),
+        "agent_performance": _get_agent_performance(),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     return state
@@ -68,6 +71,12 @@ def get_client_state_summary(
 def format_for_director_context(state: Dict[str, Any]) -> str:
     """Format state dict into readable text for DirectorBrain injection."""
     lines = ["=== CLIENT STATE (use for 'website ka kya haal hai' questions) ===", ""]
+
+    # North-star goal
+    ns = state.get("north_star") or {}
+    if ns.get("primary_goal"):
+        lines.append(f"North-star: {ns['primary_goal']}")
+    lines.append("")
 
     # Website health
     health = state.get("website_health") or {}
@@ -143,6 +152,21 @@ def format_for_director_context(state: Dict[str, Any]) -> str:
     sec = state.get("security_status")
     if sec:
         lines.append(f"Security: {sec}")
+    lines.append("")
+
+    # Serper (Google search API)
+    serper = state.get("serper_usage")
+    if serper:
+        lines.append(f"Serper: {serper.get('used', 0)}/{serper.get('limit', 2500)} this month")
+    lines.append("")
+
+    # Agent performance (Director uses to assign work)
+    perf = state.get("agent_performance") or {}
+    if perf.get("agents"):
+        busy = sorted(perf.get("agents", {}).items(), key=lambda x: x[1].get("total", 0), reverse=True)[:5]
+        lines.append("Agent workload (7d): " + ", ".join(f"{a}:{s['total']}" for a, s in busy))
+    if perf.get("idle"):
+        lines.append("Idle: " + ", ".join(perf["idle"][:5]))
     lines.append("")
 
     # Last message
@@ -255,12 +279,15 @@ def _get_monthly_revenue(bridge: Optional["IntegrationBridge"]) -> Dict:
 
 
 def _get_pending_goals() -> List[Dict]:
-    """From data/goals.json"""
+    """From data/goals.json — handles list OR dict with 'goals' key."""
     path = DATA_DIR / "goals.json"
     data = _load_json(path, [])
-    if not isinstance(data, list):
-        return []
-    return [g for g in data if g.get("status") == "pending"]
+    goals_list: List[Dict] = []
+    if isinstance(data, list):
+        goals_list = data
+    elif isinstance(data, dict):
+        goals_list = data.get("goals", data.get("tasks", [])) or []
+    return [g for g in goals_list if isinstance(g, dict) and g.get("status") == "pending"]
 
 
 def _get_current_agent_activity(director: Optional["Director"]) -> Dict:
@@ -359,3 +386,33 @@ def _get_schedule_summary() -> Optional[str]:
         if not last or not last.startswith(today):
             due.append(name)
     return f"Due today: {', '.join(due[:5])}" if due else "All caught up"
+
+
+def _get_serper_usage() -> Optional[Dict[str, Any]]:
+    """Serper API usage this month (2500 free)."""
+    try:
+        from core.serper_client import get_serper_usage
+        return get_serper_usage()
+    except Exception:
+        return None
+
+
+def _get_agent_performance() -> Optional[Dict[str, Any]]:
+    """Agent performance — who's busy, who's idle (for Director)."""
+    try:
+        from core.agent_performance import get_agent_performance
+        return get_agent_performance(days=7)
+    except Exception:
+        return None
+
+
+def _get_north_star() -> Optional[Dict[str, Any]]:
+    """North-star goal — world #1."""
+    try:
+        path = DATA_DIR / ".." / "config" / "north_star.json"
+        path = path.resolve()
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return None

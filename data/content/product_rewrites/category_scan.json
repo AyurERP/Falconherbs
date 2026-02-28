@@ -1,25 +1,19 @@
 {
-  "scanned_at": "2026-02-25T05:34:15.568742",
+  "scanned_at": "2026-02-28T18:10:10.450064",
   "total": 35,
-  "flagged": 3,
+  "flagged": 2,
   "categories": [
     {
-      "id": 112,
-      "name": "Diabetic",
-      "suggested": "Wellness",
-      "count": 2
-    },
-    {
-      "id": 114,
-      "name": "Weight Loss",
-      "suggested": "Weight Management",
-      "count": 8
-    },
-    {
-      "id": 170,
-      "name": "Weight Loss",
-      "suggested": "Weight Management",
+      "id": 156,
+      "name": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
+      "suggested": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
       "count": 1
+    },
+    {
+      "id": 118,
+      "name": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
+      "suggested": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
+      "count": 3
     }
   ]
 }

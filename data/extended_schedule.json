@@ -73,6 +73,37 @@
       "enabled": true,
       "last_run": null,
       "description": "Analyze customer data and suggest recovery actions"
+    },
+    "sentry_daily_scan": {
+      "time": "11:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Scan recent FB/IG comments for compliance risks"
+    },
+    "vps_health_check": {
+      "time": "00:00",
+      "frequency": "interval",
+      "interval_minutes": 30,
+      "enabled": true,
+      "last_run": null,
+      "description": "VPS CPU/memory/disk monitoring"
+    },
+    "content_package_weekly": {
+      "time": "06:00",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Generate weekly content package for HeroPost"
+    },
+    "weekly_trending_scan": {
+      "time": "12:00",
+      "day": "friday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly trending keywords (ayurveda/herbal) via Serper"
     }
   },
   "created_at": "2026-02-23T05:10:47.392577"

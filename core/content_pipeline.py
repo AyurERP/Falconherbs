@@ -175,6 +175,21 @@ class ContentPipeline:
             "instant relief":
                 "fast-acting support",
         }
+        # Merge SEO-safe swaps from config (single source of truth)
+        swaps = self._load_smart_swaps()
+        if swaps:
+            self.safe_alternatives.update(swaps)
+    
+    def _load_smart_swaps(self):
+        """Load config/smart_word_swap.json for SEO + compliant replacements."""
+        try:
+            cfg = Path(__file__).parent.parent / "config" / "smart_word_swap.json"
+            if cfg.exists():
+                data = json.loads(cfg.read_text(encoding="utf-8"))
+                return data.get("replacements", {})
+        except Exception:
+            pass
+        return {}
     
     def safety_check(self, content):
         """

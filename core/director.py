@@ -49,6 +49,7 @@ from __future__ import annotations
 import concurrent.futures
 import importlib
 import json
+import os
 import signal
 import sys
 import time
@@ -483,10 +484,12 @@ class Director:
         """
         try:
             data = self._read_json(GOALS_FILE, default=[])
-            if not isinstance(data, list):
-                log.warning("goals.json root is not a list — resetting to empty")
-                return []
-            return data
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict):
+                goals = data.get("goals", data.get("tasks", [])) or []
+                return goals if isinstance(goals, list) else []
+            return []
         except Exception as exc:
             log.critical("load_goals crashed: %s", exc, exc_info=True)
             return []
@@ -1527,9 +1530,18 @@ Respond in JSON:
 
         Uses ``urllib`` from stdlib — no external dependency — with a
         20-second timeout (SSL handshake from VPS can be slow).
+
+        Env: MUTE_SITE_ALERTS=1 to silence site-down alerts (maintenance mode).
+        Env: SITE_ALERT_COOLDOWN_MIN=30 to reduce alert frequency (default 10).
         """
         url = site if site.startswith("http") else f"https://{site}"
         start = time.monotonic()
+        mute = os.environ.get("MUTE_SITE_ALERTS", "").strip().lower() in ("1", "true", "yes")
+        cooldown_sec = int(os.environ.get("SITE_ALERT_COOLDOWN_MIN", "10")) * 60
+
+        def _maybe_send_site_alert(msg: str) -> None:
+            if not mute:
+                self._send_alert(msg)
 
         try:
             req = urllib.request.Request(
@@ -1547,16 +1559,16 @@ Respond in JSON:
                 _now_mono_h = time.monotonic()
                 _last_alert_h = self._site_last_alert.get(site, 0)
                 _down_n_h = self._site_down_count[site]
-                if _now_mono_h - _last_alert_h >= 600:  # 10-min cooldown
+                if _now_mono_h - _last_alert_h >= cooldown_sec:
                     self._site_last_alert[site] = _now_mono_h
                     if _down_n_h >= 3:
-                        self._send_alert(
+                        _maybe_send_site_alert(
                             f"🚨 URGENT: {site} has been down for 15+ min!\n"
                             f"HTTP {resp.status} | Down checks: {_down_n_h}\n"
                             f"Time: {_utcnow_iso()}"
                         )
                     else:
-                        self._send_alert(
+                        _maybe_send_site_alert(
                             f"🔴 SITE DOWN: {site}\n"
                             f"HTTP {resp.status}\n"
                             f"Time: {_utcnow_iso()}"
@@ -1587,16 +1599,16 @@ Respond in JSON:
                 _now_mono_e = time.monotonic()
                 _last_alert_e = self._site_last_alert.get(site, 0)
                 _down_n_e = self._site_down_count[site]
-                if _now_mono_e - _last_alert_e >= 600:  # 10-min cooldown
+                if _now_mono_e - _last_alert_e >= cooldown_sec:
                     self._site_last_alert[site] = _now_mono_e
                     if _down_n_e >= 3:
-                        self._send_alert(
+                        _maybe_send_site_alert(
                             f"🚨 URGENT: {site} has been down for 15+ min!\n"
                             f"HTTP {exc.code} | Down checks: {_down_n_e}\n"
                             f"Time: {_utcnow_iso()}"
                         )
                     else:
-                        self._send_alert(
+                        _maybe_send_site_alert(
                             f"🔴 SITE DOWN: {site}\n"
                             f"HTTP {exc.code}\n"
                             f"Time: {_utcnow_iso()}"
@@ -1617,22 +1629,21 @@ Respond in JSON:
         except Exception as exc:
             elapsed_ms = round((time.monotonic() - start) * 1000, 1)
             log.warning("Site UNREACHABLE  |  %s  |  %s", site, exc)
-            # Cooldown: 10-min repeat alerts; escalate after 3 consecutive checks
             now_mono = time.monotonic()
             self._site_down_count[site] = self._site_down_count.get(site, 0) + 1
             _down_n_u = self._site_down_count[site]
             _last_alert_u = self._site_last_alert.get(site, 0)
-            if now_mono - _last_alert_u >= 600:  # 10-min cooldown
+            if now_mono - _last_alert_u >= cooldown_sec:
                 self._last_unreachable_alert[site] = now_mono
                 self._site_last_alert[site] = now_mono
                 if _down_n_u >= 3:
-                    self._send_alert(
+                    _maybe_send_site_alert(
                         f"🚨 URGENT: {site} has been down for 15+ min!\n"
                         f"Error: {str(exc)[:150]}\n"
                         f"Down checks: {_down_n_u} | Time: {_utcnow_iso()}"
                     )
                 else:
-                    self._send_alert(
+                    _maybe_send_site_alert(
                         f"🔴 SITE UNREACHABLE: {site}\n"
                         f"Error: {str(exc)[:200]}\n"
                         f"Time: {_utcnow_iso()}"

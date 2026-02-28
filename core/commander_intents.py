@@ -86,6 +86,11 @@ class ExtendedIntentClassifier:
             "health_scan": {
                 "patterns": [
                     r"\bhealth\s+(?:scan|check|audit|claims?)\b",
+                    r"\bscan\s+karo\b",
+                    r"\bsite\s+scan\b",
+                    r"\bwebsite\s+scan\b",
+                    r"\bfull\s+(?:website|site)\s+scan\b",
+                    r"\bpoori\s+website\s+(?:scan|check)\b",
                     r"\bfda\b",
                     r"\bftc\b",
                     r"\bcompliance\b",
@@ -94,11 +99,14 @@ class ExtendedIntentClassifier:
                     r"\brisk\s+(?:scan|check|report)\b",
                     r"\blegal\s+check\b",
                     r"\bclaims?\s+check\b",
-                    r"\bsite\s+scan\b",
-                    r"\bwebsite\s+scan\b",
+                    r"\bsab\s+jagah\s+(?:scan|check|dhundh)\b",
+                    r"\bheader\s+footer\s+(?:bhi\s+)?scan\b",
+                    r"\bsab\s+wrong\s+(?:words?|claims?)\s+dhundh\b",
+                    r"\bpehle\s+scan\b",
+                    r"\bscan\s+pehle\b",
                 ],
                 "handler": "handle_health_scan",
-                "description": "Scan for health claim violations"
+                "description": "Full site scan via WooCommerce + WP API — products, blogs, pages, categories, descriptions, titles"
             },
             
             "safety_check": {
@@ -114,6 +122,20 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_safety_check",
                 "description": "Quick health safety check on text"
+            },
+
+            "server_diagnose": {
+                "patterns": [
+                    r"\bsite\s+down\b",
+                    r"\bsite\s+unreachable\b",
+                    r"\bserver\s+(?:check|diagnose|status)\b",
+                    r"\bwhm\s+(?:check|status)\b",
+                    r"\bplugin\s+update\s+crash\b",
+                    r"\bapache\s+restart\b",
+                    r"\bkya\s+problem\s+hai\s+site\b",
+                ],
+                "handler": "handle_server_diagnose",
+                "description": "Server/site diagnostic — reachability, WHM, common fixes"
             },
             
             # ===== REVENUE =====
@@ -615,6 +637,11 @@ class ExtendedIntentClassifier:
                     r"\bpublish\s+live\s+karo\b",
                     r"\blive\s+publish\b",
                     r"\bpublish\s+live\b",
+                    r"\blive\s+karo\b",
+                    r"\bmake\s+(?:it\s+)?live\b",
+                    r"\bgo\s+live\b",
+                    r"\bsite\s+pe\s+(?:daal|publish|live)\b",
+                    r"\bwebsite\s+(?:pe|par)\s+(?:daal|publish)\b",
                 ],
                 "handler": "handle_publish_blog",
                 "description": "Publish blog to WordPress"
@@ -758,6 +785,13 @@ class ExtendedIntentClassifier:
                     r"\ball\s+fix\b",
                     r"\b125\s+fix\b",
                     r"\bpura\s+fix\b",
+                    r"\bfix\s+karo\b",
+                    r"\bsab\s+theek\s+karo\b",
+                    r"\bcompliance\s+fix\b",
+                    r"\bhealth\s+claims?\s+fix\b",
+                    r"\bviolations?\s+fix\b",
+                    r"\brewrite\s+sab\b",
+                    r"\bsab\s+rewrite\b",
                 ],
                 "handler": "handle_push_all_fixes",
                 "description": "Apply ALL fixes: products + blogs + pages + categories"
@@ -950,6 +984,34 @@ class ExtendedIntentClassifier:
                 ],
                 "handler": "handle_aeo_report",
                 "description": "Show latest AEO brand monitoring report"
+            },
+
+            "agent_performance": {
+                "patterns": [
+                    r"\bagent\s+(?:performance|report|status)\b",
+                    r"\bkaun\s+kitna\s+kaam\s+kar\s+raha\b",
+                    r"\bperformance\s+report\b",
+                    r"\btransparency\s+report\b",
+                    r"\bsab\s+agents?\s+(?:ka\s+)?report\b",
+                    r"\bwho\s+(?:is\s+)?(?:working|idle)\b",
+                    r"\bteam\s+performance\b",
+                    r"\bagent\s+report\b",
+                ],
+                "handler": "handle_agent_performance",
+                "description": "Agent performance — who's busy, who's idle"
+            },
+
+            "director_complaint": {
+                "patterns": [
+                    r"\bdirector\s*[,:]?\s*(?:complaint|problem|issue|fix\s+nahi)\b",
+                    r"\bcomplaint\s+(?:to\s+)?director\b",
+                    r"\bdirector\s+ko\s+(?:batao|report|complaint)\b",
+                    r"\b(?:agent|team)\s+ne\s+(?:y|kuch)\s+nahi\s+kiya\b",
+                    r"\bproblem\s+hai\s+director\b",
+                    r"\bdirector\s+issue\b",
+                ],
+                "handler": "handle_director_complaint",
+                "description": "Report problem/complaint to Director"
             },
 
             # ===== COMPETITOR PRICING =====
@@ -1417,6 +1479,13 @@ class IntentResponseHandler:
             "response": f"❌ Check failed: {result.get('error')}",
             "success": False
         }
+
+    def handle_server_diagnose(self, intent):
+        """Server/site diagnostic — reachability, WHM, common fixes."""
+        result = self.bridge.run_server_diagnose()
+        if result.get("success"):
+            return {"response": result.get("message", "Done."), "success": True}
+        return {"response": result.get("error", "Diagnostic failed."), "success": False}
     
     def handle_revenue_check(self, intent):
         """Revenue report"""
@@ -1439,6 +1508,13 @@ class IntentResponseHandler:
         response = (
             "🛠️ *FALCON AGENCY — WORLD-CLASS COMMANDS*\n"
             "─────────────────────────────────\n"
+            "📊 *Transparency & Reports*\n"
+            "• \"agent performance\" — Kaun kitna kaam kar raha\n"
+            "• \"director complaint\" — Problem report karo\n"
+            "• \"kaun kitna kaam kar raha\" — Team report\n\n"
+            "🖥️ *Server / Site Down*\n"
+            "• \"site down\" / \"server diagnose\" — Check reachability, WHM\n"
+            "• MUTE_SITE_ALERTS=1 in .env — Maintenance mode (no alerts)\n\n"
             "🏥 *Health & Compliance*\n"
             "• \"health scan\" — Full site audit (125+ areas)\n"
             "• \"scan products\" — WooCommerce compliance\n"
@@ -1800,9 +1876,13 @@ class IntentResponseHandler:
         }
 
     def _is_confirmation(self, intent: dict) -> bool:
-        """Check if message is a confirmation (haan karo, yes do it, etc)."""
+        """Check if message is a confirmation (haan karo, yes do it, etc).
+        NOTE: Do NOT include 'karo' alone — 'sab fix karo' = request, not confirmation."""
         msg = (intent.get("message_text") or "").lower()
-        return any(w in msg for w in ["haan", "yes", "karo", "confirm", "do it", "theek", "apply"])
+        # Must contain explicit yes/approve — exclude "fix karo", "sab fix karo"
+        if any(x in msg for x in ["fix karo", "sab fix", "fix sab", "fix all"]):
+            return False
+        return any(w in msg for w in ["haan", "yes", "confirm", "do it", "theek", "apply", "ok karo", "agree"])
 
     def handle_push_all_rewrites(self, intent):
         """Apply all pending product rewrites. Returns summary + document_path."""
@@ -1836,18 +1916,27 @@ class IntentResponseHandler:
         }
 
     def handle_push_all_fixes(self, intent):
-        """Apply ALL fixes: products + blogs + pages + categories."""
+        """Flow: Generate rewrites → Show preview → Permission → Publish."""
         if not intent.get("confirmed") and not self._is_confirmation(intent):
+            # Step 1: Generate rewrites only (no publish), show preview, ask permission
+            result = self.bridge.run_push_all(generate_first=True, apply_immediately=False)
+            if result.get("success"):
+                preview = result.get("preview", result.get("summary", ""))
+                return {
+                    "response": (
+                        "📋 *Rewrites ready — preview:*\n\n" + (preview[:1200] + "…" if len(preview) > 1200 else preview) + "\n\n"
+                        "👆 Check karo. Agar sab theek hai toh *'haan karo'* ya *'ok'* bol ke publish kar dunga."
+                    ),
+                    "success": True,
+                    "needs_confirmation": True,
+                    "pending_action": "push_all_fixes",
+                }
             return {
-                "response": (
-                    "⚠️ *Confirm karein:* Ye ALL pending fixes (products + blogs + pages + categories) ko LIVE site par apply karega. "
-                    "Type *'haan karo'* ya *'yes do it'* to confirm."
-                ),
-                "success": True,
-                "needs_confirmation": True,
-                "pending_action": "push_all_fixes",
+                "response": result.get("summary", result.get("error", "Generate failed.")),
+                "success": False,
             }
-        result = self.bridge.run_push_all()
+        # Step 2: User approved — apply to live site
+        result = self.bridge.run_push_all(generate_first=False)
         if result.get("success"):
             return {
                 "response": result.get("summary", "Fix all complete."),
@@ -2873,6 +2962,14 @@ Keep it punchy, under 150 words. No health claims."""
                 "success": False
             }
     
+    def handle_live_publish(self, intent):
+        """Confirmation flow: user said 'haan karo' after live publish prompt. Execute live publish."""
+        intent = dict(intent) if intent else {}
+        intent["confirmed"] = True
+        # Force live (as_draft=False) — this is the confirmation for live
+        intent["_force_live"] = True
+        return self.handle_publish_blog(intent)
+
     def handle_publish_blog(self, intent):
         """Approve and publish latest draft via ContentWorkflow.
         Detects 'live' keyword for direct publish vs draft."""
@@ -2884,22 +2981,23 @@ Keep it punchy, under 150 words. No health claims."""
                     "success": False
                 }
             
+            # Confirmation flow (handle_live_publish) sets _force_live
+            force_live = intent.get("_force_live", False)
             # Detect live vs draft from original message
             msg = intent.get(
                 "original_text",
-                intent.get("extracted_data", {}).get(
-                    "query", ""
-                )
-            ).lower()
-            is_live = any(
+                intent.get("message_text", intent.get("extracted_data", {}).get("query", "")),
+            )
+            msg = (msg or "").lower()
+            is_live = force_live or any(
                 w in msg for w in [
                     "live publish", "publish live",
-                    "live karo"
+                    "live karo", "make live", "go live"
                 ]
             )
             as_draft = not is_live
 
-            # SAFETY: Live publish requires explicit confirmation
+            # SAFETY: Live publish requires explicit confirmation (unless already confirmed)
             if is_live and not intent.get("confirmed") and not self._is_confirmation(intent):
                 return {
                     "response": (
@@ -3178,6 +3276,42 @@ Keep it punchy, under 150 words. No health claims."""
             "response": report + suffix,
             "success": True,
         }
+
+    def handle_agent_performance(self, intent_result: dict) -> dict:
+        """Agent performance report — who's busy, who's idle, failures."""
+        try:
+            from core.agent_performance import format_performance_report
+            days = 7
+            report = format_performance_report(days)
+            return {"response": report, "success": True}
+        except Exception as e:
+            return {"response": "❌ Report failed: " + str(e)[:100], "success": False}
+
+    def handle_director_complaint(self, intent_result: dict) -> dict:
+        """Route complaint to Director — show failures + suggest action."""
+        try:
+            from core.agent_performance import get_agent_performance
+            data = get_agent_performance(days=7)
+            failures = data.get("failures", [])[:5]
+            idle = data.get("idle", [])
+            lines = [
+                "📋 *DIRECTOR — COMPLAINT RECEIVED*",
+                "─" * 25,
+                "",
+            ]
+            if failures:
+                lines.append("❌ *Recent failures:*")
+                for f in failures:
+                    lines.append(f"  • {f['agent']}: {f['action']} — {f['status']}")
+                lines.append("")
+            if idle:
+                lines.append("⚠️ *Idle agents:* " + ", ".join(idle))
+                lines.append("")
+            lines.append("💡 Director ko yeh data milega. Next digest mein failures include honge.")
+            lines.append("Specific fix chahiye? Batao kaun sa agent, kya issue.")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": "Complaint logged. " + str(e)[:80], "success": True}
 
     # ===== PRICING HANDLERS =====
 

@@ -26,6 +26,7 @@ class HealthClaimsScanner:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.scanned_urls = set()
         self.results = []
+        self._smart_swaps = self._load_smart_swaps()
         
         # ====== VIOLATION PATTERNS ======
         # These are common FDA/FTC red flags for supplements
@@ -34,15 +35,21 @@ class HealthClaimsScanner:
             "disease_cure_claims": {
                 "patterns": [
                     r"\bcures?\b",
+                    r"\bcure\s+(?:for|of)\b",
                     r"\btreat(?:s|ment)?\b.*(?:disease|cancer|diabetes|"
-                    r"arthritis|HIV|AIDS|covid|tumor)",
-                    r"\bprevents?\b.*(?:cancer|disease|infection|diabetes)",
-                    r"\bheals?\b.*(?:disease|condition|disorder)",
-                    r"\beliminates?\b.*(?:disease|cancer|tumor|infection)",
+                    r"arthritis|HIV|AIDS|covid|tumor|infection|condition)",
+                    r"\bprevents?\b.*(?:cancer|disease|infection|diabetes|heart)",
+                    r"\bheals?\b.*(?:disease|condition|disorder|wound|infection)",
+                    r"\beliminates?\b.*(?:disease|cancer|tumor|infection|toxin)",
                     r"\banti[- ]?cancer\b",
                     r"\banti[- ]?tumor\b",
                     r"\banti[- ]?diabetic\b",
                     r"\bcancer[- ]?fighting\b",
+                    r"\b(?:effective|works?)\s+(?:for|against)\s+(?:cancer|diabetes|disease)",
+                    r"\bcombats?\s+(?:cancer|diabetes|disease|infection)",
+                    r"\bfights?\s+(?:cancer|diabetes|disease|tumor)",
+                    r"\breverses?\s+(?:diabetes|cancer|disease)",
+                    r"\b(?:remedy|remedies)\s+for\b",
                 ],
                 "risk": "HIGH",
                 "reason": "Direct disease claims — FDA considers this "
@@ -61,6 +68,8 @@ class HealthClaimsScanner:
                     r"\bprescri(?:be|ption)\b",
                     r"\bguaranteed\s+(?:to|results?)\b",
                     r"\b100%\s+(?:effective|cure|guaranteed)\b",
+                    r"\bproven\s+to\s+(?:cure|treat|prevent)\b",
+                    r"\bguaranteed\s+(?:cure|relief|results?)\b",
                 ],
                 "risk": "HIGH",
                 "reason": "Makes product sound like a drug — "
@@ -81,12 +90,31 @@ class HealthClaimsScanner:
                     r"\banxi(?:ety|ous)\b",
                     r"\binsomnia\b", r"\barthritis\b", r"\beczema\b",
                     r"\bpsoriasis\b",
+                    r"\bconstipation\b", r"\bindigestion\b",
+                    r"\bobesity\b", r"\boverweight\b",
+                    r"\bkidney\s+(?:disease|failure|stone)\b",
+                    r"\bliver\s+(?:disease|failure)\b",
+                    r"\b(?:skin|blood)\s+infection\b",
+                    r"\b(?:skin|blood)\s+disorder\b",
                 ],
                 "risk": "HIGH",
                 "reason": "Mentioning diseases in product context = "
                           "implied drug claim",
                 "fix": "Remove disease names. Describe symptoms or "
                        "body functions instead."
+            },
+            
+            "for_disease_claims": {
+                "patterns": [
+                    r"\bfor\s+(?:diabetes|cancer|heart\s+disease|hypertension)\b",
+                    r"\bfor\s+(?:constipation|indigestion|obesity|depression)\b",
+                    r"\bfor\s+(?:anxiety|arthritis|asthma|eczema|psoriasis)\b",
+                    r"\b(?:relief|relieves?)\s+from\s+(?:diabetes|arthritis|pain)\b",
+                    r"\b(?:relief|relieves?)\s+(?:for|of)\s+(?:constipation|pain)\b",
+                ],
+                "risk": "HIGH",
+                "reason": "'For [disease]' = implied treatment claim",
+                "fix": "Use 'traditionally used to support' or 'may help with wellness'"
             },
         }
         
@@ -95,16 +123,30 @@ class HealthClaimsScanner:
                 "patterns": [
                     r"\bboosts?\s+immun\w+\b",
                     r"\bstrengthens?\s+immun\w+\b",
+                    r"\b(?:boost|boosts)\s+(?:immunity|energy)\b",
                     r"\bfights?\s+(?:infection|virus|bacteria)\b",
                     r"\banti[- ]?(?:viral|bacterial|fungal|microbial|"
                     r"inflammatory|oxidant)\b",
                     r"\bdetox(?:ify|ifies|ification)?\b",
+                    r"\bdetox\s+(?:body|blood|liver)\b",
                     r"\bcleanses?\s+(?:blood|liver|kidney|body|toxins)\b",
                     r"\bpurif(?:y|ies)\s+blood\b",
                     r"\blowers?\s+(?:blood\s+(?:sugar|pressure)|"
                     r"cholesterol)\b",
                     r"\breduces?\s+(?:blood\s+sugar|cholesterol|"
                     r"blood\s+pressure)\b",
+                    r"\bcontrols?\s+(?:blood\s+sugar|cholesterol|"
+                    r"blood\s+pressure)\b",
+                    r"\bmanages?\s+(?:diabetes|blood\s+sugar)\b",
+                    r"\bregulates?\s+(?:blood\s+sugar|cholesterol)\b",
+                    r"\bimproves?\s+(?:digestion|blood\s+sugar|cholesterol)\b",
+                    r"\bhelps?\s+(?:in\s+)?(?:getting\s+rid\s+of|rid\s+of)\b",
+                    r"\bweight\s+loss\b",
+                    r"\bshed\s+(?:weight|pounds)\b",
+                    r"\bburn\s+fat\b",
+                    r"\breduces?\s+(?:stress|anxiety|inflammation)\b",
+                    r"\b(?:relief|relieves?)\s+(?:from|for)\b",
+                    r"\b(?:treat|treatment)\s+of\s+(?:skin|infection)\b",
                 ],
                 "risk": "MEDIUM",
                 "reason": "Implied treatment claims — borderline "
@@ -124,11 +166,30 @@ class HealthClaimsScanner:
                     r"\bwonder\s+(?:herb|drug|cure|remedy)\b",
                     r"\binstant\s+(?:relief|results?|cure)\b",
                     r"\bpermanent\s+(?:cure|solution|relief)\b",
+                    r"\bguaranteed\s+(?:results?|relief)\b",
+                    r"\bproven\s+(?:effective|to\s+work)\b",
+                    r"\bpowerful\s+(?:cure|remedy|treatment)\b",
+                    r"\btransform(?:s|ing)?\s+(?:your\s+)?(?:health|body)\b",
                 ],
                 "risk": "MEDIUM",
                 "reason": "Absolute/exaggerated claims — FTC violation",
                 "fix": "Add qualifiers: 'may help', "
                        "'traditionally used for'"
+            },
+            
+            "ayurvedic_marketing": {
+                "patterns": [
+                    r"\b(?:cure|treat|heal)\s+for\b",
+                    r"\bgood\s+for\s+(?:diabetes|cancer)\b",
+                    r"\b(?:benefits?|beneficial)\s+for\s+(?:diabetes|cancer)\b",
+                    r"\b(?:effective|works?)\s+for\s+(?:constipation|indigestion)\b",
+                    r"\bimmunity\s+booster\b",
+                    r"\bblood\s+sugar\s+(?:control|management)\b",
+                    r"\bcholesterol\s+(?:control|lowering)\b",
+                ],
+                "risk": "MEDIUM",
+                "reason": "Implied treatment — use structure/function language",
+                "fix": "Use smart swap: 'supports X' or 'traditionally used for'"
             },
         }
         
@@ -146,7 +207,26 @@ class HealthClaimsScanner:
             },
         }
         
-        # ====== SAFE ALTERNATIVES ======
+        # Additional LOW risk patterns (regex-based, like high/medium)
+        self.low_risk_regex_patterns = {
+            "borderline_claims": {
+                "patterns": [
+                    r"\b(?:helps?|supporting|supports?)\s+(?:with|in)\s+"
+                    r"(?:constipation|indigestion|digestion)\b",
+                    r"\b(?:natural|herbal)\s+(?:remedy|treatment)\b",
+                    r"\b(?:traditional|ayurvedic)\s+(?:cure|remedy)\b",
+                    r"\b(?:skin|hair|digestion)\s+(?:health|benefits?)\b",
+                    r"\b(?:anti[- ]?oxidant|antioxidant)\s+(?:properties?|rich)\b",
+                    r"\b(?:anti[- ]?bacterial|antibacterial)\s+(?:properties?)\b",
+                ],
+                "risk": "LOW",
+                "reason": "Borderline — may need disclaimer",
+                "fix": "Add FDA disclaimer; ensure structure/function language"
+            },
+        }
+        
+        # ====== SAFE ALTERNATIVES (SEO + compliant) ======
+        # Load from config/smart_word_swap.json; fallback to built-in
         self.safe_replacements = {
             "cures": "traditionally used to support",
             "treats": "may help with",
@@ -166,6 +246,42 @@ class HealthClaimsScanner:
             "miracle": "time-honored",
             "instant relief": "fast-acting support",
         }
+        if self._smart_swaps:
+            self.safe_replacements.update(self._smart_swaps)
+    
+    def _load_smart_swaps(self) -> dict:
+        """Load SEO-safe replacements from config."""
+        try:
+            cfg = Path(__file__).parent.parent / "config" / "smart_word_swap.json"
+            if cfg.exists():
+                data = json.loads(cfg.read_text(encoding="utf-8"))
+                return data.get("replacements", {})
+        except Exception:
+            pass
+        return {}
+    
+    def apply_smart_swaps(self, text: str) -> str:
+        """
+        Apply SEO-safe claim replacements to text.
+        Uses phrase_priority so longer phrases get replaced first.
+        """
+        if not text or not self.safe_replacements:
+            return text
+        out = text
+        # Sort by phrase length (longer first) so "cures diabetes" before "cures"
+        order = sorted(
+            self.safe_replacements.keys(),
+            key=lambda k: (-len(k), k),
+        )
+        # Multiple passes: "for diabetes" → "for healthy blood sugar" → "for metabolic wellness"
+        prev = None
+        while prev != out:
+            prev = out
+            for bad in order:
+                good = self.safe_replacements[bad]
+                pat = re.compile(r"\b" + re.escape(bad) + r"\b", re.IGNORECASE)
+                out = pat.sub(good, out)
+        return out
     
     def crawl_site(self, max_pages=200):
         """Crawl the website and collect all page URLs"""
@@ -212,9 +328,8 @@ class HealthClaimsScanner:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 title = soup.title.string if soup.title else "No Title"
                 
-                # Get visible text
-                for tag in soup(["script", "style", "nav", "footer",
-                                 "header"]):
+                # Get visible text (script/style removed)
+                for tag in soup(["script", "style"]):
                     tag.decompose()
                 text = soup.get_text(separator=" ", strip=True)
                 
@@ -312,6 +427,23 @@ class HealthClaimsScanner:
                     findings["low_risk"].append({
                         "category": category,
                         "issue": f"Missing: '{pattern}'",
+                        "reason": data["reason"],
+                        "fix": data["fix"]
+                    })
+                    findings["risk_score"] += 2
+        
+        # Check LOW risk (borderline regex matches)
+        for category, data in self.low_risk_regex_patterns.items():
+            for pattern in data["patterns"]:
+                matches = re.finditer(pattern, text_lower)
+                for match in matches:
+                    start = max(0, match.start() - 30)
+                    end = min(len(text), match.end() + 30)
+                    context = text[start:end].strip()
+                    findings["low_risk"].append({
+                        "category": category,
+                        "matched": match.group(),
+                        "context": f"...{context}...",
                         "reason": data["reason"],
                         "fix": data["fix"]
                     })

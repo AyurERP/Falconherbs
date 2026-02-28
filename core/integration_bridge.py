@@ -272,7 +272,61 @@ class IntegrationBridge:
                 "error": str(e),
                 "traceback": traceback.format_exc()
             }
-    
+
+    def run_server_diagnose(self) -> dict:
+        """Server/site diagnostic — reachability, WHM status. Returns WhatsApp-ready message."""
+        import urllib.request
+        import urllib.error
+        site = os.getenv("WOO_SITE_URL", "https://falconherbs.com")
+        if not site.startswith("http"):
+            site = f"https://{site}"
+
+        lines = ["*SERVER DIAGNOSTIC*", "—" * 20]
+
+        # HTTP checks
+        for path in ["/", "/wp-admin/"]:
+            try:
+                req = urllib.request.Request(
+                    site.rstrip("/") + path,
+                    headers={"User-Agent": "FalconDiagnose/1.0"},
+                )
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    lines.append(f"  {path or '/'}: OK (HTTP {r.status})")
+            except urllib.error.HTTPError as e:
+                lines.append(f"  {path or '/'}: FAIL (HTTP {e.code})")
+            except Exception as e:
+                lines.append(f"  {path or '/'}: UNREACHABLE — {str(e)[:80]}")
+
+        # WHM
+        whm_url = os.getenv("WHM_URL", "")
+        whm_user = os.getenv("WHM_USER", "")
+        whm_pass = os.getenv("WHM_PASSWORD", "")
+        if whm_url and whm_user and whm_pass:
+            try:
+                import requests
+                r = requests.get(
+                    f"{whm_url.rstrip('/')}/json-api/version",
+                    auth=(whm_user, whm_pass),
+                    timeout=15,
+                    verify=False,
+                )
+                if r.status_code == 200:
+                    lines.append("\nWHM: OK")
+                else:
+                    lines.append(f"\nWHM: HTTP {r.status_code}")
+            except Exception as e:
+                lines.append(f"\nWHM: {str(e)[:60]}")
+        else:
+            lines.append("\nWHM: Not configured (add WHM_URL, WHM_USER, WHM_PASSWORD)")
+
+        lines.append("\n*Common fixes:*")
+        lines.append("• 503/Unreachable: WHM > Restart Apache")
+        lines.append("• Plugin crash: Rename wp-content/plugins to plugins_off")
+        lines.append("• .htaccess: Rename to .htaccess.bak")
+        lines.append("\nMute alerts: MUTE_SITE_ALERTS=1 in .env")
+
+        return {"success": True, "message": "\n".join(lines)}
+
     def run_health_scan(self, max_pages=100):
         """
         FULL SITE health claims scan.
@@ -302,7 +356,10 @@ class IntegrationBridge:
 
             site = os.getenv("WOO_SITE_URL", "https://falconherbs.com")
             wp_user = os.getenv("FALCONHERBS_WP_USER")
-            wp_pass = os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+            wp_pass = (
+                os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+                or os.getenv("FALCONHERBS_WP_PASSWORD")
+            )
             wc_key  = os.getenv("FALCONHERBS_WC_API_KEY")
             wc_sec  = os.getenv("FALCONHERBS_WC_API_SECRET")
             wp_auth = (wp_user, wp_pass) if wp_user and wp_pass else None
@@ -316,10 +373,20 @@ class IntegrationBridge:
                 "categories_advisory":[],   # category names — manual rename
                 "image_ocr_advisory": [],   # images that likely have text — manual
             }
+            total_high = total_medium = total_low = 0
 
-            # ── 1. PRODUCTS: descriptions + short desc ────────────
-            api_result = woo._make_request("products", {"per_page": 100, "page": 1})
-            products = api_result.get("data", []) if api_result.get("success") else []
+            # ── 1. PRODUCTS: descriptions + short desc (paginate to get ALL) ──
+            products = []
+            page = 1
+            while True:
+                api_result = woo._make_request("products", {"per_page": 100, "page": page})
+                batch = api_result.get("data", []) if api_result.get("success") else []
+                if not batch:
+                    break
+                products.extend(batch)
+                if len(batch) < 100:
+                    break
+                page += 1
 
             clean_count = 0
             for p in products:
@@ -334,22 +401,32 @@ class IntegrationBridge:
                 desc_violations = False
                 if desc_text.strip():
                     s = scanner.scan_page(url, desc_text, name, is_product=True)
-                    if s.get("high_risk") or s.get("medium_risk"):
+                    total_high += len(s.get("high_risk", []))
+                    total_medium += len(s.get("medium_risk", []))
+                    total_low += len(s.get("low_risk", []))
+                    if s.get("high_risk") or s.get("medium_risk") or s.get("low_risk"):
                         desc_violations = True
                         report["products_fixable"].append({
                             "id": pid, "name": name, "url": url,
                             "risk_score": s.get("risk_score", 0),
-                            "high": [h["matched"][:60] for h in s.get("high_risk",[])[:3]],
-                            "medium": [m["matched"][:50] for m in s.get("medium_risk",[])[:2]],
+                            "high": [h.get("matched", h.get("issue",""))[:60] for h in s.get("high_risk",[])[:5]],
+                            "medium": [m.get("matched", m.get("issue",""))[:50] for m in s.get("medium_risk",[])[:4]],
+                            "low": [str(x.get("matched") or x.get("issue",""))[:40] for x in s.get("low_risk",[])[:3]],
                         })
 
                 # --- 1b. Title scan
                 title_s = scanner.scan_page(url, name, name, is_product=True)
-                if title_s.get("high_risk") or title_s.get("medium_risk"):
+                total_high += len(title_s.get("high_risk", []))
+                total_medium += len(title_s.get("medium_risk", []))
+                total_low += len(title_s.get("low_risk", []))
+                if title_s.get("high_risk") or title_s.get("medium_risk") or title_s.get("low_risk"):
                     report["titles_fixable"].append({
                         "id": pid, "name": name, "url": url,
                         "risk_score": title_s.get("risk_score", 0),
-                        "violations": [h["matched"][:60] for h in title_s.get("high_risk",[])[:3]],
+                        "violations": [
+                            str(h.get("matched") or h.get("issue",""))[:60]
+                            for h in (title_s.get("high_risk",[])+title_s.get("medium_risk",[]))[:5]
+                        ],
                     })
 
                 # --- 1c. Image alt text scan
@@ -358,14 +435,20 @@ class IntegrationBridge:
                     img_src = img.get("src", "")
                     if alt.strip():
                         alt_s = scanner.scan_page(img_src, alt, name, is_product=True)
-                        if alt_s.get("high_risk") or alt_s.get("medium_risk"):
+                        total_high += len(alt_s.get("high_risk", []))
+                        total_medium += len(alt_s.get("medium_risk", []))
+                        total_low += len(alt_s.get("low_risk", []))
+                        if alt_s.get("high_risk") or alt_s.get("medium_risk") or alt_s.get("low_risk"):
                             report["image_alt_fixable"].append({
                                 "product_id": pid,
                                 "product_name": name,
                                 "image_id": img.get("id"),
                                 "alt_text": alt,
                                 "src": img_src,
-                                "violations": [h["matched"][:60] for h in alt_s.get("high_risk",[])[:3]],
+                                "violations": [
+                                    str(h.get("matched") or h.get("issue",""))[:60]
+                                    for h in (alt_s.get("high_risk",[])+alt_s.get("medium_risk",[]))[:5]
+                                ],
                             })
                     # Advisory: image likely has text if alt is detailed
                     if len(alt) > 30 and any(w in alt.lower() for w in [
@@ -379,7 +462,7 @@ class IntegrationBridge:
                             "advice": "Image may contain embedded text matching health claims — manual review needed",
                         })
 
-                if not desc_violations and not title_s.get("high_risk"):
+                if not desc_violations and not (title_s.get("high_risk") or title_s.get("medium_risk")):
                     clean_count += 1
 
             # ── 2. BLOG POSTS ─────────────────────────────────────
@@ -394,13 +477,19 @@ class IntegrationBridge:
                         content_text = BeautifulSoup(content_html,"html.parser").get_text(" ",strip=True)
                         full_text = title + " " + content_text
                         s = scanner.scan_page(post.get("link",""), full_text, title)
-                        if s.get("high_risk") or s.get("medium_risk"):
+                        total_high += len(s.get("high_risk", []))
+                        total_medium += len(s.get("medium_risk", []))
+                        total_low += len(s.get("low_risk", []))
+                        if s.get("high_risk") or s.get("medium_risk") or s.get("low_risk"):
                             report["blogs_advisory"].append({
                                 "id": post["id"], "title": title,
                                 "url": post.get("link",""),
                                 "slug": post.get("slug",""),
                                 "risk_score": s.get("risk_score",0),
-                                "violations": [h["matched"][:70] for h in s.get("high_risk",[])[:3]],
+                                "violations": [
+                                    str(h.get("matched") or h.get("issue",""))[:70]
+                                    for h in (s.get("high_risk",[])+s.get("medium_risk",[]))[:5]
+                                ],
                                 "fix": "MANUAL — edit in WordPress admin > Posts",
                             })
             except Exception:
@@ -418,12 +507,18 @@ class IntegrationBridge:
                         content_text = BeautifulSoup(content_html,"html.parser").get_text(" ",strip=True)
                         full_text = title + " " + content_text
                         s = scanner.scan_page(page.get("link",""), full_text, title)
-                        if s.get("high_risk") or s.get("medium_risk"):
+                        total_high += len(s.get("high_risk", []))
+                        total_medium += len(s.get("medium_risk", []))
+                        total_low += len(s.get("low_risk", []))
+                        if s.get("high_risk") or s.get("medium_risk") or s.get("low_risk"):
                             report["pages_advisory"].append({
                                 "id": page["id"], "title": title,
                                 "url": page.get("link",""),
                                 "risk_score": s.get("risk_score",0),
-                                "violations": [h["matched"][:70] for h in s.get("high_risk",[])[:3]],
+                                "violations": [
+                                    str(h.get("matched") or h.get("issue",""))[:70]
+                                    for h in (s.get("high_risk",[])+s.get("medium_risk",[]))[:5]
+                                ],
                                 "fix": "MANUAL — edit in WordPress admin > Pages",
                             })
             except Exception:
@@ -472,10 +567,14 @@ class IntegrationBridge:
             page_count     = len(report["pages_advisory"])
             cat_count      = len(report["categories_advisory"])
             ocr_count      = len(report["image_ocr_advisory"])
+            total_violations = total_high + total_medium + total_low
 
             lines = [
                 "🏥 *FULL SITE HEALTH CLAIMS AUDIT*",
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+                "📊 *TOTAL VIOLATIONS:* {} (HIGH: {} | MED: {} | LOW: {})".format(
+                    total_violations, total_high, total_medium, total_low),
                 "",
                 "📦 *PRODUCTS SCANNED:* {}".format(total_products),
                 "✅ Clean: {} | ⚠️ With issues: {}".format(clean_count, fixable_count),
@@ -541,19 +640,33 @@ class IntegrationBridge:
                 _json.dump({
                     "total_products": total_products,
                     "clean": clean_count,
+                    "total_violations": total_violations,
+                    "violations_breakdown": {"high": total_high, "medium": total_medium, "low": total_low},
                     "report": report,
                 }, f, indent=2, ensure_ascii=False)
 
+            try:
+                from core.logger import log
+                log.log_action("health_scan", "health_scanner", "success", {"products": total_products, "violations": total_violations})
+            except Exception:
+                pass
             return {
                 "success":   True,
                 "summary":   "\n".join(lines),
                 "total":     total_products,
                 "violations": fixable_count,
                 "clean":     clean_count,
+                "total_violations": total_violations,
+                "violations_breakdown": {"high": total_high, "medium": total_medium, "low": total_low},
                 "full_report": report,
             }
 
         except Exception as e:
+            try:
+                from core.logger import log
+                log.log_action("health_scan", "health_scanner", "failed", {"error": str(e)[:200]})
+            except Exception:
+                pass
             return {
                 "success": False,
                 "error": str(e),
@@ -778,12 +891,51 @@ class IntegrationBridge:
                 "report_path": None,
             }
 
-    def run_push_all(self, generate_first: bool = True) -> dict:
+    def run_generate_all_fixes(self) -> dict:
+        """
+        Generate rewrites ONLY — scan + rewrite, save drafts. NO publish.
+        Use before showing preview and asking permission.
+        """
+        rewriter = self.tools.get("rewriter")
+        rewrites_dir = getattr(rewriter, "rewrites_dir", None) if rewriter else None
+        if not rewriter or not rewrites_dir:
+            return {"success": False, "error": "Rewriter not loaded", "summary": "", "preview": ""}
+
+        from pathlib import Path
+        rdir = Path(rewrites_dir)
+        skip = {"last_scan.json", "blog_scan.json", "page_scan.json", "category_scan.json"}
+
+        # Products
+        try:
+            self.scan_products()
+            self.rewrite_flagged_products()
+        except Exception:
+            pass
+        # Blogs
+        try:
+            self.scan_blog_posts()
+            rewriter.rewrite_blog_post()
+        except Exception:
+            pass
+        # Pages
+        try:
+            self.scan_pages()
+            rewriter.rewrite_pages()
+        except Exception:
+            pass
+
+        preview = self.get_rewrite_status()
+        return {"success": True, "summary": "Rewrites generated. Review karo, phir 'haan karo' bol ke publish karo.", "preview": preview}
+
+    def run_push_all(self, generate_first: bool = True, apply_immediately: bool = True) -> dict:
         """
         Apply ALL pending fixes: products + blogs + pages + categories.
-        If generate_first=True, generates rewrites for products/blogs/pages
-        when none exist (so one command fixes everything).
+        If generate_first=True, generates rewrites when none exist.
+        If apply_immediately=False, only generates (no publish) — for preview flow.
         """
+        if not apply_immediately:
+            return self.run_generate_all_fixes()
+
         parts = []
         report_path = None
         any_success = False
@@ -1040,8 +1192,20 @@ class IntegrationBridge:
             if not aeo:
                 return {"success": False,
                         "error": "AEO Agent not loaded"}
-            return aeo.run_monthly_scan()
+            result = aeo.run_monthly_scan()
+            try:
+                from core.logger import log
+                status = "success" if result.get("success") else "failed"
+                log.log_action("aeo_monthly_scan", "aeo", status, {"flagged": result.get("flagged", 0)})
+            except Exception:
+                pass
+            return result
         except Exception as e:
+            try:
+                from core.logger import log
+                log.log_action("aeo_monthly_scan", "aeo", "failed", {"error": str(e)[:200]})
+            except Exception:
+                pass
             return {"success": False, "error": str(e)}
 
     def get_aeo_report(self) -> str:
@@ -1704,6 +1868,25 @@ class IntegrationBridge:
                         total_runs, avg_rate
                     )
                 )
+        except Exception:
+            pass
+
+        # 10. Agent failures (transparency)
+        try:
+            from core.agent_performance import get_agent_performance
+            perf = get_agent_performance(days=1)
+            failures = perf.get("failures", [])
+            if failures:
+                lines.append("\n\u26A0\uFE0F *AGENT FAILURES (24h):*")
+                for f in failures[:3]:
+                    lines.append("   \u2022 {}: {} \u2014 {}".format(
+                        f.get("agent", "?"),
+                        f.get("action", "?"),
+                        f.get("status", "?"),
+                    ))
+            idle = perf.get("idle", [])
+            if idle and len(idle) > 3:
+                lines.append("\n\u23F1\uFE0F *IDLE:* " + ", ".join(idle[:5]))
         except Exception:
             pass
 

@@ -198,26 +198,12 @@ class AEOAgent:
 
     def _search_serper(self, query: str) -> Dict:
         """
-        Search Google via Serper.dev API.
+        Search Google via centralized Serper client.
         Returns dict with organic[], peopleAlsoAsk[], answerBox, knowledgeGraph.
         """
-        api_key = os.getenv("SERPER_API_KEY", "")
-        if not api_key:
-            return {}
-
         try:
-            r = requests.post(
-                "https://google.serper.dev/search",
-                headers={
-                    "X-API-KEY": api_key,
-                    "Content-Type": "application/json",
-                },
-                json={"q": query, "gl": "in", "hl": "en"},
-                timeout=15,
-            )
-            if r.status_code == 200:
-                return r.json()
-            return {}
+            from core.serper_client import search
+            return search(query, source="aeo") or {}
         except Exception:
             return {}
 

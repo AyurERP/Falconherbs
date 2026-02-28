@@ -61,6 +61,13 @@ class ExtendedSchedule:
                             "description": "Generate weekly content package for HeroPost",
                         }
                         modified = True
+                    if "weekly_trending_scan" not in tasks:
+                        tasks["weekly_trending_scan"] = {
+                            "time": "12:00", "day": "friday", "frequency": "weekly",
+                            "enabled": True, "last_run": None,
+                            "description": "Weekly trending keywords (ayurveda/herbal) via Serper",
+                        }
+                        modified = True
                     if modified:
                         self._save_schedule(data)
                     return data
@@ -216,6 +223,14 @@ class ExtendedSchedule:
                     "enabled": True,
                     "last_run": None,
                     "description": "Monthly AEO scan — Falcon Herbs visibility in AI search"
+                },
+                "weekly_trending_scan": {
+                    "time": "12:00",
+                    "day": "friday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Weekly trending keywords (ayurveda/herbal) via Serper — uses quota"
                 },
                 "weekly_price_scan": {
                     "time": "08:30",
@@ -380,6 +395,7 @@ class ExtendedSchedule:
             "sentry_daily_scan": self._task_sentry_scan,
             "weekly_influencer_scan": self._task_influencer_scan,
             "monthly_aeo_scan":   self._task_aeo_scan,
+            "weekly_trending_scan": self._task_weekly_trending,
             "weekly_price_scan":  self._task_price_scan,
             "vps_health_check":    self._task_vps_health_check,
         }
@@ -1311,6 +1327,53 @@ class ExtendedSchedule:
                 "message": "AEO scan failed: {}".format(
                     result.get("error", "unknown")
                 ),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _task_weekly_trending(self):
+        """
+        Weekly trending keywords scan via Serper.
+        Searches ayurveda/herbal topics, saves for content strategy.
+        Uses Serper quota — part of 2500/month.
+        """
+        try:
+            from core.serper_client import search, get_serper_usage, can_search
+            if not can_search():
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "Serper quota exhausted. Trending scan skipped.",
+                }
+            queries = [
+                "ayurveda trending 2025",
+                "herbal supplements India popular",
+                "ashwagandha giloy demand",
+                "natural immunity India search",
+                "triphala digestion wellness",
+            ]
+            results = []
+            for q in queries:
+                data = search(q, source="weekly_trending")
+                if data:
+                    organic = data.get("organic", [])[:3]
+                    titles = [o.get("title", "") for o in organic if o.get("title")]
+                    if titles:
+                        results.append(f"• {q}\n  Top: {titles[0][:60]}...")
+            usage = get_serper_usage()
+            summary = (
+                "📈 *WEEKLY TRENDING SCAN*\n"
+                f"Searched {len(queries)} topics.\n"
+                f"Serper: {usage['used']}/{usage['limit']} this month\n"
+            )
+            if results:
+                summary += "\n".join(results[:5])
+            else:
+                summary += "No results (check API key)."
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": summary,
             }
         except Exception as e:
             return {"success": False, "error": str(e)}

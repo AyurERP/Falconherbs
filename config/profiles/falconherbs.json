@@ -385,6 +385,7 @@
   "credentials": {
     "_warning": "NO REAL CREDENTIALS IN THIS FILE. All values are placeholder references to environment variables loaded via KeyVault from .env file.",
     "wp_admin_password": "{{ENV:FALCONHERBS_WP_PASSWORD}}",
+    "wp_app_password": "{{ENV:FALCONHERBS_WP_APP_PASSWORD}}",
     "wp_admin_url": "https://falconherbs.com/wp-admin/",
     "wp_admin_user": "HerbsAd",
     "cpanel_url": "{{ENV:FALCONHERBS_CPANEL_URL}}",

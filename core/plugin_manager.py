@@ -169,12 +169,24 @@ def check_plugin_safety(plugin_slug: str) -> Dict[str, Any]:
     }
 
 
-def _get_wp_auth_headers(site_config: dict) -> Optional[Dict[str, str]]:
-    """Build Basic Auth headers from site config."""
+def _resolve_env(val: str) -> str:
+    """Resolve {{ENV:VAR}} to os.environ value."""
     import os
-    wp_user = site_config.get("wp_user") or os.getenv("FALCONHERBS_WP_USER")
+    if isinstance(val, str) and val.startswith("{{ENV:") and val.endswith("}}"):
+        var = val[6:-2].strip()
+        return os.environ.get(var, "") or ""
+    return val or ""
+
+
+def _get_wp_auth_headers(site_config: dict) -> Optional[Dict[str, str]]:
+    """Build Basic Auth headers from site config or env."""
+    import os
+    creds = site_config.get("credentials", {})
+    raw_user = site_config.get("wp_user") or creds.get("wp_admin_user") or ""
+    wp_user = _resolve_env(str(raw_user)) if raw_user else os.getenv("FALCONHERBS_WP_USER")
+    raw_pass = creds.get("wp_app_password") or creds.get("wp_admin_password") or ""
     wp_pass = (
-        site_config.get("wp_app_password")
+        (_resolve_env(str(raw_pass)) if raw_pass else "")
         or os.getenv("FALCONHERBS_WP_APP_PASSWORD")
         or os.getenv("FALCONHERBS_WP_PASSWORD")
     )

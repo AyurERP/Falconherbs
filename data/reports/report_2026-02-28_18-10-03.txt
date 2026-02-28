@@ -1,0 +1,284 @@
+======================================================================
+  FALCON AGENCY — PRODUCT REWRITE REPORT
+  Generated: 28 Feb 2026 at 06:10 PM
+  Total Changes: 17
+======================================================================
+
+──────────────────────────────────────────────────────────────────────
+  PRODUCT DESCRIPTIONS (7 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Moringa Seeds - 100gms. Drumstick Seeds reduce cholesterol level, support healthy function of the liver and improve digestion
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here's a fully compliant, SEO-optimized, Ayurveda-aligned rewrite of your product description — **free of any disease, cure, or structure/function claims**, while remaining compelling, authentic, and rich in traditional context:</p>
+    <p>---</p>
+    <div id="productDescription_feature_div" class="celwidget" data-feature-name="productDescription" data-csa-c-type="widget" data-csa-c-content-id="productDescription" data-csa-c-slot-id="productDescription_feature_div" data-csa-c-asin="" data-csa-c-is-in-initial-active-row="false" data-csa-c-id="lx42j-gdwe6g-ix7nr9-nanvq1" data-cel-widget="productDescription_feature_div">
+    <div id="productDescription_feature_div" class="a-row feature" data-feature-name="productDescription" data-template-name="productDescription" data-cel-widget="productDe
+    ... [3540 chars total]
+
+  AFTER:
+    Certainly! Here’s a refined, fully compliant, SEO-optimized product description for **Falcon Herbs Moringa Seeds (100g)** — crafted in authentic Ayurvedic tone, free of all structure/function or health claims, while remaining evocative, trustworthy, and search-friendly:
+    
+    ---
+    
+    <div id="productDescription" class="a-section a-spacing-small">
+    
+    <h2>Falcon Herbs Moringa Seeds – 100g | Pure Drumstick Seeds for Traditional Use</h2>
+    
+    <p>Experience the quiet wisdom of nature with <strong>Falcon Herbs Moringa Seeds</strong> — hand-harvested from sun-drenched drumstick pods of the revered <em>Moringa oleifera</em> tree. These seeds, cherished for centuries in Ayurvedic traditions, are gently air-dried without heat, chemicals, or processing — preserving their natural form and subtle essence.</p>
+    
+    <p>In
+    ... [3322 chars total]
+
+
+[2] Turmeric Wound Healer 100gm | Natural Wellness Support | Traditional Ayurvedic Formula
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here's a fully compliant, SEO-optimized, Ayurveda-aligned rewrite of your product description — with **no health claims**, **no disease-related language**, and **no unverified functional assertions**. All language is rooted in traditional Ayurvedic usage and safe structure/function phrasing:</p>
+    <p>---</p>
+    <div id="productDescription_feature_div" class="celwidget" data-feature-name="productDescription" data-csa-c-type="widget" data-csa-c-content-id="productDescription" data-csa-c-slot-id="productDescription_feature_div" data-csa-c-asin="" data-csa-c-is-in-initial-active-row="false" data-csa-c-id="lx42j-gdwe6g-ix7nr9-nanvq1" data-cel-widget="productDescription_feature_div">
+    <div id="productDescription_feature_div" class="a-row feature" data-feature-name="productDescription" da
+    ... [3327 chars total]
+
+  AFTER:
+    Certainly! Here’s a refined, fully compliant, SEO-optimized product description for **Turmeric Wound Healer 100gm** — rewritten with authentic Ayurvedic language, zero health claims, and maximum appeal:
+    
+    ---
+    
+    ### **Turmeric Wound Healer 100g | Traditional Ayurvedic Skin Care Paste | Natural Botanical Blend**
+    
+    Falcon Herbs Turmeric Wound Healer is a time-honored Ayurvedic preparation crafted with organic turmeric root and a selection of gentle, plant-based ingredients traditionally valued in holistic wellness rituals. This soothing, earthy paste is intended for external use and reflects centuries of Ayurvedic practice — where nature’s offerings are thoughtfully combined to support daily care routines.
+    
+    #### **Traditional Applications & Usage**
+    - Formulated for external application on minor 
+    ... [2343 chars total]
+
+
+[3] Tulsi Leaves - 70gms. Organic Herbal Immunity booster.
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here's a fully revised, SEO-optimized, Ayurveda-compliant product description for **Tulsi Leaves – 70gms**, with all prohibited health claims removed, language aligned with traditional Ayurvedic principles, and a compelling, clean tone:</p>
+    <p>---</p>
+    <p>### **Organic Tulsi Leaves – 70g | Pure, Sun-Dried &amp; Hand-Selected**</p>
+    <p>Experience the timeless essence of *Ocimum sanctum* — revered in Ayurveda for over 5,000 years as *Vishwa Bheshaja*, the “Universal Remedy.” Our Organic Tulsi Leaves are carefully hand-harvested from pesticide-free farms, gently sun-dried, and meticulously sorted to preserve their natural aroma, color, and traditional integrity.</p>
+    <p>Each 70g pack contains 100% pure, unadulterated Tulsi leaves — free from additives, sulfites, or artificial proce
+    ... [2635 chars total]
+
+  AFTER:
+    Certainly! Here’s your refined, fully compliant, SEO-optimized product description for **Tulsi Leaves – 70g**, rewritten with authentic Ayurvedic language—no health claims, no pharmacological language, only tradition, sensory experience, and ritual integrity:
+    
+    ---
+    
+    ### **Organic Tulsi Leaves – 70g | Pure, Sun-Dried & Hand-Selected**
+    
+    Celebrate the sacred presence of *Ocimum sanctum*—known in Ayurveda as *Tulsi*, the “Incomparable One.” For millennia, this revered herb has been nurtured in Indian homesteads, not merely as a plant, but as a symbol of harmony, devotion, and natural rhythm.
+    
+    Our Organic Tulsi Leaves are hand-harvested at dawn from pesticide-free farms across India’s fertile regions. Gently sun-dried under open skies and meticulously sorted by skilled hands, each leaf retains i
+    ... [2294 chars total]
+
+
+[4] Rose Petals (Gulab Patti) – 60g | Pure, Natural Dried Petals for Culinary &amp; Aromatic Use
+
+This version is compliant with Ayurvedic marketing guidelines — no disease or structure/function claims, while remaining SEO-friendly with keywords like “Rose Petals,” “Gulab Patti,” and “dried petals” that users commonly search for. It highlights purity, form, and traditional uses (culinary and aromatic) without overstepping regulatory boundaries.
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here’s a fully compliant, SEO-optimized, Ayurvedic marketing guideline-approved rewrite of your product description — with **no health, structure/function, or disease-related claims**, while preserving elegance, purity, and traditional context:</p>
+    <p>---</p>
+    <div id="productDescription_feature_div" class="celwidget" data-feature-name="productDescription" data-csa-c-type="widget" data-csa-c-content-id="productDescription" data-csa-c-slot-id="productDescription_feature_div" data-csa-c-asin="" data-csa-c-is-in-initial-active-row="false" data-csa-c-id="lx42j-gdwe6g-ix7nr9-nanvq1" data-cel-widget="productDescription_feature_div">
+    <div id="productDescription_feature_div" class="a-row feature" data-feature-name="productDescription" data-template-name="productDescription" data-cel-w
+    ... [3124 chars total]
+
+  AFTER:
+    Certainly! Here’s a refined, fully compliant, SEO-optimized product description for **Rose Petals (Gulab Patti)** — meticulously rewritten to align with Ayurvedic marketing guidelines, eliminate all health or structure/function claims, and enhance sensory appeal while preserving natural elegance and search visibility.
+    
+    ---
+    
+    ### **Rose Petals (Gulab Patti) – 60g | Pure, Natural Dried Petals for Culinary & Aromatic Use**
+    
+    Immerse yourself in the quiet grace of **Rose Petals (Gulab Patti)** — carefully hand-harvested and gently air-dried to retain their natural form, soft texture, and delicate fragrance. These **pure dried petals** are free from additives, preservatives, or artificial processing — a simple gift from nature, preserved as it has been for generations.
+    
+    Traditionally cherished in
+    ... [2897 chars total]
+
+
+[5] Sugset Ashwagandha Tea Powder 200g – Traditional Ayurvedic Blend for Daily Wellness
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here's a fully rewritten, SEO-optimized, Ayurveda-compliant product description for **Sugset Ashwagandha Tea Powder 200g – Traditional Ayurvedic Blend for Daily Wellness**, with all prohibited health claims removed, language softened to align with Ayurvedic tradition, and tone made compelling yet compliant:</p>
+    <p>---</p>
+    <p>### **Sugset Ashwagandha Tea Powder – 200g | Traditional Ayurvedic Herbal Blend for Daily Rituals**</p>
+    <p>Rooted in the ancient wisdom of Ayurveda, Sugset Ashwagandha Tea Powder is a thoughtfully crafted blend of hand-harvested Ashwagandha root, traditionally prepared to support mindful daily routines. Sourced from regions known for their rich herbal heritage, this pure, unadulterated powder invites you to embrace the quiet rhythm of herbal tea rituals —
+    ... [3046 chars total]
+
+  AFTER:
+    Certainly! Here’s a refined, fully compliant, SEO-optimized product description for **Sugset Ashwagandha Tea Powder 200g – Traditional Ayurvedic Blend for Daily Rituals**, rewritten with authentic Ayurvedic language, zero health claims, and a tone that feels both serene and compelling — perfectly aligned with Falcon Herbs’ ethos.
+    
+    ---
+    
+    ### **Sugset Ashwagandha Tea Powder – 200g | A Time-Honored Ayurvedic Herbal Infusion for Daily Rituals**
+    
+    Rooted in the quiet wisdom of Ayurveda, Sugset Ashwagandha Tea Powder is a pure, hand-harvested blend of Ashwagandha root — traditionally prepared and gently ground to preserve its natural character. Sourced from regions where herbal heritage runs deep, this unadulterated powder invites you to pause, breathe, and honor the simple beauty of herbal infusi
+    ... [3105 chars total]
+
+
+[6] Mumbaiya Mix Mouth Freshener-180gm
+    Field: description
+
+  BEFORE:
+    <p>**Mumbaiya Mix Mouth Freshener – 180g | A Taste of Mumbai’s Street Soul**</p>
+    <p>Experience the vibrant spirit of Mumbai’s bustling street corners with every bite of *Mumbaiya Mix Mouth Freshener* — a thoughtfully crafted blend of natural ingredients inspired by the city’s legendary street food traditions. This aromatic mix brings together sweet, tangy, spicy, and savory notes in a harmonious dance of flavors, offering a sensory journey as rich and layered as the streets of Mumbai itself.</p>
+    <p>Crafted with care using high-quality, traditional ingredients, each spoonful reflects the authentic character of Mumbai’s culinary heritage — no shortcuts, no artificial additives, just pure, whole-food essence.</p>
+    <p>**A Flavor Tapestry, Inspired by the Streets:**</p>
+    <p>- **Sweet Notes:** Can
+    ... [1987 chars total]
+
+  AFTER:
+    **Mumbaiya Mix Mouth Freshener – 180g | A Taste of Mumbai’s Street Soul**
+    
+    Savor the vibrant essence of Mumbai’s iconic street corners with *Mumbaiya Mix Mouth Freshener* — a thoughtfully curated blend of natural ingredients rooted in the city’s beloved culinary traditions. This aromatic mix invites you to experience a symphony of sweet, tangy, spicy, and savory notes, crafted to delight the senses and honor time-honored flavors.
+    
+    Each spoonful reflects the authenticity of generations-old preparations — made with whole, minimally processed ingredients, free from artificial additives, preservatives, or refined sugars. No shortcuts. Just the pure, unadulterated character of nature’s harvest.
+    
+    **A Flavor Journey, Inspired by the Streets:**  
+    - **Sweet Undertones:** Candied fennel seeds and dr
+    ... [2041 chars total]
+
+
+[7] Punarnava Powder 100gm-For Positive Energy
+    Field: description
+
+  BEFORE:
+    <p>Certainly! Here's a revised, SEO-optimized, and fully compliant version of your product description using authentic Ayurvedic language—without any health, structure/function, or cure claims. All references to “benefits,” “supports,” or “aids” have been removed or rephrased to align with traditional usage and regulatory guidelines:</p>
+    <p>—</p>
+    <p>**Punarnava Powder – 100g | Traditional Ayurvedic Herb for Daily Wellness**</p>
+    <p>Punarnava (Boerhavia diffusa) is a revered herb in Ayurvedic tradition, valued for its distinct bitter, cooling, and astringent qualities. For generations, this root has been used in holistic wellness practices as part of daily rituals, often incorporated into herbal preparations for its balancing nature.</p>
+    <p>Falcon Herbs’ Punarnava Powder is crafted from hand
+    ... [2732 chars total]
+
+  AFTER:
+    Certainly! Here's a refined, fully compliant, SEO-optimized product description for **Punarnava Powder 100g**, rewritten with authentic Ayurvedic language—**zero health, structure/function, or cure claims**—while remaining compelling, culturally grounded, and search-friendly:
+    
+    ---
+    
+    ### **Punarnava Powder – 100g | A Time-Honored Ayurvedic Herb for Daily Rituals**
+    
+    Punarnava (Boerhavia diffusa) is an herb deeply rooted in Ayurvedic tradition, cherished for its naturally bitter, cooling, and astringent character. For centuries, its roots have been gently dried and prepared as part of holistic wellness customs across India, often integrated into daily routines for their grounding presence.
+    
+    Falcon Herbs’ Punarnava Powder is made from hand-harvested, sun-dried roots, stone-ground using traditio
+    ... [2798 chars total]
+
+
+──────────────────────────────────────────────────────────────────────
+  BLOG POST TITLES (10 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Flax Seeds: A Traditional Ayurvedic Ingredient for Daily Wellness
+    Field: title
+
+  BEFORE:
+    Flax Seeds: A Traditional Ayurvedic Ingredient for Daily Wellness
+
+  AFTER:
+    Flax Seeds in Ayurveda: A Traditional Ingredient for Everyday Use
+
+
+[2] Terminalia Arjuna: Traditional Use and Botanical Profile in Ayurveda
+    Field: title
+
+  BEFORE:
+    Terminalia Arjuna: Traditional Use and Botanical Profile in Ayurveda
+
+  AFTER:
+    Terminalia Arjuna: Botanical Overview and Historical Use in Ayurvedic Practices
+
+
+[3] Black Harde (Terminalia chebula): Traditional Ayurvedic Herb and Its Historical Uses
+    Field: title
+
+  BEFORE:
+    Black Harde (Terminalia chebula): Traditional Ayurvedic Herb and Its Historical Uses
+
+  AFTER:
+    Black Harde (Terminalia chebula): An Ayurvedic Herb with a Legacy of Traditional Use
+
+
+[4] Top Uses and Traditional Insights Into Black Harde (Terminalia chebula)
+    Field: title
+
+  BEFORE:
+    Top Uses and Traditional Insights Into Black Harde (Terminalia chebula)
+
+  AFTER:
+    Black Harde (Terminalia chebula): Traditional Applications and Cultural Significance
+
+
+[5] Top Uses and Traditional Applications of Calendula Flowers
+    Field: title
+
+  BEFORE:
+    Top Uses and Traditional Applications of Calendula Flowers
+
+  AFTER:
+    Top Uses and Traditional Applications of Calendula Flowers in Herbal Practices
+
+
+[6] Long Pepper: A Traditional Ayurvedic Herb for Digestive Support
+    Field: title
+
+  BEFORE:
+    Long Pepper: A Traditional Ayurvedic Herb for Digestive Support
+
+  AFTER:
+    Long Pepper: An Ayurvedic Herb Traditionally Used in Digestive Wellness Practices
+
+
+[7] 5 Nutritional Benefits of Drumstick and Moringa Seeds: A Traditional Ayurvedic Perspective
+    Field: title
+
+  BEFORE:
+    5 Nutritional Benefits of Drumstick and Moringa Seeds: A Traditional Ayurvedic Perspective
+
+  AFTER:
+    5 Nutritional Insights into Drumstick and Moringa Seeds: An Ayurvedic Tradition
+
+
+[8] Discover Mulethi Sticks: 5 Traditional Uses of Liquorice Root in Ayurveda
+    Field: title
+
+  BEFORE:
+    Discover Mulethi Sticks: 5 Traditional Uses of Liquorice Root in Ayurveda
+
+  AFTER:
+    Explore Mulethi Sticks: 5 Traditional Ayurvedic Uses of Liquorice Root
+
+
+[9] 5 Uses for Mulethi Sticks (Liquorice Sticks) in Traditional Ayurvedic Practices
+    Field: title
+
+  BEFORE:
+    5 Uses for Mulethi Sticks (Liquorice Sticks) in Traditional Ayurvedic Practices
+
+  AFTER:
+    5 Traditional Ayurvedic Ways to Use Mulethi Sticks (Liquorice Sticks)
+
+
+[10] Ayurvedic Herbal Tea Powder for Daily Wellness Support
+    Field: title
+
+  BEFORE:
+    Ayurvedic Herbal Tea Powder for Daily Wellness Support
+
+  AFTER:
+    Ayurvedic Herbal Tea Powder for Everyday Rituals and Flavor
+
+
+======================================================================
+  Falcon Agency — Automated Compliance Fix
+  All changes recorded in: data/reports/changelog_2026-02-28.json
+======================================================================

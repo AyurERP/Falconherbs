@@ -96,22 +96,18 @@ def run_system_check() -> bool:
     try:
         goals_path = Path("data/goals.json")
         if not goals_path.exists():
-            default_goals = {
-                "goals": [],
-                "created_at": datetime.now().isoformat(),
-                "note": "Auto-created on first run",
-            }
+            # Director expects list format — same as _ensure_goals_file
+            default_goals: list = []
             goals_path.parent.mkdir(parents=True, exist_ok=True)
             goals_path.write_text(json.dumps(default_goals, indent=2))
             goals = default_goals
             log.info("[OK] Goals — auto-created empty goals.json")
         else:
             goals = json.loads(goals_path.read_text())
-            # Accept both formats: legacy list [] OR new dict {"goals": [...]}
             if isinstance(goals, list):
                 goal_count = len(goals)
             else:
-                goal_count = len(goals.get('goals', []))
+                goal_count = len(goals.get("goals", []))
             log.info(f"[OK] Goals — {goal_count} goals loaded")
         checks.append(True)
     except Exception as e:

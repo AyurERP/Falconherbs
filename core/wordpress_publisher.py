@@ -23,7 +23,10 @@ load_dotenv()
 # WordPress credentials (WP admin for REST API — not cPanel)
 WP_SITE_URL = os.getenv("WP_SITE_URL", "https://falconherbs.com")
 WP_USER = os.getenv("FALCONHERBS_WP_USER") or os.getenv("FALCONHERBS_CPANEL_USER", "falconherbs")
-WP_APP_PASSWORD = os.getenv("FALCONHERBS_WP_PASSWORD", "")
+WP_APP_PASSWORD = (
+    os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+    or os.getenv("FALCONHERBS_WP_PASSWORD", "")
+)
 
 # Drafts directory
 DRAFTS_DIR = Path(__file__).parent.parent / "data" / "content" / "drafts"

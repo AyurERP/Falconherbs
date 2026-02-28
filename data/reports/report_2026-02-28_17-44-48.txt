@@ -1,0 +1,124 @@
+======================================================================
+  FALCON AGENCY — PRODUCT REWRITE REPORT
+  Generated: 28 Feb 2026 at 05:44 PM
+  Total Changes: 11
+======================================================================
+
+──────────────────────────────────────────────────────────────────────
+  BLOG POST TITLES (11 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Flax Seeds 
+    Field: title
+
+  BEFORE:
+    Flax Seeds 
+
+  AFTER:
+    Flax Seeds: A Traditional Ayurvedic Ingredient for Daily Wellness
+
+
+[2] Terminalia Arjuna
+    Field: title
+
+  BEFORE:
+    Terminalia Arjuna
+
+  AFTER:
+    Terminalia Arjuna: Traditional Use and Botanical Profile in Ayurveda
+
+
+[3] Black Harde, Terminalia Chebula
+    Field: title
+
+  BEFORE:
+    Black Harde, Terminalia Chebula
+
+  AFTER:
+    Black Harde (Terminalia chebula): Traditional Ayurvedic Herb and Its Historical Uses
+
+
+[4] Top Benefits Of Black Harde, Terminalia Chebula
+    Field: title
+
+  BEFORE:
+    Top Benefits Of Black Harde, Terminalia Chebula
+
+  AFTER:
+    Top Uses and Traditional Insights Into Black Harde (Terminalia chebula)
+
+
+[5] Top  Benefits Of Calendula Flowers, Calenula
+    Field: title
+
+  BEFORE:
+    Top  Benefits Of Calendula Flowers, Calenula
+
+  AFTER:
+    Top Uses and Traditional Applications of Calendula Flowers
+
+
+[6] Dry Amla -Boost Your Hair, Gut, & Heart Health Naturally: The Magic of Dry Amla
+    Field: title
+
+  BEFORE:
+    Dry Amla -Boost Your Hair, Gut, & Heart Health Naturally: The Magic of Dry Amla
+
+  AFTER:
+    Dry Amla: A Traditional Ayurvedic Ingredient for Daily Wellness Rituals
+
+
+[7] Long Pepper | Reduces Heart burn, Provide relief in constipation.
+    Field: title
+
+  BEFORE:
+    Long Pepper | Reduces Heart burn, Provide relief in constipation.
+
+  AFTER:
+    Long Pepper: A Traditional Ayurvedic Herb for Digestive Support
+
+
+[8] 5 Powerful Nutritional of Drumstick & Moringa Seeds: Improve Digestion, Reduce Cholesterol & More!
+    Field: title
+
+  BEFORE:
+    5 Powerful Nutritional of Drumstick & Moringa Seeds: Improve Digestion, Reduce Cholesterol & More!
+
+  AFTER:
+    5 Nutritional Benefits of Drumstick and Moringa Seeds: A Traditional Ayurvedic Perspective
+
+
+[9] Unlock the Power of Liquorice root | Mulethi Sticks: 5 Potential Benefits for Your Health
+    Field: title
+
+  BEFORE:
+    Unlock the Power of Liquorice root | Mulethi Sticks: 5 Potential Benefits for Your Health
+
+  AFTER:
+    Discover Mulethi Sticks: 5 Traditional Uses of Liquorice Root in Ayurveda
+
+
+[10] 5 Powerful Potential Benefits Uses,  of Mulethi Sticks |  Liquorice Sticks : Supporting Your Kidney, Liver, and Bladder Health
+    Field: title
+
+  BEFORE:
+    5 Powerful Potential Benefits Uses,  of Mulethi Sticks |  Liquorice Sticks : Supporting Your Kidney, Liver, and Bladder Health
+
+  AFTER:
+    5 Uses for Mulethi Sticks (Liquorice Sticks) in Traditional Ayurvedic Practices
+
+
+[11] Ayurvedic Herbal Tea Powder for Diabetes Relief
+    Field: title
+
+  BEFORE:
+    Ayurvedic Herbal Tea Powder for Diabetes Relief
+
+  AFTER:
+    Ayurvedic Herbal Tea Powder for Daily Wellness Support
+
+
+======================================================================
+  Falcon Agency — Automated Compliance Fix
+  All changes recorded in: data/reports/changelog_2026-02-28.json
+======================================================================

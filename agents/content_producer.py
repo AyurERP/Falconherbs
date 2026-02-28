@@ -287,6 +287,14 @@ Return JSON only:
                 for item in findings.get("high_risk", []) + findings.get("medium_risk", []):
                     claims.append(item.get("matched", ""))
                 if claims:
+                    # First try smart swaps (SEO-safe replacements)
+                    swapped = self._health_scanner.apply_smart_swaps(caption)
+                    if swapped != caption:
+                        # Re-scan after swap; if clean, use swapped
+                        recheck = self._health_scanner.scan_page("", swapped, "", is_product=False)
+                        if not (recheck.get("high_risk") or recheck.get("medium_risk")):
+                            return swapped
+                    # Still has claims → regenerate
                     caption = self._regenerate_clean(caption, claims, product_name, platform, post_type, theme)
             except Exception as e:
                 log.warning("Health scan on caption failed: %s", e)

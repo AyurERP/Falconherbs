@@ -271,7 +271,7 @@ class FalconCommander:
             if self._extended_classifier:
                 try:
                     # Check for confirmation of pending action (haan karo, yes do it)
-                    confirm_words = ["haan", "yes", "karo", "confirm", "do it", "theek", "apply"]
+                    confirm_words = ["haan", "yes", "karo", "kar do", "confirm", "do it", "theek", "apply", "ok", "done"]
                     if any(w in lower_text for w in confirm_words) and len(lower_text) < 30:
                         pending = memory.get_context(user_id, "pending_action")
                         if pending:
@@ -302,6 +302,17 @@ class FalconCommander:
                     ext_result = self._extended_classifier.classify(text)
                     if ext_result:
                         ext_result["message_text"] = text
+                        # Long tasks: send "Starting... wait" before running
+                        intent = ext_result.get("intent", "")
+                        long_tasks = {"health_scan": "~40 sec", "aeo_scan": "~30 sec", "scan_products": "~60 sec"}
+                        if intent in long_tasks:
+                            try:
+                                eta = long_tasks[intent]
+                                self._whatsapp.send_message(
+                                    f"⏳ Starting {intent.replace('_', ' ')}... {eta} lagenge. Wait karo."
+                                )
+                            except Exception:
+                                pass
                         response = self._extended_handler.handle(ext_result)
                         # Store pending_action for confirmation flow
                         if response.get("needs_confirmation") and response.get("pending_action"):
@@ -502,6 +513,23 @@ class FalconCommander:
         agent_tag = parts[0].lower()  # @developer
         query = parts[1] if len(parts) > 1 else "status"
         
+        # @aeo — route to AEO (bridge tool, not Director agent)
+        if agent_tag in ["@aeo", "@aeo_agent"]:
+            if hasattr(self, "_extended_handler") and self._extended_handler:
+                intent = "aeo_scan" if "scan" in query.lower() else "aeo_report"
+                ext_result = {
+                    "intent": intent,
+                    "handler": "handle_aeo_scan" if intent == "aeo_scan" else "handle_aeo_report",
+                    "message_text": text,
+                    "extracted_data": {},
+                }
+                response = self._extended_handler.handle(ext_result)
+                raw = response.get("response", "AEO: No response")
+                reply = director_brain.wrap_raw_response(text, raw, "aeo", recent_messages=self._get_recent_for_wrap())
+                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
+                self._whatsapp.send_message(reply)
+            return
+        
         agent_map = {
             "@developer": director._developer,
             "@dev": director._developer,
@@ -536,7 +564,7 @@ class FalconCommander:
         if agent is None:
             raw = (
                 f"Unknown agent: {agent_tag}. "
-                "Available: @developer, @strategist, @media, @backup, @director"
+                "Available: @developer, @strategist, @media, @backup, @aeo, @director"
             )
             reply = director_brain.wrap_raw_response(
                 text, raw, "unknown_agent",
@@ -833,30 +861,10 @@ class FalconCommander:
         self._whatsapp.send_message(reply)
 
     def _search_serper(self, query: str) -> str:
-        """Live Google search via Serper.dev. Returns formatted text or empty."""
-        api_key = os.getenv("SERPER_API_KEY", "")
-        if not api_key:
-            return ""
+        """Live Google search via centralized Serper client. Returns formatted text or empty."""
         try:
-            import requests as _req
-            r = _req.post(
-                "https://google.serper.dev/search",
-                headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
-                json={"q": query, "gl": "in", "hl": "en"},
-                timeout=12,
-            )
-            if r.status_code != 200:
-                return ""
-            data = r.json()
-            parts = []
-            for i, o in enumerate(data.get("organic", [])[:8], 1):
-                parts.append(f"{i}. {o.get('title','')}\n   {o.get('snippet','')}")
-            for p in data.get("peopleAlsoAsk", [])[:3]:
-                parts.append(f"PAA: {p.get('question','')}\n   {p.get('snippet','')}")
-            ab = data.get("answerBox", {})
-            if ab:
-                parts.append(f"Featured: {ab.get('title','')}\n   {ab.get('snippet','')}")
-            return "\n\n".join(parts) if parts else ""
+            from core.serper_client import search_text
+            return search_text(query, source="commander")
         except Exception:
             return ""
 
@@ -1011,8 +1019,8 @@ class FalconCommander:
             return {"intent": "status_check", "task": None, "site": "falconherbs.com",
                     "params": {}, "reply_needed": True, "idea_text": None}
 
-        # Approve
-        if any(w in lower for w in ["yes", "approve", "haan", "ok", "go ahead", "kar do", "theek"]):
+        # Approve (haan, ok, agree, publish karo, etc)
+        if any(w in lower for w in ["yes", "approve", "haan", "ok", "go ahead", "kar do", "theek", "agree", "sahi", "publish karo", "live karo"]):
             return {"intent": "approve_action", "task": None, "site": "falconherbs.com",
                     "params": {}, "reply_needed": False, "idea_text": None}
 
