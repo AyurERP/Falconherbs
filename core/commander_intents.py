@@ -1394,15 +1394,6 @@ class IntentResponseHandler:
         """Run health claims scan"""
         url = intent.get("extracted_data", {}).get("url")
         
-        response = (
-            "🏥 *Health Claims Scan Starting...*\n"
-            "⏱️ This takes 2-5 minutes depending on "
-            "site size.\n"
-            "📊 Results will be saved to "
-            "data/health_audit/\n\n"
-            "🔄 Scanning..."
-        )
-        
         result = self.bridge.run_health_scan(max_pages=100)
         
         if result.get("success"):

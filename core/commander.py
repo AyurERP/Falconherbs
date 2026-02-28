@@ -304,7 +304,18 @@ class FalconCommander:
                         ext_result["message_text"] = text
                         # Long tasks: send "Starting... wait" before running
                         intent = ext_result.get("intent", "")
-                        long_tasks = {"health_scan": "~40 sec", "aeo_scan": "~30 sec", "scan_products": "~60 sec"}
+                        long_tasks = {
+                            "health_scan": "~40 sec", 
+                            "aeo_scan": "~30 sec", 
+                            "scan_products": "~60 sec", 
+                            "store_audit": "~2 mins",
+                            "bulk_title_fix": "~1 min",
+                            "disclaimer_injection": "~1 min",
+                            "scan_blog_posts": "~1 min",
+                            "scan_pages": "~1 min",
+                            "rewrite_blogs": "~2 mins",
+                            "rewrite_products": "~2 mins"
+                        }
                         if intent in long_tasks:
                             try:
                                 eta = long_tasks[intent]
