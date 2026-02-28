@@ -365,7 +365,7 @@ SEO REQUIREMENTS:
 - Include LSI/related terms naturally
 - Short paragraphs (2-3 sentences max)
 - Use bullet points and numbered lists
-- Suggest 3 internal link opportunities: [INTERNAL_LINK]
+- Include 3 internal links using REAL existing URLs from falconherbs.com (e.g. /shop/, /product/ashwagandha-root-whole-100g/, /product-category/immunity/). Do NOT use fabricated or placeholder [INTERNAL_LINK] URLs.
 
 CRITICAL HEALTH & LEGAL RULES — MUST FOLLOW:
 ❌ NEVER use: "cures", "treats disease", "prevents disease",
