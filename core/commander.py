@@ -270,9 +270,19 @@ class FalconCommander:
             # ── Step 0: Try new extended intents first ──
             if self._extended_classifier:
                 try:
-                    # Check for confirmation of pending action (haan karo, yes do it)
-                    confirm_words = ["haan", "yes", "karo", "kar do", "confirm", "do it", "theek", "apply", "ok", "done"]
-                    if any(w in lower_text for w in confirm_words) and len(lower_text) < 30:
+                    # 1. Check for specific new intent first (Primary Route)
+                    ext_result = self._extended_classifier.classify(text)
+                    
+                    # 2. Check for confirmation of pending action ONLY if no clear specific command
+                    # OR if the command itself is an approval intent
+                    is_direct_confirm = False
+                    confirm_words = ["haan", "yes", "kar do", "confirm", "do it", "theek", "apply", "ok karo", "done"]
+                    
+                    # Simple "karo" or "theek hai" (short)
+                    if any(w in lower_text for w in confirm_words) and len(lower_text) < 25:
+                        is_direct_confirm = True
+                    
+                    if is_direct_confirm and not ext_result:
                         pending = memory.get_context(user_id, "pending_action")
                         if pending:
                             handler_name = pending if pending.startswith("handle_") else f"handle_{pending.replace('-', '_')}"
@@ -299,7 +309,6 @@ class FalconCommander:
                                 self._whatsapp.send_message(reply_text)
                                 memory.add_message(user_id, "assistant", reply_text)
                                 return
-                    ext_result = self._extended_classifier.classify(text)
                     if ext_result:
                         ext_result["message_text"] = text
                         # Long tasks: send "Starting... wait" before running

@@ -20,6 +20,54 @@ class HealthClaimsRewriter:
         self.rewrites_dir = Path("data/content/product_rewrites")
         self.rewrites_dir.mkdir(parents=True, exist_ok=True)
 
+    def _clean_ai_markup(self, text: str) -> str:
+        """Strip conversational filler, markdown rules, and quotes from AI responses."""
+        if not text:
+            return ""
+            
+        # 1. Strip common conversational prefixes
+        lines = text.split("\n")
+        cleaned_lines = []
+        skip_header = True
+        
+        filler_patterns = [
+            "certainly", "here is", "here's", "i have", "rewritten", 
+            "optimized", "compliant", "this version", "version below"
+        ]
+        
+        for i, line in enumerate(lines[:8]):
+            l_line = line.lower().strip()
+            # If line is empty, skip
+            if not l_line:
+                continue
+            # If line looks like filler, keep skipping
+            if skip_header and any(p in l_line for p in filler_patterns):
+                continue
+            # If we hit a horizontal rule or bold header, we might be at the content
+            # But "---" is often used to separate filler from content.
+            if skip_header and "---" in line:
+                skip_header = False
+                continue
+            
+            # If we reached here, it's likely content
+            skip_header = False
+            cleaned_lines.extend(lines[i:])
+            break
+            
+        if not cleaned_lines:
+            cleaned_lines = lines # Fallback if logic failed
+
+        text = "\n".join(cleaned_lines).strip()
+        
+        # 2. Strip surrounding quotes and rules
+        text = text.strip().strip('"').strip("'").strip("`").strip()
+        if text.startswith("---"):
+            text = text[3:].strip()
+        if text.endswith("---"):
+            text = text[:-3].strip()
+            
+        return text.strip()
+
     # ── Scan ────────────────────────────────────────────
 
     def scan_all_products(self):
@@ -165,12 +213,12 @@ class HealthClaimsRewriter:
                                 "Rewrite this product title to be safe and "
                                 "compliant (no health claims/cures). "
                                 "Keep it SEO-friendly.\n\n"
+                                "IMPORTANT: Return ONLY the title text. No conversational filler like 'Certainly'.\n"
                                 "Original Title: {}"
                             ).format(name)
                             t_response = ai.generate(t_prompt)
                             if t_response:
-                                # Strip quotes if LLM adds them
-                                new_name = t_response.strip().strip('"').strip("'")
+                                new_name = self._clean_ai_markup(t_response)
                         except Exception:
                             pass
 
@@ -183,11 +231,13 @@ class HealthClaimsRewriter:
                                 "Ayurvedic language. Remove ALL "
                                 "health claims. Keep it compelling "
                                 "and SEO-friendly.\n\n"
+                                "IMPORTANT: Return ONLY the rewritten description. "
+                                "Do NOT include conversational filler like 'Certainly!', 'Here is', etc.\n\n"
                                 "Original:\n{}"
                             ).format(new_name, desc)
                             response = ai.generate(prompt)
                             if response:
-                                new_desc = response
+                                new_desc = self._clean_ai_markup(response)
                         except Exception:
                             pass
 
@@ -666,11 +716,12 @@ class HealthClaimsRewriter:
                             "Rewrite this blog post title to remove any health claims "
                             "(cures, treats, controls, reverses, heals, etc). "
                             "Keep it informative and SEO-friendly.\n\n"
+                            "IMPORTANT: Return ONLY the title text. No conversational filler.\n"
                             f"Original title: {title}"
                         )
                         resp = ai.generate(prompt)
                         if resp:
-                            new_title = resp.strip().strip('"').strip("'")
+                            new_title = self._clean_ai_markup(resp)
                     except Exception:
                         pass
 
@@ -896,11 +947,13 @@ class HealthClaimsRewriter:
                     try:
                         prompt = (
                             "Rewrite this page title to remove health claims. "
-                            "Keep it informative.\n\nOriginal: " + title
+                            "Keep it informative.\n\n"
+                            "IMPORTANT: Return ONLY the title text. No conversational filler.\n"
+                            "Original: " + title
                         )
                         resp = ai.generate(prompt)
                         if resp:
-                            new_title = resp.strip().strip('"').strip("'")
+                            new_title = self._clean_ai_markup(resp)
                     except Exception:
                         pass
                 rewrite_data = {
