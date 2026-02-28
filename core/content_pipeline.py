@@ -20,6 +20,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from core.ai_client import call_ai
+
 
 class ContentPipeline:
     """
@@ -431,9 +433,9 @@ FORMAT:
         }
         
         # Generate content if AI client available
-        if self.ai_client:
+        if True:
             try:
-                response = self.ai_client.generate(prompt)
+                response = call_ai('content', [{'role': 'user', 'content': prompt}])
                 if response:
                     draft["content"] = response
                     draft["status"] = "generated"
@@ -561,9 +563,9 @@ INCLUDE AT END:
             "safety_check": None
         }
         
-        if self.ai_client:
+        if True:
             try:
-                response = self.ai_client.generate(prompt)
+                response = call_ai('content', [{'role': 'user', 'content': prompt}])
                 if response:
                     draft["content"] = response
                     draft["status"] = "generated"
@@ -738,9 +740,9 @@ HEALTH RULES:
                     "status": "prompt_only"
                 }
                 
-                if self.ai_client:
+                if True:
                     try:
-                        response = self.ai_client.generate(prompt)
+                        response = call_ai('content', [{'role': 'user', 'content': prompt}])
                         if response:
                             safety = self.safety_check(response)
                             post["content"] = safety[

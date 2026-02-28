@@ -528,3 +528,54 @@ REWRITTEN (caption only, no JSON):"""
             "campaign_path": str(campaign_dir),
             "summary": f"Email campaign ready: {campaign_dir}\n\nSEND_GUIDE.txt mein steps hain.",
         }
+
+    def draft_blog_post(self, topic: str, keyword: str) -> dict:
+        """Called by Chanakya to create an SEO blog post draft, save to WP as Draft, and alert."""
+        try:
+            from core.content_pipeline import ContentPipeline
+            pipe = ContentPipeline()
+            res = pipe.create_blog_draft(topic=topic, target_keyword=keyword)
+            if res.get('success'):
+                draft_path = res.get('file')
+                import os
+                from pathlib import Path
+                draft_name = Path(draft_path).name
+
+                from core.wordpress_publisher import WordPressPublisher
+                wp = WordPressPublisher()
+                wp_res = wp.publish_draft(draft_name=draft_name, as_draft=True)
+                
+                # Send WhatsApp preview
+                msg = f"📝 CHANAKYA UPDATE: Blog Draft Ready!\n"
+                msg += f"Topic: {topic}\n"
+                msg += f"WP Status: 'Draft' Created.\n"
+                msg += f"Preview available. Please publish manually in WP Admin."
+                
+                try:
+                    from core.approval import ApprovalSystem
+                    ApprovalSystem().send_alert(msg)
+                except Exception:
+                    pass
+                
+                return {'success': True, 'wp_res': wp_res, 'file': draft_name}
+            return {'success': False, 'error': 'Pipeline failed.'}
+        except Exception as e:
+            import traceback
+            return {'success': False, 'error': str(e), 'trace': traceback.format_exc()}
+
+    def draft_emergency_email(self, cause: str) -> dict:
+        """Drafts emergency email based on Chanakya's trigger."""
+        return self.generate_email_campaign(campaign_type=cause)
+        
+    def handle_delegation(self, instruction: dict) -> dict:
+        """Receives commands from Chanakya or Director."""
+        cmd = instruction.get('instruction', '')
+        if 'blog' in cmd.lower() or 'encyclopedia' in cmd.lower():
+            topic = cmd
+            kw = cmd
+            if 'keyword:' in cmd.lower():
+                kw = cmd.split('keyword:')[1].strip()
+            return self.draft_blog_post(topic, kw)
+        elif 'email' in cmd.lower() or 'revenue' in cmd.lower():
+            return self.draft_emergency_email('urgent_recovery')
+        return {'success': False, 'error': 'Unknown content delegation command.', 'cmd': cmd}

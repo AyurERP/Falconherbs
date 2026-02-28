@@ -49,9 +49,9 @@ AI_MODELS = {
     # Developer — Llama 3.3 70B, technical precision
     "developer":        "nv::meta/llama-3.3-70b-instruct",
 
-    # Media/Content — Qwen3 80B MoE, creative writing
-    "media":            "nv::qwen/qwen3-next-80b-a3b-instruct",
-    "content":          "nv::qwen/qwen3-next-80b-a3b-instruct",
+    # Media/Content — Llama 3.3 70B, creative writing
+    "media":            "nv::meta/llama-3.3-70b-instruct",
+    "content":          "nv::meta/llama-3.3-70b-instruct",
     "content_fallback": "nv::meta/llama-3.3-70b-instruct",
 
     # Fallback — 70B (massive upgrade from old 8B garbage model)
