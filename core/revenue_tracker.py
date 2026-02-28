@@ -130,6 +130,36 @@ class RevenueTracker:
                 target * datetime.now().day / 30
             )
         }
+
+    def get_weekly_performance(self) -> dict:
+        """Get revenue for current week vs previous week."""
+        revenue_data = self._load(self.revenue_file)
+        entries = revenue_data.get("entries", [])
+        
+        now = datetime.now()
+        this_week_start = now - timedelta(days=now.weekday())
+        this_week_start = this_week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        prev_week_start = this_week_start - timedelta(days=7)
+        
+        this_week_rev = sum(
+            e["amount"] for e in entries 
+            if datetime.fromisoformat(e["date"]) >= this_week_start
+        )
+        prev_week_rev = sum(
+            e["amount"] for e in entries 
+            if prev_week_start <= datetime.fromisoformat(e["date"]) < this_week_start
+        )
+        
+        trend = 0
+        if prev_week_rev > 0:
+            trend = ((this_week_rev - prev_week_rev) / prev_week_rev) * 100
+            
+        return {
+            "this_week": this_week_rev,
+            "prev_week": prev_week_rev,
+            "trend_percent": trend
+        }
     
     def sync_from_woocommerce(self, woo_orders_data):
         """Import orders from WooCommerce data"""

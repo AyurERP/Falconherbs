@@ -75,6 +75,7 @@ from core.integration_bridge import IntegrationBridge
 from core.ai_client import call_ai
 from core.woocommerce_connector import WooCommerceConnector
 from core.revenue_tracker import RevenueTracker
+from core.learning_cache import learning
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1298,6 +1299,12 @@ Respond in JSON:
         _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check", "content_package_weekly", "generate_weekly_content_package"}
 
         def _do_dispatch() -> dict:
+            # --- SELF-LEARNING: Check for past failures ---
+            lesson = learning.get_lesson(task, agent)
+            if lesson:
+                log.warning(f"Director: Task suggestion from experience: {lesson}")
+                # We could even notify WhatsApp here if it's a persistent blocker
+
             if agent == "sentinel":
                 return self._dispatch_sentinel(task, site, params)
             elif agent in ("developer", "strategist", "media", "backup"):
@@ -1331,6 +1338,12 @@ Respond in JSON:
                     result = {"status": "timeout", "error": error_msg}
 
             duration = time.monotonic() - dispatch_start
+
+            # --- SELF-LEARNING: Update repository ---
+            if result.get("status") in ("success", "ok", "complete", "done"):
+                learning.record_success(task, agent)
+            elif result.get("status") in ("error", "failed", "timeout"):
+                learning.record_failure(task, result.get("error", "Unknown error"), agent)
 
             # ── Log the dispatch ──
             log.log_action(

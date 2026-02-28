@@ -21,9 +21,9 @@ Operational guarantees:
     • Sentinel NEVER crashes the host process. Every public method
       is wrapped in a top-level try/except that logs and returns a
       safe default.
-    • Sentinel NEVER takes destructive action without human approval.
-      block_ip() sends an alert with copy-paste commands — the owner
-      executes them manually.
+    • Sentinel usually takes only non-destructive actions. IP blocks require
+      manual execution. However, specific security headers (HSTS, CSP) are 
+      automatically patched via cPanel if missing, as approved by the owner.
     • Every finding, every scan, every decision is recorded via
       log.log_action() into SQLite for post-incident forensics.
 
@@ -40,6 +40,8 @@ import hashlib
 import ipaddress
 import os
 import re
+import socket
+import ssl
 import threading
 import time
 from collections import defaultdict
@@ -54,6 +56,7 @@ import schedule
 from config.settings import settings
 from core.approval import ApprovalSystem
 from core.logger import log
+from core.cpanel_connector import cpanel
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -64,6 +67,7 @@ from core.logger import log
 _HTTP_TIMEOUT: int = 25                    # seconds; SSL handshake from VPS can be slow
 _SLOW_RESPONSE_THRESHOLD: float = 3.0      # seconds; triggers MEDIUM alert
 _USER_AGENT: str = "FalconAgency-Sentinel/2.0 (Internal Security Scanner)"
+_SSL_EXPIRY_THRESHOLD_DAYS: int = 15        # triggers HIGH alert
 
 # ── File integrity ──
 _HASH_CHUNK_SIZE: int = 65_536             # 64 KiB read blocks
@@ -381,6 +385,33 @@ class Sentinel:
                     error="No HTTP response obtained after all retries",
                 )
 
+            # ── CHECK 2.5: SSL Certificate Expiry (Self-Healing awareness) ──
+            if site_url.startswith("https://"):
+                try:
+                    hostname = urlparse(site_url).hostname
+                    if hostname:
+                        context = ssl.create_default_context()
+                        with socket.create_connection((hostname, 443), timeout=10) as sock:
+                            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                                cert = ssock.getpeercert()
+                                if cert:
+                                    not_after = cert.get('notAfter')
+                                    if not_after:
+                                        expiry = datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
+                                        days_left = (expiry - datetime.utcnow()).days
+                                        if days_left < _SSL_EXPIRY_THRESHOLD_DAYS:
+                                            findings.append(self._finding(
+                                                category="transport",
+                                                title="SSL Certificate Expiring Soon",
+                                                severity="HIGH" if days_left < 7 else "MEDIUM",
+                                                description=f"SSL certificate for {hostname} expires in {days_left} days. Your site will soon show scary security warnings to customers.",
+                                                recommendation="Login to cPanel/WHM and verify Auto-SSL is running, or renew certificate manually.",
+                                                raw=f"Expires: {not_after} ({days_left} days left)",
+                                            ))
+                                            log.warning("🔒 SSL EXPIRING  |  host=%s  |  days_left=%d", hostname, days_left)
+                except Exception as ssl_err:
+                    log.warning("Failed to probe SSL expiry for %s: %s", site_url, ssl_err)
+
             # ── CHECK 3: Response time ──
             if response_time is not None and response_time > _SLOW_RESPONSE_THRESHOLD:
                 findings.append(self._finding(
@@ -432,6 +463,22 @@ class Sentinel:
                         description=desc,
                         recommendation=rec,
                     ))
+                    # --- AUTO-FIX: Security Headers ---
+                    if name in ("Strict-Transport-Security", "Content-Security-Policy"):
+                        log.info(f"Sentinel: Detected missing {name}. Attempting auto-fix via cPanel...")
+                        if cpanel.patch_htaccess_security_headers():
+                            log.info(f"Sentinel: Successfully patched {name} in .htaccess")
+                            # Notify the owner
+                            self._approval.send_alert(
+                                f"🛡️ *SENTINEL AUTO-FIX*\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"Detected missing security header:\n"
+                                f"*{name}*\n\n"
+                                f"✅ Successfully patched `.htaccess` via cPanel. "
+                                f"Your site is now more secure."
+                            )
+                        else:
+                            log.warning(f"Sentinel: Failed to auto-fix {name}. Manual intervention needed.")
                 elif acceptable:
                     # Header exists — quick sanity check
                     val_lower = value.lower()

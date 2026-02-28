@@ -68,6 +68,13 @@ class ExtendedSchedule:
                             "description": "Weekly trending keywords (ayurveda/herbal) via Serper",
                         }
                         modified = True
+                    if "growth_proactive_scan" not in tasks:
+                        tasks["growth_proactive_scan"] = {
+                            "time": "09:30", "day": "tuesday", "frequency": "weekly",
+                            "enabled": True, "last_run": None,
+                            "description": "Proactive growth & revenue analysis with strategy suggestions",
+                        }
+                        modified = True
                     if modified:
                         self._save_schedule(data)
                     return data
@@ -151,6 +158,21 @@ class ExtendedSchedule:
                     "enabled": True,
                     "last_run": None,
                     "description": "Full health claims re-scan"
+                },
+                "growth_proactive_scan": {
+                    "time": "09:30",
+                    "day": "tuesday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Proactive growth & revenue analysis"
+                },
+                "backup_health_check": {
+                    "time": "03:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Check cPanel backup status and auto-trigger if stale"
                 },
                 "weekly_content_batch": {
                     "time": "08:00",
@@ -1477,6 +1499,94 @@ class ExtendedSchedule:
             "message": "No new influencers found this week "
                        "for topic: {}".format(target_topic),
         }
+
+    def _task_growth_proactive_scan(self):
+        """
+        🚀 SELF-GROWTH: Analyze revenue vs goals and suggest strategies.
+        """
+        try:
+            from core.revenue_tracker import RevenueTracker
+            from core.ai_client import call_ai
+            
+            tracker = RevenueTracker()
+            perf = tracker.get_weekly_performance()
+            
+            revenue = perf.get("this_week", 0)
+            trend = perf.get("trend_percent", 0)
+            
+            if trend < -5:
+                status_msg = f"📉 Sales are down by {abs(trend):.1f}% compared to last week."
+            elif trend > 5:
+                status_msg = f"📈 Sales are up by {trend:.1f}%! Great momentum."
+            else:
+                status_msg = "📊 Sales are stable."
+
+            # Ask Strategist for a proactive idea
+            prompt = (
+                f"You are the Lead Strategist for Falcon Agency. {status_msg} "
+                f"Current revenue: ₹{revenue}. "
+                "The goal is simple: make falconherbs.com the #1 Ayurvedic site in the world. "
+                "Based on this, what is ONE specific proactive growth action we should take this week? "
+                "Keep it short, bold, and actionable in Hinglish/English mix."
+            )
+            
+            suggestion = call_ai(prompt)
+            
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": (
+                    "🚀 *PROACTIVE GROWTH SCAN*\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"{status_msg}\n\n"
+                    f"*Strategist Suggestion:*\n{suggestion}"
+                ),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _task_backup_health_check(self):
+        """
+        🛡️ SELF-HEALING BACKUP: Check cPanel backups and trigger if stale.
+        """
+        try:
+            from core.cpanel_connector import cpanel
+            backups = cpanel.list_backups()
+            
+            if not backups:
+                # No backups found, trigger one
+                cpanel.start_full_backup()
+                return {
+                    "success": True,
+                    "send_whatsapp": True,
+                    "message": "🛡️ *BACKUP ALERT*: No cPanel backups found! Triggered a full backup automatically."
+                }
+            
+            # Sort by date
+            backups.sort(key=lambda x: x.get('backup_time', ''), reverse=True)
+            latest = backups[0]
+            ts_str = latest.get('backup_time', '')
+            
+            # Simple check: if > 48h old
+            try:
+                latest_dt = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                if (datetime.now(timezone.utc) - latest_dt).total_seconds() > 48 * 3600:
+                    cpanel.start_full_backup()
+                    return {
+                        "success": True,
+                        "send_whatsapp": True,
+                        "message": f"🛡️ *BACKUP STALE*: Latest backup is {ts_str}. Triggered fresh full cPanel backup."
+                    }
+            except:
+                pass # Date parse fail
+                
+            return {
+                "success": True,
+                "send_whatsapp": False,
+                "message": f"Backup health OK. Latest: {ts_str}"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 # ==================== TEST ====================
 

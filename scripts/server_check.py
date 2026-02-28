@@ -41,48 +41,18 @@ def main():
     except Exception as e:
         print(f"   FAIL: {e}")
 
-    # 2. cPanel API (port 2083)
-    print("\n2. CPANEL API (port 2083)")
-    cpanel_user = os.getenv("CPANEL_USERNAME") or os.getenv("FALCONHERBS_CPANEL_USER", "")
-    cpanel_token = os.getenv("CPANEL_API_TOKEN") or os.getenv("FALCONHERBS_CPANEL_PASSWORD", "")
-    cpanel_domain = os.getenv("CPANEL_DOMAIN") or os.getenv("FALCONHERBS_CPANEL_URL", "falconherbs.com")
-    cpanel_domain = cpanel_domain.replace("https://", "").replace("http://", "").split("/")[0].split(":")[0]
-    cpanel_port = os.getenv("CPANEL_PORT", "2083")
-
-    if not cpanel_user or not cpanel_token:
-        print("   SKIP: CPANEL_USERNAME + CPANEL_API_TOKEN (or FALCONHERBS_CPANEL_*) not set")
+    # 2. cPanel API
+    print("\n2. CPANEL API")
+    from core.cpanel_connector import cpanel
+    if not cpanel._configured:
+        print("   SKIP: FALCONHERBS_CPANEL_* not set in .env")
     else:
-        try:
-            import requests
-            base = f"https://{cpanel_domain}:{cpanel_port}"
-            headers = {"Authorization": f"cpanel {cpanel_user}:{cpanel_token}"}
-            # Simple API call — list accounts or version
-            r = requests.get(
-                f"{base}/execute/VersionControl/get_version",
-                headers=headers,
-                timeout=15,
-                verify=True,
-            )
-            if r.status_code == 200:
-                print(f"   {base} — OK (200)")
-            else:
-                # Try alternate — listaccts
-                r2 = requests.get(
-                    f"{base}/json-api/listaccts",
-                    headers=headers,
-                    timeout=15,
-                    verify=True,
-                )
-                if r2.status_code == 200:
-                    print(f"   {base} — OK (200)")
-                else:
-                    print(f"   {base} — HTTP {r.status_code} (may need API token from cPanel)")
-        except requests.exceptions.SSLError as e:
-            print(f"   SSL Error: {str(e)[:80]}")
-        except requests.exceptions.ConnectTimeout:
-            print(f"   Timeout — check firewall/port {cpanel_port}")
-        except Exception as e:
-            print(f"   FAIL: {e}")
+        # Just check connectivity via a simple call (optional, cpanel class doesn't have a check_conn yet)
+        res = cpanel._execute("Fileman", "list_files", {"dir": "public_html", "limit": 1})
+        if res.get("status"):
+            print(f"   {cpanel.url} — OK")
+        else:
+            print(f"   {cpanel.url} — FAILED: {res.get('errors')}")
 
     # 3. WHM API
     print("\n3. WHM API")
