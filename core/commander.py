@@ -314,7 +314,15 @@ class FalconCommander:
                             "scan_blog_posts": "~1 min",
                             "scan_pages": "~1 min",
                             "rewrite_blogs": "~2 mins",
-                            "rewrite_products": "~2 mins"
+                            "rewrite_products": "~2 mins",
+                            "generate_all_fixes": "~2 mins",
+                            "push_all": "~1 min",
+                            "apply_rewrite": "~15 sec",
+                            "rename_categories": "~30 sec",
+                            "weekly_package": "~3 mins",
+                            "content_status": "~15 sec",
+                            "trending_scan": "~20 sec",
+                            "price_scan": "~1 min"
                         }
                         if intent in long_tasks:
                             try:
@@ -524,19 +532,43 @@ class FalconCommander:
         agent_tag = parts[0].lower()  # @developer
         query = parts[1] if len(parts) > 1 else "status"
         
-        # @aeo — route to AEO (bridge tool, not Director agent)
-        if agent_tag in ["@aeo", "@aeo_agent"]:
+        # @aeo and @content — route to bridge tools, not Director agents
+        if agent_tag in ["@aeo", "@aeo_agent", "@content"]:
             if hasattr(self, "_extended_handler") and self._extended_handler:
-                intent = "aeo_scan" if "scan" in query.lower() else "aeo_report"
+                if agent_tag == "@content":
+                    l_query = query.lower()
+                    if "weekly" in l_query or "package" in l_query:
+                        intent = "weekly_package"
+                    elif "reel" in l_query:
+                        intent = "product_reel"
+                    elif "email" in l_query or "campaign" in l_query:
+                        intent = "email_campaign"
+                    elif "blog" in l_query:
+                        intent = "blog_draft"
+                    elif "social" in l_query:
+                        intent = "social_draft"
+                    else:
+                        intent = "content_status"
+                else:
+                    intent = "aeo_scan" if "scan" in query.lower() else "aeo_report"
+
                 ext_result = {
                     "intent": intent,
-                    "handler": "handle_aeo_scan" if intent == "aeo_scan" else "handle_aeo_report",
+                    "handler": f"handle_{intent}",
                     "message_text": text,
                     "extracted_data": {},
                 }
+                
+                # Notify owner it's thinking if it's a known long task
+                long_tasks = ["weekly_package", "product_reel", "blog_draft"]
+                if intent in long_tasks:
+                    self._whatsapp.send_message(f"⏳ Talking to Content Pipeline / Producer... Give me a minute.")
+                else:
+                    self._whatsapp.send_message(f"💬 Asking {agent_tag.replace('@', '').upper()}...")
+
                 response = self._extended_handler.handle(ext_result)
-                raw = response.get("response", "AEO: No response")
-                reply = director_brain.wrap_raw_response(text, raw, "aeo", recent_messages=self._get_recent_for_wrap())
+                raw = response.get("response", f"{agent_tag}: No response")
+                reply = director_brain.wrap_raw_response(text, raw, "bridge_agent", recent_messages=self._get_recent_for_wrap())
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                 self._whatsapp.send_message(reply)
             return
@@ -677,8 +709,17 @@ class FalconCommander:
             self._whatsapp.send_message(reply)
             return
 
+        # Identify long tasks and provide ETA
+        eta = ""
+        if task == "health_claim_audit":
+            eta = " (~1 min lagenge)"
+        elif "audit" in task or "scan" in task:
+            eta = " (~1-2 mins lagenge)"
+        elif "generate" in task or "rewrite" in task:
+            eta = " (~2-3 mins lagenge)"
+
         # Notify owner that task is starting — via DirectorBrain for tone matching
-        raw_start = f"Task {task.replace('_', ' ').title()} starting on {site}."
+        raw_start = f"Task {task.replace('_', ' ').title()} starting on {site}. Wait karo{eta}."
         start_msg = director_brain.wrap_raw_response(
             original_text, raw_start, "task_start",
             recent_messages=self._get_recent_for_wrap(),

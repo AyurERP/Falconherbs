@@ -75,7 +75,26 @@ AI Formats Reply (mirrors owner's language)
 WhatsApp → Owner
 ```
 
+## Health Scan vs. Rewrite Pipeline
+
+The system separates the **detection** of health claim violations from the **modification** of site content to ensure strict human oversight.
+
+1. **Scan (`health_scanner.py`)** 
+   - **Trigger**: "health scan", "site health check" 
+   - **Action**: Reads products, blogs, and pages via API. Checks text against FDA/FTC-style risk patterns (e.g., "cures", "treats").
+   - **Result**: Generates an advisory report (`data/health_audit/health_audit_report.json`) and alerts the owner of violations. **Always read-only.**
+
+2. **Rewrite (`health_rewriter.py`)** 
+   - **Trigger**: "rewrite products", "generate fixes"
+   - **Action**: Takes the flagged items from the recent scan and uses AI to rewrite them into compliant language (e.g., "traditionally used for" instead of "cures").
+   - **Result**: Saves drafted rewrites to `data/content/product_rewrites/`. Does **not** push to the live site yet. 
+
+3. **Approval & Apply Pipeline**
+   - **Trigger**: "approve rewrites", "apply fixes", "sab fix karo"
+   - **Action**: Reviews pending drafts in the `product_rewrites` directory. The Director prompts for human confirmation if not already explicitly provided. Upon "haan karo" or "YES", the system executes `apply_rewrite` logic to push the updated titles/descriptions to WooCommerce/WordPress via API.
+
 ## Phase Summary
+
 
 | Phase | What Was Built |
 |-------|---------------|

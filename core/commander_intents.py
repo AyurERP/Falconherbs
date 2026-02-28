@@ -1065,6 +1065,17 @@ class ExtendedIntentClassifier:
                 "description": "Keyword analysis and rank check",
             },
         }
+        self.intents["director_complaint"] = {
+            "patterns": [
+                r"\b(director|you|tum)\s+(are\s+)?(useless|dumb|stupid|idiot|pagal|not\s+working|failing|bekaar|slow)\b",
+                r"\b(complaint|complain|feedback)\s+(about\s+)?(director|you)\b",
+                r"\b(fix\s+yourself|do\s+better|work\s+properly)\b",
+                r"\bwake\s+up\s+director\b",
+                r"\byou\s+are\s+(a\s+)?disappointment\b",
+            ],
+            "handler": "handle_director_complaint",
+            "description": "Handle owner complaints about the Director",
+        }
     
     def classify(self, message):
         """
@@ -3413,6 +3424,24 @@ Keep it punchy, under 150 words. No health claims."""
         ).strip()
         
         return stripped if len(stripped) > 5 else None
+
+    def handle_director_complaint(self, intent):
+        """Handle owner complaints about the Director."""
+        msg = intent.get("message_text", "")
+        try:
+            from core.logger import log
+            log.log_action("director_complaint_received", "commander", "failed", {"msg": msg[:100]})
+        except Exception:
+            pass
+            
+        return {
+            "response": (
+                "Boss, I hear you and take full responsibility. If I am failing or slow, I need to fix it immediately. "
+                "I exist to run Falcon Herbs perfectly. Please tell me exactly what went wrong — is it a bug, a slow response, or a bad decision? "
+                "I am logging this complaint internally."
+            ),
+            "success": True,
+        }
 
 if __name__ == "__main__":
     import sys
