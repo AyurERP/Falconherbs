@@ -93,28 +93,119 @@ class WooCommerceConnector:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    def update_product(self, product_id, data):
-        """Update a WooCommerce product via REST API.
+    def _fetch_product_exact(self, product_id):
+        """Fetch a single product exactly for verification."""
+        return self._make_request(f"products/{product_id}")
+
+    def update_product(self, product_id, data, verify=True, retry=0):
+        """Update a WooCommerce product via REST API with Verification Engine.
         data is a dict with WooCommerce fields:
         name, description, short_description, etc."""
         try:
-            print(
-                f"  🔄 Updating product {product_id}: "
-                f"{list(data.keys())}"
-            )
-            result = self._make_update_request(
-                f"products/{product_id}", data
-            )
-            if result.get("success"):
+            print(f"  🔄 [VerifyEngine] Preparing update for product {product_id}: {list(data.keys())}")
+            
+            before_state = None
+            if verify:
+                # 1) Save before_state
+                res_before = self._fetch_product_exact(product_id)
+                if res_before.get("success"):
+                    before_state = res_before.get("data", {})
+            
+            # 2) Execute update
+            result = self._make_update_request(f"products/{product_id}", data)
+            
+            if not result.get("success"):
+                return {
+                    "success": False,
+                    "error": result.get("error", "Unknown error"),
+                }
+            
+            if not verify or not before_state:
                 return {
                     "success": True,
                     "product_id": product_id,
                     "updated_fields": list(data.keys()),
+                    "verified": False,
                 }
-            return {
-                "success": False,
-                "error": result.get("error", "Unknown error"),
+                
+            # 3) Re-fetch after_state
+            res_after = self._fetch_product_exact(product_id)
+            after_state = res_after.get("data", {}) if res_after.get("success") else {}
+            
+            # 4) Compare key fields
+            failed_fields = []
+            for key, val_expect in data.items():
+                if key not in after_state:
+                    continue
+                    
+                val_actual = after_state[key]
+                val_before = before_state.get(key)
+                
+                if key == "meta_data" and isinstance(val_expect, list):
+                    for m_exp in val_expect:
+                        m_key = m_exp.get("key")
+                        m_val = m_exp.get("value")
+                        actual_val = next((m.get("value") for m in val_actual if m.get("key") == m_key), None)
+                        if str(actual_val) != str(m_val):
+                            failed_fields.append(key)
+                            break
+                else:
+                    c_actual = str(val_actual).replace('\r\n', '\n').strip()
+                    c_expect = str(val_expect).replace('\r\n', '\n').strip()
+                    c_before = str(val_before).replace('\r\n', '\n').strip() if val_before is not None else ""
+                    
+                    if c_actual != c_expect:
+                        if c_actual == c_before and c_expect != c_before:
+                            failed_fields.append(key)
+
+            # 7) Log all verifications
+            verification_record = {
+                "timestamp": datetime.now().isoformat(),
+                "product_id": product_id,
+                "attempt": retry + 1,
+                "fields_requested": list(data.keys()),
+                "failed_fields": failed_fields,
+                "verified_success": len(failed_fields) == 0
             }
+            
+            self.data_dir.mkdir(parents=True, exist_ok=True)
+            log_path = self.data_dir / "verification_log.json"
+            logs = []
+            if log_path.exists():
+                try:
+                    with open(log_path, "r", encoding="utf-8") as f:
+                        logs = json.load(f)
+                except Exception:
+                    pass
+            logs.append(verification_record)
+            with open(log_path, "w", encoding="utf-8") as f:
+                json.dump(logs, f, indent=2)
+                
+            # 5) Only report SUCCESS if data actually changed
+            if len(failed_fields) == 0:
+                print(f"  ✅ [VerifyEngine] Update confirmed for {product_id}!")
+                return {
+                    "success": True,
+                    "product_id": product_id,
+                    "updated_fields": list(data.keys()),
+                    "verified": True
+                }
+            else:
+                # 6) If unchanged -> retry once -> if still fails -> Alert
+                print(f"  ⚠️ [VerifyEngine] Verification failed for {product_id} on fields: {failed_fields}.")
+                if retry < 1:
+                    print(f"  🔄 Retrying update for {product_id}...")
+                    return self.update_product(product_id, data, verify=True, retry=retry+1)
+                else:
+                    msg = f"Bhai, product ID {product_id} update nahi hua - manually check karo"
+                    print(f"  🚨 ALERT: {msg} | Failed fields: {failed_fields}")
+                    return {
+                        "success": False,
+                        "error": msg,
+                        "failed_fields": failed_fields,
+                        "verified": False
+                    }
+                    
         except Exception as e:
             return {"success": False, "error": str(e)}
     
