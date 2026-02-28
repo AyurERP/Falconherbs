@@ -21,45 +21,64 @@ class HealthClaimsRewriter:
         self.rewrites_dir.mkdir(parents=True, exist_ok=True)
 
     def _clean_ai_markup(self, text: str) -> str:
-        """Strip conversational filler, markdown rules, and quotes from AI responses."""
+        """Strip conversational filler, markdown rules, quotes, SEO blocks, and AI commentary."""
         if not text:
             return ""
             
-        # 1. Strip common conversational prefixes
+        import re
+        
+        # 1. Extract and Strip SEO Keywords section (usually at the end)
+        # Patterns like "**SEO Keywords Naturally Integrated:** ..."
+        keywords_pattern = r"(?i)(?:\*\*|###|#)?\s*SEO Keywords\s*(?:Naturally Integrated)?\s*[:：]?(.*?)(?:\n\n|\n---|\n\*\*\*|$)"
+        # We don't return them here to keep signature simple, 
+        # but we strip them from the text.
+        text = re.sub(r"(?i)(?:\n)?(?:\*\*|###|#)?\s*SEO Keywords.*?(?:\n\n|\n---|\n\*\*\*|$)", "", text, flags=re.DOTALL)
+
+        # 2. Strip common conversational prefixes/suffixes
         lines = text.split("\n")
         cleaned_lines = []
         skip_header = True
         
         filler_patterns = [
             "certainly", "here is", "here's", "i have", "rewritten", 
-            "optimized", "compliant", "this version", "version below"
+            "optimized", "compliant", "this version", "version below",
+            "refined", "seo-optimized", "fully compliant"
         ]
         
-        for i, line in enumerate(lines[:8]):
+        for i, line in enumerate(lines[:10]):
             l_line = line.lower().strip()
-            # If line is empty, skip
             if not l_line:
                 continue
-            # If line looks like filler, keep skipping
             if skip_header and any(p in l_line for p in filler_patterns):
                 continue
-            # If we hit a horizontal rule or bold header, we might be at the content
-            # But "---" is often used to separate filler from content.
             if skip_header and "---" in line:
                 skip_header = False
                 continue
             
-            # If we reached here, it's likely content
             skip_header = False
             cleaned_lines.extend(lines[i:])
             break
             
         if not cleaned_lines:
-            cleaned_lines = lines # Fallback if logic failed
+            cleaned_lines = lines
 
         text = "\n".join(cleaned_lines).strip()
         
-        # 2. Strip surrounding quotes and rules
+        # 3. Strip trailing AI commentary (This version enhances..., Let me know...)
+        # Usually starts at the end of the text
+        commentary_keywords = ["this version", "this rewrite", "this description", "let me know", "hope this", "it invites"]
+        text_lines = text.split("\n")
+        if len(text_lines) > 2:
+            last_lines = text_lines[-3:]
+            for i, line in enumerate(last_lines):
+                l_line = line.lower()
+                if any(k in l_line for k in commentary_keywords):
+                    # Found commentary in one of the last 3 lines
+                    text_lines = text_lines[:-(3-i)]
+                    break
+            text = "\n".join(text_lines).strip()
+
+        # 4. Strip surrounding quotes and rules
         text = text.strip().strip('"').strip("'").strip("`").strip()
         if text.startswith("---"):
             text = text[3:].strip()
@@ -67,6 +86,15 @@ class HealthClaimsRewriter:
             text = text[:-3].strip()
             
         return text.strip()
+
+    def _extract_keywords(self, text: str) -> str:
+        """Extract SEO keywords from the AI response block."""
+        import re
+        pattern = r"(?i)(?:SEO Keywords|Keywords).*?[:：]\s*(.*?)(?:\n\n|\n---|\n\*\*\*|$)"
+        match = re.search(pattern, text, flags=re.DOTALL)
+        if match:
+            return match.group(1).strip().replace("\n", " ")
+        return ""
 
     # ── Scan ────────────────────────────────────────────
 
@@ -231,13 +259,20 @@ class HealthClaimsRewriter:
                                 "Ayurvedic language. Remove ALL "
                                 "health claims. Keep it compelling "
                                 "and SEO-friendly.\n\n"
-                                "IMPORTANT: Return ONLY the rewritten description. "
-                                "Do NOT include conversational filler like 'Certainly!', 'Here is', etc.\n\n"
+                                "IMPORTANT RULES:\n"
+                                "1. Return ONLY the rewritten description.\n"
+                                "2. Do NOT include conversational filler ('Certainly!', 'Here is', etc).\n"
+                                "3. Do NOT include meta-commentary at the end ('This version enhances...', etc).\n"
+                                "4. List SEO keywords at the VERY END after a '---' separator so they can be extracted.\n\n"
                                 "Original:\n{}"
                             ).format(new_name, desc)
                             response = ai.generate(prompt)
                             if response:
                                 new_desc = self._clean_ai_markup(response)
+                                # Extract keywords for meta field
+                                keywords = self._extract_keywords(response)
+                                if keywords:
+                                    rewrite_data["rewritten_keywords"] = keywords
                         except Exception:
                             pass
 
@@ -447,12 +482,22 @@ class HealthClaimsRewriter:
 
                         new_desc = data.get("rewritten_description", "")
                         new_name = data.get("rewritten_name", "")
+                        new_keywords = data.get("rewritten_keywords", "")
 
                         update_fields = {}
                         if new_desc:
                             update_fields["description"] = new_desc
                         if new_name:
                             update_fields["name"] = new_name
+                        
+                        # Rank Math Focus Keywords
+                        if new_keywords:
+                            update_fields["meta_data"] = [
+                                {
+                                    "key": "_rank_math_focus_keyword",
+                                    "value": new_keywords
+                                }
+                            ]
 
                         if not update_fields:
                             errors.append(f"{name}: no rewritten content")
