@@ -50,10 +50,17 @@ def extract_and_clean(text: str):
         break
     text = "\n".join(lines[start_idx:]).strip()
 
+    # Clean keywords
+    if keywords:
+        keywords = keywords.replace("**", "").replace("__", "").replace("*", "").strip()
+        keywords = re.sub(r"^[*,:\s-]+", "", keywords).strip()
+
     # Clean surrounding markup
     text = text.strip().strip('"').strip("'").strip("`").strip()
-    if text.startswith("---"): text = text[3:].strip()
-    if text.endswith("---"): text = text[:-3].strip()
+    while text.startswith("---") or text.startswith("***"):
+        text = re.sub(r"^[*-]{3,}\s*", "", text).strip()
+    while text.endswith("---") or text.endswith("***"):
+        text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
     
     return text.strip(), keywords
 
@@ -78,7 +85,11 @@ def bulk_cleanup():
             if "rewritten_description" in data and data["rewritten_description"]:
                 old_desc = data["rewritten_description"]
                 new_desc, kw = extract_and_clean(old_desc)
-                if new_desc != old_desc or kw:
+                
+                # Check keywords in data too
+                old_kw = data.get("rewritten_keywords", "")
+                
+                if new_desc != old_desc or (kw and kw != old_kw):
                     data["rewritten_description"] = new_desc
                     if kw:
                         data["rewritten_keywords"] = kw
@@ -86,10 +97,18 @@ def bulk_cleanup():
                     changed = True
                     print(f"  ✨ Cleaned {f_path.name}")
 
+            if data.get("rewritten_keywords"):
+                old_kw = data["rewritten_keywords"]
+                new_kw = old_kw.replace("**", "").replace("__", "").replace("*", "").strip()
+                new_kw = re.sub(r"^[*,:\s-]+", "", new_kw).strip()
+                if new_kw != old_kw:
+                    data["rewritten_keywords"] = new_kw
+                    extracted_kw = new_kw
+                    changed = True
             if changed:
                 with open(f_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                
+                    
                 # Push live if status is applied
                 if data.get("status") == "applied":
                     pid = data.get("product_id")

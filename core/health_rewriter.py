@@ -78,12 +78,12 @@ class HealthClaimsRewriter:
                     break
             text = "\n".join(text_lines).strip()
 
-        # 4. Strip surrounding quotes and rules
+        # 4. Strip surrounding quotes, rules, and multiple separators
         text = text.strip().strip('"').strip("'").strip("`").strip()
-        if text.startswith("---"):
-            text = text[3:].strip()
-        if text.endswith("---"):
-            text = text[:-3].strip()
+        while text.startswith("---") or text.startswith("***"):
+            text = re.sub(r"^[*-]{3,}\s*", "", text).strip()
+        while text.endswith("---") or text.endswith("***"):
+            text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
             
         return text.strip()
 
@@ -93,7 +93,11 @@ class HealthClaimsRewriter:
         pattern = r"(?i)(?:SEO Keywords|Keywords).*?[:：]\s*(.*?)(?:\n\n|\n---|\n\*\*\*|$)"
         match = re.search(pattern, text, flags=re.DOTALL)
         if match:
-            return match.group(1).strip().replace("\n", " ")
+            kw = match.group(1).strip().replace("\n", " ")
+            # Strip markdown and leading junk
+            kw = kw.replace("**", "").replace("__", "").replace("*", "").strip()
+            kw = re.sub(r"^[*,:\s-]+", "", kw).strip()
+            return kw
         return ""
 
     # ── Scan ────────────────────────────────────────────
