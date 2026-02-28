@@ -1,0 +1,217 @@
+[
+  {
+    "id": 7800,
+    "name": "Triphala Powder",
+    "old_slug": "triphala-powder-detoxify-rejuvenate",
+    "new_slug": "triphala-powder-traditional-wellness",
+    "reason": [
+      "detoxify",
+      "rejuvenate",
+      "detox"
+    ]
+  },
+  {
+    "id": 7797,
+    "name": "Sitopaladi Powder 100gm - Promote Healthy Respiratory Function",
+    "old_slug": "sitopaladi-powder-healthy-respiratory",
+    "new_slug": "sitopaladi-powder-100g-respiratory-support",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7791,
+    "name": "Safed Musli Powder 100gm - Enhance Men's Health Naturally",
+    "old_slug": "safed-musli-powder-for-mens-health",
+    "new_slug": "safed-musli-powder-100g-mens-wellness",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7778,
+    "name": "Neem Powder 100gm- For Healthy Blood Sugar",
+    "old_slug": "neem-powder-for-healthy-blood-sugar",
+    "new_slug": "neem-powder-100g-cardio-support",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7758,
+    "name": "Haritaki Powder 100gm \u2013 For Healthy Immunity",
+    "old_slug": "haritaki-powder-for-healthy-immunity",
+    "new_slug": "haritaki-powder-100g-immunity-support",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7751,
+    "name": "New Giloy Powder 100g -For detox & Boosts Immunity",
+    "old_slug": "new-giloy-powder-100g-for-detox-boosts-immunity",
+    "new_slug": "new-giloy-powder-100g-immunity-support",
+    "reason": [
+      "boost",
+      "detox"
+    ]
+  },
+  {
+    "id": 7742,
+    "name": "Brahmi Powder 100gm\u2013Support Healthy Memory",
+    "old_slug": "brahmi-powder-support-healthy-memory",
+    "new_slug": "brahmi-powder-100g-stress-support",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7728,
+    "name": "Arjuna Powder 100gm \u2013 Healthy Lipid Levels",
+    "old_slug": "arjuna-powder-healthy-lipid-levels",
+    "new_slug": "arjuna-powder-100g-cardio-support",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7610,
+    "name": "Orange Peel Herbal 100g Face Pack | Removes dirt from skin pores  and Helps Promotes healthier and younger skin",
+    "old_slug": "orange-peel-herbal-face-pack-removes-dirt-from-skin-pores-and-helps-promotes-healthier-and-younger-skin",
+    "new_slug": "orange-peel-herbal-face-pack-100g-skin-care",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7512,
+    "name": "Tulsi Leaves - 70gms. Organic Herbal Immunity booster.",
+    "old_slug": "tulsi-leaves-herbal-immunity-booster",
+    "new_slug": "tulsi-leaves-immunity-support",
+    "reason": [
+      "boost"
+    ]
+  },
+  {
+    "id": 7510,
+    "name": "Turmeric Wound Healer 100gm | Natural Wellness Support | Traditional Ayurvedic Formula",
+    "old_slug": "turmeric-wound-healer-100gm-natural-immunity-booster-improves-heart-health-and-fights-against-cancer",
+    "new_slug": "turmeric-wound-healer-100g-immunity-support",
+    "reason": [
+      "heal",
+      "boost",
+      "cancer"
+    ]
+  },
+  {
+    "id": 7479,
+    "name": "Mulethi sticks - 100gms. Improves Kidney, Liver and Bladder functions, May boost immunity, protect against disease and promote liver health",
+    "old_slug": "mulethi-sticks-100gms-improves-kidney-liver-and-bladder-functions-may-boost-immunity-protect-against-disease-and-promote-liver-health",
+    "new_slug": "mulethi-sticks-immunity-support",
+    "reason": [
+      "heal",
+      "boost",
+      "disease"
+    ]
+  },
+  {
+    "id": 7448,
+    "name": "Methi Dana 200gm | Used to treat digestive problems such as loss of appetite, upset stomach",
+    "old_slug": "methi-dana-200gm-used-to-treat-digestive-problems-such-as-loss-of-appetite-upset-stomach",
+    "new_slug": "methi-dana-200g-digestive-wellness",
+    "reason": [
+      "treat"
+    ]
+  },
+  {
+    "id": 7444,
+    "name": "Moringa Seeds - 100gms. Drumstick Seeds reduce cholesterol level, support healthy function of the liver and improve digestion",
+    "old_slug": "moringa-seeds-100gms-moringa-seeds-reduce-cholesterol-level-support-healthy-function-of-the-liver-and-improve-digestion",
+    "new_slug": "moringa-seeds-digestive-wellness",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7435,
+    "name": "Long Pepper Whole 100gms | Reduces Heart burn, for weight management, provide relief in constipation",
+    "old_slug": "long-pepper-whole-100gms-reduces-heart-burn-for-weight-management-provide-relief-in-constipation",
+    "new_slug": "long-pepper-whole-digestive-wellness",
+    "reason": [
+      "relief"
+    ]
+  },
+  {
+    "id": 7433,
+    "name": "Kamarkas Raw Herb 200gms | Provide relief from the summer heat and reducing weakness",
+    "old_slug": "kamarkas-raw-herb-200gms-provide-relief-from-the-summer-heat-and-reducing-weakness",
+    "new_slug": "kamarkas-raw-herb-traditional-energy",
+    "reason": [
+      "relief"
+    ]
+  },
+  {
+    "id": 7324,
+    "name": "Haritaki Dried Whole 200 gm | Good for Digestion | Detox body and helps Nervous System",
+    "old_slug": "haritaki-dried-good-for-digestion-detox-body-and-helps-nervous-system",
+    "new_slug": "haritaki-dried-whole-200g-digestive-wellness",
+    "reason": [
+      "detox"
+    ]
+  },
+  {
+    "id": 7323,
+    "name": "Guduchi (Tinospora Cordifolia) - 100gm | Pure Organic Raw and Immune System Booster",
+    "old_slug": "guduchi-tinospora-cordifolia-immune-system-booster",
+    "new_slug": "guduchi-tinospora-cordifolia-100g-immunity-support",
+    "reason": [
+      "boost"
+    ]
+  },
+  {
+    "id": 7292,
+    "name": "Organic Dry Dates 200 gm | Helps maintain Bone Health & great for Skin",
+    "old_slug": "organic-dry-dates-helps-maintain-bone-health-great-for-skin",
+    "new_slug": "organic-dry-dates-200g-skin-care",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7285,
+    "name": "Black Harde 100gm | boosts immunity, improve strength and provide nourishment to the scalp",
+    "old_slug": "black-harde-100gm-boosts-immunity-improve-strength-and-provide-nourishment-to-the-scalp",
+    "new_slug": "black-harde-100g-immunity-support",
+    "reason": [
+      "boost"
+    ]
+  },
+  {
+    "id": 7204,
+    "name": "Arnica Flowers a Whole - 70gms. Helps in reducing skin Infections and helpful in the treatment of burns as well as boosts immunity",
+    "old_slug": "arnica-flowers-whole-70gms-helps-in-reducing-skin-infections-and-helpful-in-the-treatment-of-burns-as-well-as-boosts-immunity",
+    "new_slug": "arnica-flowers-a-whole-immunity-support",
+    "reason": [
+      "treat",
+      "boost"
+    ]
+  },
+  {
+    "id": 7134,
+    "name": "Alsi Flax Seeds 200 gm -A great source of fiber to promote a healthy weight loss",
+    "old_slug": "alsi-flax-seeds-200-gm-a-great-source-of-fiber-to-promote-a-healthy-weight-loss",
+    "new_slug": "alsi-flax-seeds-200g-weight-management",
+    "reason": [
+      "heal"
+    ]
+  },
+  {
+    "id": 7068,
+    "name": "Ashwagandha Root Whole \u2013 100 gm | Traditional Ayurvedic Herb for Daily Wellness Support",
+    "old_slug": "ashwagandha-root-boost-immunity",
+    "new_slug": "ashwagandha-root-whole-100g-immunity-support",
+    "reason": [
+      "boost"
+    ]
+  }
+]
