@@ -7,12 +7,27 @@ import re
 from datetime import datetime
 from core.woocommerce_connector import WooCommerceConnector
 
+def md_to_html(text: str) -> str:
+    """Convert basic Markdown to HTML."""
+    if not text:
+        return ""
+    # 1. Bold: **text** -> <strong>text</strong>
+    text = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", text)
+    # 2. Italic: *text* -> <em>text</em>
+    text = re.sub(r"\*(.*?)\*", r"<em>\1</em>", text)
+    # 3. Paragraphs (if not already HTML)
+    if "<p>" not in text.lower():
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        text = "\n".join([f"<p>{p.replace('\n', '<br />')}</p>" for p in paragraphs])
+    return text.strip()
+
 def extract_and_clean(text: str):
     """
     1. Extract SEO Keywords
     2. Remove Keywords section
     3. Remove trailing AI commentary
     4. Strip conversational filler
+    5. Convert Markdown to HTML
     """
     if not text:
         return "", ""
@@ -61,6 +76,9 @@ def extract_and_clean(text: str):
         text = re.sub(r"^[*-]{3,}\s*", "", text).strip()
     while text.endswith("---") or text.endswith("***"):
         text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
+    
+    # 5. MD TO HTML
+    text = md_to_html(text)
     
     return text.strip(), keywords
 

@@ -20,6 +20,33 @@ class HealthClaimsRewriter:
         self.rewrites_dir = Path("data/content/product_rewrites")
         self.rewrites_dir.mkdir(parents=True, exist_ok=True)
 
+    def _md_to_html(self, text: str) -> str:
+        """Convert basic Markdown (bold, italic, newlines) to HTML for WooCommerce."""
+        if not text:
+            return ""
+            
+        import re
+        
+        # 1. Bold: **text** -> <strong>text</strong>
+        text = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", text)
+        
+        # 2. Italic: *text* -> <em>text</em>
+        # We use a non-greedy match and ensure it's not part of an internal word accidentally
+        text = re.sub(r"\*(.*?)\*", r"<em>\1</em>", text)
+        
+        # 3. Newlines to Paragraphs/Breaks
+        # If text doesn't already contain block-level HTML tags
+        if "<p>" not in text.lower() and "<div>" not in text.lower():
+            paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+            html_parts = []
+            for p in paragraphs:
+                # Handle single newlines as breaks
+                p_html = p.replace("\n", "<br />")
+                html_parts.append(f"<p>{p_html}</p>")
+            text = "\n".join(html_parts)
+            
+        return text.strip()
+
     def _clean_ai_markup(self, text: str) -> str:
         """Strip conversational filler, markdown rules, quotes, SEO blocks, and AI commentary."""
         if not text:
@@ -82,8 +109,11 @@ class HealthClaimsRewriter:
         text = text.strip().strip('"').strip("'").strip("`").strip()
         while text.startswith("---") or text.startswith("***"):
             text = re.sub(r"^[*-]{3,}\s*", "", text).strip()
-        while text.endswith("---") or text.endswith("***"):
-            text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
+        if text.endswith("---"):
+            text = text[:-3].strip()
+            
+        # 5. Convert Markdown to HTML
+        text = self._md_to_html(text)
             
         return text.strip()
 
