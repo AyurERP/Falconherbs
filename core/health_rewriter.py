@@ -91,29 +91,42 @@ class HealthClaimsRewriter:
 
         text = "\n".join(cleaned_lines).strip()
         
-        # 3. Strip trailing AI commentary (This version enhances..., Let me know...)
-        # Usually starts at the end of the text
-        commentary_keywords = ["this version", "this rewrite", "this description", "let me know", "hope this", "it invites"]
-        text_lines = text.split("\n")
-        if len(text_lines) > 2:
-            last_lines = text_lines[-3:]
-            for i, line in enumerate(last_lines):
-                l_line = line.lower()
+        # 3. Strip trailing AI commentary and justification blocks
+        lines = text.split('\n')
+        
+        # We process from the bottom up to chop off the tail
+        if len(lines) > 3:
+            commentary_keywords = [
+                "this version", "this rewrite", "this description", 
+                "let me know", "hope this", "it invites", "matched packaging",
+                "why this works", "100% compliant", "ftc/fda-aligned",
+                "amazon product listings", "a+ content version",
+                "seo-rich keywords", "perfect for amazon"
+            ]
+            
+            for i in range(len(lines)-1, max(0, len(lines)-15), -1):
+                l_line = lines[i].lower()
                 if any(k in l_line for k in commentary_keywords):
-                    # Found commentary in one of the last 3 lines
-                    text_lines = text_lines[:-(3-i)]
+                    # We found a commentary line, chop everything from here down
+                    # But if the previous line is "---" or "***", chop that too
+                    chop_idx = i
+                    if i > 0 and re.match(r'^\s*[-*]{3,}\s*$', lines[i-1]):
+                        chop_idx = i - 1
+                    # Or if it's "### ✅ Why This Works", we chop at that heading
+                    lines = lines[:chop_idx]
                     break
-            text = "\n".join(text_lines).strip()
+                    
+        text = "\n".join(lines).strip()
 
-        # 4. Strip surrounding quotes, rules, and multiple separators
-        text = text.strip().strip('"').strip("'").strip("`").strip()
-        while text.startswith("---") or text.startswith("***"):
-            text = re.sub(r"^[*-]{3,}\s*", "", text).strip()
-        if text.endswith("---"):
-            text = text[:-3].strip()
+        # 4. Strip multiple trailing separators if they survived
+        while text.endswith("---") or text.endswith("***"):
+            text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
             
         # 5. Convert Markdown to HTML
         text = self._md_to_html(text)
+                
+        # Final safety cleanup
+        text = text.strip()
             
         return text.strip()
 
