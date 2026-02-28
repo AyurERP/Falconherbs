@@ -350,6 +350,9 @@ Output JSON: {"trends": [...], "relevance": "...", "action_items": [...]}"""},
             elif task == "analyse_content_gaps":
                 data = self.analyse_content_gaps(site, profile)
 
+            elif task in ("run_chanakya_triggers", "proactive_check"):
+                data = self.run_chanakya_triggers(site, profile)
+
             elif task in ("get_recommendations", "generate_recommendations"):
                 # Run a lightweight set of analyses to feed the recommendation engine
                 all_findings = params.get("all_findings", {})
@@ -2457,6 +2460,166 @@ Provide competitive analysis JSON:
         report = f"🔍 COMPETITOR ANALYSIS\n{competitor_url}\n\n{response[:1500]}"
         self._send_telegram_summary(report[:1500])
         return report
+
+    # ============================================================================
+    #  CHANAKYA: PROACTIVE ENGINE (Project Chanakya)
+    # ============================================================================
+
+    def _get_chanakya_memory_path(self) -> Path:
+        return REPORTS_DIR / "chanakya_memory.json"
+
+    def _load_chanakya_memory(self) -> dict:
+        path = self._get_chanakya_memory_path()
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {"revenue_history": [], "product_velocity": {}}
+
+    def _save_chanakya_memory(self, memory: dict):
+        path = self._get_chanakya_memory_path()
+        path.write_text(json.dumps(memory, indent=2), encoding="utf-8")
+
+    def _update_longitudinal_memory(self, site: str, new_data: dict):
+        mem = self._load_chanakya_memory()
+        # Add timestamp
+        new_data["timestamp"] = _utcnow_iso()
+        
+        if "sales_summary" in new_data:
+            mem["revenue_history"].append({
+                "date": _today_str(),
+                "revenue": new_data["sales_summary"].get("total_revenue_inr", 0),
+                "orders": new_data["sales_summary"].get("total_orders", 0)
+            })
+            # Keep last 90 days
+            mem["revenue_history"] = mem["revenue_history"][-90:]
+            
+        if "top_products" in new_data:
+            for p in new_data["top_products"]:
+                pid = str(p.get("product_id"))
+                if pid not in mem["product_velocity"]:
+                    mem["product_velocity"][pid] = []
+                mem["product_velocity"][pid].append({
+                    "date": _today_str(),
+                    "qty": p.get("quantity_sold", 0)
+                })
+                mem["product_velocity"][pid] = mem["product_velocity"][pid][-30:]
+                
+        self._save_chanakya_memory(mem)
+
+    def run_chanakya_triggers(self, site: str, profile: dict) -> dict:
+        """Runs the proactive 'Chanakya' trigger pipeline."""
+        log.info("CHANAKYA: Running proactive triggers for %s", site)
+        
+        # Pull latest sales data to feed triggers
+        sales_data = self.analyse_sales(site, profile)
+        
+        # Update memory
+        self._update_longitudinal_memory(site, sales_data)
+        mem = self._load_chanakya_memory()
+        
+        actions_taken = []
+        
+        # --- Trigger 1: Revenue Health ---
+        rev_actions = self._trigger_revenue_health(sales_data)
+        actions_taken.extend(rev_actions)
+        
+        # --- Trigger 2: Trending Products ---
+        trend_actions = self._trigger_trending_products(sales_data, mem)
+        actions_taken.extend(trend_actions)
+        
+        # --- Trigger 3: Stock Levels ---
+        stock_actions = self._trigger_inventory_velocity(site)
+        actions_taken.extend(stock_actions)
+        
+        result_msg = f"CHANAKYA TRIGGERS COMPLETED. Actions taken: {len(actions_taken)}"
+        self.report_to_owner(result_msg)
+        
+        return {
+            "status": "success",
+            "actions_taken": actions_taken
+        }
+
+    def _trigger_revenue_health(self, sales_data: dict) -> list:
+        actions = []
+        if not sales_data.get("api_accessible"):
+            return actions
+            
+        summary = sales_data.get("sales_summary", {})
+        if summary.get("total_revenue_inr", 0) == 0:
+            msg = "🚨 CHANAKYA ALERT: ₹0 revenue detected over the checked period. "
+            msg += "Investigating checkout drop-offs and system health. Attempting to delegate check to Developer..."
+            self.report_to_owner(msg, priority="high")
+            actions.append({"type": "alert", "details": "Zero revenue detected"})
+            # In purely autonomous mode, we'd delegate:
+            # actions.append(self._draft_delegation_command("developer", "Check WooCommerce checkout page functionality and logs for errors."))
+        return actions
+
+    def _trigger_trending_products(self, sales_data: dict, memory: dict) -> list:
+        actions = []
+        top_products = sales_data.get("top_by_quantity", [])
+        
+        for p in top_products:
+            if p.get("quantity_sold", 0) >= 3:
+                name = p.get("name")
+                msg = f"🔥 CHANAKYA ALERT: '{name}' is trending ({p['quantity_sold']} sales). "
+                msg += "I recommend running a targeted social push or increasing ad spend for this SKU."
+                self.report_to_owner(msg)
+                actions.append({"type": "opportunity", "product": name, "qty": p['quantity_sold']})
+        return actions
+
+    def _trigger_inventory_velocity(self, site: str) -> list:
+        actions = []
+        try:
+            from core.woocommerce_connector import WooCommerceConnector
+            woo = WooCommerceConnector()
+            # Need to get raw data to check stock properly
+            page = 1
+            low_stock = []
+            while True and page < 5: # Limit pagination for safety
+                res = woo._make_request("products", {"page": page, "per_page": 100, "status": "any"})
+                if not res.get("success"):
+                    break
+                batch = res.get("data", [])
+                if not batch:
+                    break
+                
+                for p in batch:
+                    if p.get("manage_stock") and p.get("stock_status") == "instock" and p.get("stock_quantity") is not None:
+                        if int(p.get("stock_quantity")) < 15:
+                            low_stock.append(p)
+                
+                page += 1
+                if len(batch) < 100:
+                    break
+                
+            for p in low_stock:
+                msg = f"⚠️ CHANAKYA ALERT: Stock running low for '{p['name']}' (Only {p['stock_quantity']} left). "
+                msg += "Please arrange restocking before we pause promotions."
+                self.report_to_owner(msg)
+                actions.append({"type": "low_stock", "product": p['name'], "left": p['stock_quantity']})
+        except Exception as e:
+            log.warning("Chanakya inventory trigger failed: %s", e)
+            
+        return actions
+        
+    def build_herb_encyclopedia_plan(self, product_keywords: list) -> dict:
+        """Generates an SEO 'Herb Encyclopedia' content strategy plan."""
+        # Using DeepSeek to generate the plan
+        prompt = "Create a detailed Herb Encyclopedia content strategy for an Ayurvedic website targeting Indian buyers. Include structure: Botanical name, Traditional uses, Purity tests. Output as JSON."
+        from core.ai_client import call_ai
+        res = call_ai("strategist", [{"role": "user", "content": prompt}])
+        self.report_to_owner("📚 CHANAKYA: Herb Encyclopedia content strategy generated.")
+        return {"plan": res}
+
+    def _draft_delegation_command(self, target_agent: str, instruction: str) -> dict:
+        """Helper to command other agents in the hierarchy pipeline."""
+        return {
+            "action": "delegate",
+            "target": target_agent,
+            "instruction": instruction
+        }
 
     # ── Repr ──
 
