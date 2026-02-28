@@ -69,7 +69,8 @@ class HealthClaimsRewriter:
                 # Specifically check title for safety too
                 title_check = pipeline.safety_check(name)
                 
-                if not check.get("is_safe", True) or not title_check.get("is_safe", True):
+                # FLAG if not safe (High severity) OR if any changes were made (Medium/Low severity)
+                if not check.get("is_safe", True) or not title_check.get("is_safe", True) or check.get("changes_made", 0) > 0:
                     flagged.append({
                         "id": pid,
                         "name": name,
@@ -388,16 +389,11 @@ class HealthClaimsRewriter:
 
                     else:
                         # ── WooCommerce product: update description/name ──
-                        raw = woo._make_request(f"products/{item_id}")
-                        if not raw.get("success"):
-                            errors.append(f"Product {item_id}: fetch failed")
-                            failed += 1
-                            continue
-
-                        prod = raw["data"]
-                        name = prod.get("name", "")
-                        before_desc = prod.get("description", "")
-                        before_name = prod.get("name", "")
+                        # GAP Fix: Use data from JSON instead of redundant API fetch
+                        # This avoids "Read timeout" and double API load.
+                        name = data.get("name") or f"Product {item_id}"
+                        before_desc = data.get("original_description", "")
+                        before_name = data.get("name", "")
 
                         new_desc = data.get("rewritten_description", "")
                         new_name = data.get("rewritten_name", "")

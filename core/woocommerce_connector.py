@@ -40,18 +40,16 @@ class WooCommerceConnector:
             print("   Set FALCONHERBS_WC_API_KEY and FALCONHERBS_WC_API_SECRET in .env")
     
     def _make_request(self, endpoint, params=None):
-        """Base API request with authentication"""
+        """Base API request with Basic Auth"""
         url = f"{self.api_base}/{endpoint}"
-        default_params = {
-            "consumer_key": self.consumer_key,
-            "consumer_secret": self.consumer_secret,
-            "per_page": 100
-        }
-        if params:
-            default_params.update(params)
         
         try:
-            response = requests.get(url, params=default_params, timeout=30)
+            response = requests.get(
+                url, 
+                params=params or {}, 
+                auth=(self.consumer_key, self.consumer_secret),
+                timeout=30
+            )
             response.raise_for_status()
             return {"success": True, "data": response.json()}
         except requests.exceptions.ConnectionError:
@@ -62,16 +60,15 @@ class WooCommerceConnector:
             return {"success": False, "error": str(e)}
     
     def _make_update_request(self, endpoint, data):
-        """Base API PUT request with authentication"""
+        """Base API PUT request with Basic Auth"""
         url = f"{self.api_base}/{endpoint}"
-        params = {
-            "consumer_key": self.consumer_key,
-            "consumer_secret": self.consumer_secret,
-        }
         
         try:
             response = requests.put(
-                url, params=params, json=data, timeout=30
+                url, 
+                json=data, 
+                auth=(self.consumer_key, self.consumer_secret),
+                timeout=30
             )
             response.raise_for_status()
             return {"success": True, "data": response.json()}
@@ -81,9 +78,17 @@ class WooCommerceConnector:
                 "error": "Cannot connect to site. Is it online?"
             }
         except requests.exceptions.HTTPError as e:
+            # Try to get error message from WC response body
+            err_msg = str(e)
+            try:
+                body = e.response.json()
+                if "message" in body:
+                    err_msg = body["message"]
+            except Exception:
+                pass
             return {
                 "success": False,
-                "error": f"HTTP {e.response.status_code}: {str(e)}"
+                "error": f"HTTP {e.response.status_code}: {err_msg}"
             }
         except Exception as e:
             return {"success": False, "error": str(e)}

@@ -104,7 +104,7 @@ class ContentPipeline:
             "hiv", "aids", "covid", "coronavirus", "tumor", "malignant",
             "hypertension", "stroke", "epilepsy", "asthma", "hepatitis",
             "tuberculosis", "malaria", "depression", "anxiety", "insomnia",
-            "arthritis", "eczema", "psoriasis"
+            "arthritis", "eczema", "psoriasis", "infertility", "impotence"
         ]
         
         self.safe_alternatives = {
@@ -122,22 +122,38 @@ class ContentPipeline:
                 "supports the body's natural defenses",
             "detoxifies": 
                 "supports the body's natural cleansing",
+            "detoxify":
+                "support natural cleansing",
+            "detoxification":
+                "natural cleansing process",
+            "rejuvenates":
+                "supports youthful vitality",
+            "rejuvenate":
+                "promote vitality",
+            "rejuvenation":
+                "vitality and renewal",
             "purifies blood": 
                 "traditionally used for skin and liver wellness",
+            "blood purifier":
+                "traditionally used for skin wellness",
             "lowers blood sugar": 
-                "may support healthy blood sugar levels "
-                "already within normal range",
+                "may support healthy blood sugar levels already within normal range",
             "lowers cholesterol": 
-                "may support healthy cholesterol levels "
-                "already within normal range",
+                "may support healthy cholesterol levels already within normal range",
             "anti-inflammatory": 
                 "supports comfort and ease of movement",
             "anti-aging": 
                 "supports youthful vitality",
+            "healing":
+                "wellness supporting",
+            "heals":
+                "supports natural wellness",
             "burns fat": 
                 "supports healthy metabolism",
             "weight loss": 
                 "supports healthy weight management",
+            "fat burner":
+                "metabolism support",
             "cures diabetes":
                 "supports healthy blood sugar levels",
             "theek kar deta hai":
@@ -174,6 +190,10 @@ class ContentPipeline:
                 "time-honored",
             "instant relief":
                 "fast-acting support",
+            "permanently cures":
+                "traditionally used to support",
+            "reverses":
+                "supports healthy management of",
         }
         # Merge SEO-safe swaps from config (single source of truth)
         swaps = self._load_smart_swaps()
