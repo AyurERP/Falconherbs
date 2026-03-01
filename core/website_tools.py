@@ -166,30 +166,28 @@ class WebsiteTools:
         claims = []
         content_lower = content.lower()
         
-        # HIGH RISK — Disease claims (FDA violations)
+        # HIGH RISK — Disease claims (FSSAI/FDA violations)
         high_risk_patterns = [
-            (r'\b(cures?|treats?|heals?)\s+\w+', 'Disease cure claim'),
-            (r'\b(prevents?|fights?)\s+(cancer|diabetes|heart|covid|tumor|disease)', 'Disease prevention claim'),
-            (r'\banti[-\s]?(cancer|diabetic|viral|bacterial|inflammatory)\b', 'Anti-disease claim'),
-            (r'\b(eliminates?|kills?|destroys?)\s+(virus|bacteria|infection|disease)', 'Pathogen elimination claim'),
-            (r'\b(reverses?|stops?)\s+(aging|diabetes|cancer|disease)', 'Disease reversal claim'),
+            (r'\b(cures?|treats?|heals?)\s+\w+', 'Direct disease cure claim'),
+            (r'\b(prevents?|fights?)\s+(cancer|diabetes|heart|hiv|aids|stroke|infection)', 'Disease prevention claim'),
+            (r'\banti[-\s]?(cancer|diabetic|viral|bacterial|inflammatory)\b', 'Anti-disease name claim'),
+            (r'\b(reverses?|stops?)\s+(aging|diabetes|cancer|stroke)', 'Disease reversal claim'),
+            (r'\bdiagnose[s]?\b', 'Diagnostic claim'),
+            (r'\btherapeutic\b', 'Therapeutic claim'),
         ]
         
-        # MEDIUM RISK — Unsubstantiated claims
+        # MEDIUM RISK — Medical authority or proof claims
         medium_risk_patterns = [
-            (r'\b(clinically|scientifically)\s+proven\b', 'Unsubstantiated proof claim'),
-            (r'\bguaranteed\s+(results?|cure|weight\s+loss)\b', 'Guarantee claim'),
-            (r'\b(miracle|magic|instant|overnight)\s+(cure|results?|healing)\b', 'Miracle claim'),
-            (r'\bdetox(ifies?|ify|ication)?\b', 'Detox claim'),
-            (r'\bflush(es)?\s+(toxins?|fat)\b', 'Flush toxins claim'),
-            (r'\bburn\s+fat\b', 'Fat burning claim'),
+            (r'\b(clinically|scientifically)\s+proven\b', 'Medical proof claim'),
+            (r'\bguaranteed\s+results?\b', 'Guarantee claim'),
+            (r'\bmedically\s+tested\b', 'Medical test claim'),
+            (r'\bFDA\s+approved\b', 'Agency approval claim'),
+            (r'\bdoctor\s+recommended\b', 'Medical recommendation claim'),
         ]
         
-        # LOW RISK — Need disclaimers
+        # LOW RISK — Only absolute claims like 'miracle'
         low_risk_patterns = [
-            (r'\b(boosts?|enhances?|strengthens?)\s+(immunity|immune)', 'Immune boost claim - needs disclaimer'),
-            (r'\b(improves?|supports?)\s+(energy|metabolism|digestion)', 'Structure/function claim'),
-            (r'\b(promotes?|maintains?)\s+health', 'Health promotion claim'),
+            (r'\b(miracle|magic|instant|overnight)\s+(cure|results?|healing)\b', 'Absolute claim'),
         ]
         
         def find_claims(patterns, risk_level):

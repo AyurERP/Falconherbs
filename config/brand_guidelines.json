@@ -11,27 +11,88 @@
     "logo_path": "assets/logo.png",
     "tone": "Natural, trustworthy, rooted in Indian herbal tradition",
     "platforms": {
-        "instagram_post": {"width": 1080, "height": 1080},
-        "instagram_story": {"width": 1080, "height": 1920},
-        "instagram_reel": {"width": 1080, "height": 1920},
-        "facebook_post": {"width": 1200, "height": 630},
-        "facebook_story": {"width": 1080, "height": 1920},
-        "whatsapp_status": {"width": 1080, "height": 1920},
-        "twitter_post": {"width": 1200, "height": 675},
-        "blog_featured": {"width": 1200, "height": 628}
+        "instagram_post": {
+            "width": 1080,
+            "height": 1080
+        },
+        "instagram_story": {
+            "width": 1080,
+            "height": 1920
+        },
+        "instagram_reel": {
+            "width": 1080,
+            "height": 1920
+        },
+        "facebook_post": {
+            "width": 1200,
+            "height": 630
+        },
+        "facebook_story": {
+            "width": 1080,
+            "height": 1920
+        },
+        "whatsapp_status": {
+            "width": 1080,
+            "height": 1920
+        },
+        "twitter_post": {
+            "width": 1200,
+            "height": 675
+        },
+        "blog_featured": {
+            "width": 1200,
+            "height": 628
+        }
     },
     "hashtags": {
-        "always": ["#FalconHerbs", "#HerbalWellness", "#Ayurveda"],
-        "product": ["#HerbalProducts", "#NaturalRemedies", "#OrganicIndia"],
+        "always": [
+            "#FalconHerbs",
+            "#HerbalWellness",
+            "#Ayurveda"
+        ],
+        "product": [
+            "#HerbalProducts",
+            "#NaturalRemedies",
+            "#OrganicIndia"
+        ],
         "seasonal": {}
     },
     "content_rules": [
-        "NEVER use health claims (no cure, no treat, no heal)",
-        "NEVER say FDA approved or clinically proven",
-        "Focus on: ingredients, tradition, lifestyle, wellness journey",
+        "NEVER claim to diagnose, cure, treat, prevent, or heal any disease",
+        "NEVER use medical terms like therapeutic, clinically proven, or medically tested",
+        "Focus on: traditional use, wellness support, maintaining healthy functions",
+        "Use phrases like: 'Traditionally used for', 'May support', 'Helps maintain'",
         "Use warm, conversational Hindi-English mix for Indian audience",
         "Always mention 'consult your healthcare provider' when relevant"
     ],
-    "banned_words": ["miracle", "cure", "guaranteed results", "FDA approved", "clinically proven", "treats", "heals disease"],
-    "post_types": ["product_spotlight", "ingredient_education", "customer_lifestyle", "festival_special", "wellness_tip", "behind_the_scenes", "new_arrival"]
+    "banned_words": [
+        "cures",
+        "cure",
+        "treats",
+        "treatment",
+        "prevents",
+        "prevention",
+        "heals",
+        "healing",
+        "diagnoses",
+        "therapeutic",
+        "clinically proven",
+        "medically tested",
+        "doctor recommended",
+        "guaranteed results",
+        "FDA approved",
+        "miracle",
+        "nidan karta hai",
+        "rog door karta hai",
+        "bimari theek karta hai"
+    ],
+    "post_types": [
+        "product_spotlight",
+        "ingredient_education",
+        "customer_lifestyle",
+        "festival_special",
+        "wellness_tip",
+        "behind_the_scenes",
+        "new_arrival"
+    ]
 }

@@ -86,116 +86,37 @@ class ContentPipeline:
     def _init_safety_rules(self):
         """Words/phrases to NEVER use in content"""
         self.banned_phrases = [
-            "cures", "cure for", "treats", "treatment for",
-            "prevents disease", "heals disease",
-            "clinically proven", "scientifically proven",
-            "FDA approved", "doctor recommended",
-            "guaranteed results", "100% effective",
-            "no side effects", "completely safe",
-            "miracle", "magic", "wonder drug",
-            "instant cure", "permanent cure",
-            "anti-cancer", "anti-tumor", "cancer fighting",
-            "kills bacteria", "kills virus",
-            "cures diabetes", "cures arthritis",
-            "eliminates disease",
+            "cures", "cure", "treats", "treatment", "therapeutic",
+            "prevents disease", "prevention of disease", 
+            "heals disease", "healing of disease",
+            "diagnoses", "diagnostic",
+            "clinically proven", "medically tested", "scientifically proven",
+            "doctor recommended", "guaranteed results", "guaranteed to cure",
+            "FDA approved", "nidan karta hai", "rog door karta hai", "bimari theek karta hai"
         ]
         
-        # Danger keywords (Diseases) pulled from health_scanner
+        # Danger keywords (Specific Diseases)
         self.danger_keywords = [
             "cancer", "diabetes", "heart disease", "alzheimer", "parkinson",
             "hiv", "aids", "covid", "coronavirus", "tumor", "malignant",
             "hypertension", "stroke", "epilepsy", "asthma", "hepatitis",
-            "tuberculosis", "malaria", "depression", "anxiety", "insomnia",
-            "arthritis", "eczema", "psoriasis", "infertility", "impotence"
+            "tuberculosis", "malaria", "depression", "arthritis"
         ]
         
         self.safe_alternatives = {
-            "boosts immunity": 
-                "supports healthy immune function",
-            "cures": 
-                "traditionally used to support",
-            "treats": 
-                "may help with",
-            "prevents": 
-                "traditionally associated with",
-            "heals": 
-                "supports natural wellness",
-            "fights infection": 
-                "supports the body's natural defenses",
-            "detoxifies": 
-                "supports the body's natural cleansing",
-            "detoxify":
-                "support natural cleansing",
-            "detoxification":
-                "natural cleansing process",
-            "rejuvenates":
-                "supports youthful vitality",
-            "rejuvenate":
-                "promote vitality",
-            "rejuvenation":
-                "vitality and renewal",
-            "purifies blood": 
-                "traditionally used for skin and liver wellness",
-            "blood purifier":
-                "traditionally used for skin wellness",
-            "lowers blood sugar": 
-                "may support healthy blood sugar levels already within normal range",
-            "lowers cholesterol": 
-                "may support healthy cholesterol levels already within normal range",
-            "anti-inflammatory": 
-                "supports comfort and ease of movement",
-            "anti-aging": 
-                "supports youthful vitality",
-            "healing":
-                "wellness supporting",
-            "heals":
-                "supports natural wellness",
-            "burns fat": 
-                "supports healthy metabolism",
-            "weight loss": 
-                "supports healthy weight management",
-            "fat burner":
-                "metabolism support",
-            "cures diabetes":
-                "supports healthy blood sugar levels",
-            "theek kar deta hai":
-                "mein support karta hai",
-            "theek ho gaya":
-                "mein madad karta hai",
-            "theek ho gya":
-                "mein madad karta hai",
-            "dawai band":
-                "natural wellness ke liye",
-            # NOTE: "cure", "treatment", "ilaj" are intentionally
-            # NOT in safe_alternatives — too short/generic, would
-            # corrupt legitimate phrases like "secure", "Ayurvedic
-            # treatment", "ilaj-e-tibbi". Specific combos above
-            # (e.g. "cures diabetes") cover the real violations.
-            # High-risk mapping from health_scanner
-            "anti-cancer":
-                "rich in antioxidants",
-            "anti-tumor":
-                "supports healthy cellular function",
-            "anti-diabetic":
-                "supports healthy blood sugar balance",
-            "cancer-fighting":
-                "antioxidant rich",
-            "lowers blood pressure":
-                "may support healthy blood pressure already within normal range",
-            "no side effects":
-                "generally well-tolerated when used as directed",
-            "clinically proven":
-                "supported by traditional Ayurvedic use",
-            "100% safe":
-                "made with carefully selected natural ingredients",
-            "miracle":
-                "time-honored",
-            "instant relief":
-                "fast-acting support",
-            "permanently cures":
-                "traditionally used to support",
-            "reverses":
-                "supports healthy management of",
+            "cures": "traditionally used for",
+            "treats": "may support",
+            "prevents": "traditionally valued for",
+            "heals": "supports natural wellness",
+            "rejuvenates": "supports youthful vitality",
+            "purifies blood": "traditionally used for skin and liver wellness",
+            "lowers blood sugar": "may support healthy blood sugar levels",
+            "lowers cholesterol": "may support healthy cholesterol levels",
+            "burns fat": "supports healthy metabolism",
+            "theek kar deta hai": "mein support karta hai",
+            "theek ho gaya": "mein madad karta hai",
+            "dawai band": "natural wellness ke liye",
+            "permanently cures": "traditionally used to support",
         }
         # Merge SEO-safe swaps from config (single source of truth)
         swaps = self._load_smart_swaps()

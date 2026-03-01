@@ -36,86 +36,45 @@ class HealthClaimsScanner:
                 "patterns": [
                     r"\bcures?\b",
                     r"\bcure\s+(?:for|of)\b",
-                    r"\btreat(?:s|ment)?\b.*(?:disease|cancer|diabetes|"
-                    r"arthritis|HIV|AIDS|covid|tumor|infection|condition)",
-                    r"\bprevents?\b.*(?:cancer|disease|infection|diabetes|heart)",
-                    r"\bheals?\b.*(?:disease|condition|disorder|wound|infection)",
-                    r"\beliminates?\b.*(?:disease|cancer|tumor|infection|toxin)",
-                    r"\banti[- ]?cancer\b",
-                    r"\banti[- ]?tumor\b",
-                    r"\banti[- ]?diabetic\b",
-                    r"\bcancer[- ]?fighting\b",
-                    r"\b(?:effective|works?)\s+(?:for|against)\s+(?:cancer|diabetes|disease)",
-                    r"\bcombats?\s+(?:cancer|diabetes|disease|infection)",
-                    r"\bfights?\s+(?:cancer|diabetes|disease|tumor)",
-                    r"\breverses?\s+(?:diabetes|cancer|disease)",
-                    r"\b(?:remedy|remedies)\s+for\b",
+                    r"\btreat(?:s|ment)?\b(?!.*(?:plants?|water))",
+                    r"\bprevents?\b.*(?:disease|cancer|diabetes|arthritis|heart|hypertension|kidney|depression)",
+                    r"\bheals?\b.*(?:disease|condition|disorder)",
+                    r"\bdiagnoses?\b",
+                    r"\bdiagnostic\b",
+                    r"\btherapeutic\b",
+                    r"\bnidan\s+karta\b",
+                    r"\brog\s+door\s+karta\b",
+                    r"\bbimari\s+theek\s+karta\b",
                 ],
                 "risk": "HIGH",
-                "reason": "Direct disease claims — FDA considers this "
-                          "marketing an unapproved drug",
-                "fix": "Remove disease names. Use structure/function "
-                       "claims instead."
+                "reason": "Direct disease claims — FDA/FSSAI considers this marketing an unapproved drug",
+                "fix": "Remove disease names. Use 'traditionally used for' or 'supports healthy function'."
             },
             
             "drug_claims": {
                 "patterns": [
                     r"\bclinically\s+proven\b",
                     r"\bscientifically\s+proven\b",
-                    r"\bmedically\s+proven\b",
+                    r"\bmedically\s+(?:proven|tested)\b",
                     r"\bFDA\s+approved\b",
                     r"\bdoctor\s+recommended\b",
-                    r"\bprescri(?:be|ption)\b",
                     r"\bguaranteed\s+(?:to|results?)\b",
-                    r"\b100%\s+(?:effective|cure|guaranteed)\b",
-                    r"\bproven\s+to\s+(?:cure|treat|prevent)\b",
-                    r"\bguaranteed\s+(?:cure|relief|results?)\b",
                 ],
                 "risk": "HIGH",
-                "reason": "Makes product sound like a drug — "
-                          "requires FDA drug approval",
-                "fix": "Use 'traditionally used for' or "
-                       "'may support' language"
+                "reason": "Makes product sound like a drug — requires FDA drug approval",
+                "fix": "Use 'traditionally used for' or 'may support' language"
             },
             
             "specific_disease_mentions": {
                 "patterns": [
-                    r"\bcancer\b", r"\bdiabetes\b", r"\bheart\s+disease\b",
-                    r"\bAlzheimer'?s?\b", r"\bParkinson'?s?\b",
-                    r"\bHIV\b", r"\bAIDS\b", r"\bcovid\b",
-                    r"\bcoronavirus\b", r"\btumor\b", r"\bmalignant\b",
-                    r"\bhypertension\b", r"\bstroke\b", r"\bepilepsy\b",
-                    r"\basthma\b", r"\bhepatitis\b", r"\btuberculos\w+\b",
-                    r"\bmalaria\b", r"\bdepression\b",
-                    r"\banxi(?:ety|ous)\b",
-                    r"\binsomnia\b", r"\barthritis\b", r"\beczema\b",
-                    r"\bpsoriasis\b",
-                    r"\bconstipation\b", r"\bindigestion\b",
-                    r"\bobesity\b", r"\boverweight\b",
-                    r"\bkidney\s+(?:disease|failure|stone)\b",
-                    r"\bliver\s+(?:disease|failure)\b",
-                    r"\b(?:skin|blood)\s+infection\b",
-                    r"\b(?:skin|blood)\s+disorder\b",
+                    r"\bdiabetes\b", r"\bcancer\b", r"\barhritis\b", r"\bdepression\b", 
+                    r"\bkidney\s+disease\b", r"\bheart\s+disease\b", r"\bcovid\b", 
+                    r"\btumor\b", r"\bmalignant\b", r"\bhypertension\b"
                 ],
                 "risk": "HIGH",
-                "reason": "Mentioning diseases in product context = "
-                          "implied drug claim",
-                "fix": "Remove disease names. Describe symptoms or "
-                       "body functions instead."
-            },
-            
-            "for_disease_claims": {
-                "patterns": [
-                    r"\bfor\s+(?:diabetes|cancer|heart\s+disease|hypertension)\b",
-                    r"\bfor\s+(?:constipation|indigestion|obesity|depression)\b",
-                    r"\bfor\s+(?:anxiety|arthritis|asthma|eczema|psoriasis)\b",
-                    r"\b(?:relief|relieves?)\s+from\s+(?:diabetes|arthritis|pain)\b",
-                    r"\b(?:relief|relieves?)\s+(?:for|of)\s+(?:constipation|pain)\b",
-                ],
-                "risk": "HIGH",
-                "reason": "'For [disease]' = implied treatment claim",
-                "fix": "Use 'traditionally used to support' or 'may help with wellness'"
-            },
+                "reason": "Mentioning diseases in product context = implied drug claim",
+                "fix": "Remove disease names. Describe body functions instead."
+            }
         }
         
         self.medium_risk_patterns = {
@@ -180,38 +139,23 @@ class HealthClaimsScanner:
         self.low_risk_regex_patterns = {
             "borderline_claims": {
                 "patterns": [
-                    r"\b(?:helps?|supporting|supports?)\s+(?:with|in)\s+"
-                    r"(?:constipation|indigestion|digestion)\b",
                     r"\b(?:natural|herbal)\s+(?:remedy|treatment)\b",
                     r"\b(?:traditional|ayurvedic)\s+(?:cure|remedy)\b",
-                    r"\b(?:skin|hair|digestion)\s+(?:health|benefits?)\b",
-                    r"\b(?:anti[- ]?oxidant|antioxidant)\s+(?:properties?|rich)\b",
-                    r"\b(?:anti[- ]?bacterial|antibacterial)\s+(?:properties?)\b",
                 ],
                 "risk": "LOW",
                 "reason": "Borderline — may need disclaimer",
-                "fix": "Add FDA disclaimer; ensure structure/function language"
+                "fix": "Add FSSAI disclaimer; ensure structure/function language"
             },
         }
         
         # ====== SAFE ALTERNATIVES (SEO + compliant) ======
         # Load from config/smart_word_swap.json; fallback to built-in
         self.safe_replacements = {
-            "cures": "traditionally used to support",
-            "treats": "may help with",
-            "prevents": "traditionally associated with",
-            "heals": "supports natural",
-            "boosts immunity": "supports healthy immune function",
-            "fights infection": "supports the body's natural defenses",
-            "anti-cancer": "rich in antioxidants",
-            "lowers blood sugar": "may support healthy blood sugar levels already within normal range",
-            "lowers blood pressure": "may support healthy blood pressure already within normal range",
-            "cures diabetes": "traditionally used in Ayurveda for metabolic wellness",
-            "detoxifies": "supports the body's natural cleansing processes",
-            "purifies blood": "traditionally used to support skin and liver health",
-            "no side effects": "generally well-tolerated when used as directed",
+            "cures": "traditionally used for",
+            "treats": "may support",
+            "prevents": "traditionally valued for",
+            "heals": "supports natural wellness",
             "clinically proven": "supported by traditional Ayurvedic use",
-            "100% safe": "made with carefully selected natural ingredients",
             "miracle": "time-honored",
             "instant relief": "fast-acting support",
         }
