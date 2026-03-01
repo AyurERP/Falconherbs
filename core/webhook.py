@@ -303,6 +303,8 @@ class FalconWebhook:
 
             # ── Handle media/document messages (Task 3) ──
             if msg_type in ("image", "document", "audio", "video"):
+                # Track reply context for files too
+                context_message_id = msg.get("context", {}).get("id")
                 saved_path = self._download_whatsapp_media(msg, msg_type)
                 if saved_path:
                     media_obj = msg.get(msg_type, {}) or msg.get("document", {})
@@ -314,7 +316,7 @@ class FalconWebhook:
                     )
                     try:
                         self._commander.handle_message(
-                            text_for_commander, message_id
+                            text_for_commander, message_id, sender=sender, context_message_id=context_message_id
                         )
                     except Exception as exc:
                         log.warning("Commander handle (file) failed: %s", exc)
@@ -336,12 +338,12 @@ class FalconWebhook:
                     pass
                 return
 
-            # ── Extract quote-reply context ──
             # When user swipe-replies to a message in WhatsApp, Meta sends
             # a "context" object with the quoted message ID.
-            quoted_text = ""
+            context_message_id = None
             reply_context = msg.get("context", {})
             if reply_context:
+                context_message_id = reply_context.get("id", "")
                 quoted_msg_id = reply_context.get("id", "")
                 log.info(
                     "Webhook: quote-reply detected  |  replying_to=%s",
@@ -376,15 +378,13 @@ class FalconWebhook:
                 self._whatsapp.receive_reply("latest", text_body)
                 return
 
-            # ── Route: everything else → commander ──
-            # If this is a quote-reply, prepend the context so the
-            # Director knows what message the owner is referring to.
-            full_text = text_body
-            if quoted_text:
-                full_text = f"{quoted_text}\n{text_body}"
-
             try:
-                self._commander.handle_message(full_text, message_id)
+                self._commander.handle_message(
+                    text_body, 
+                    message_id, 
+                    sender=sender, 
+                    context_message_id=context_message_id
+                )
             except Exception as exc:
                 log.critical(
                     "Commander.handle_message crashed: %s", exc, exc_info=True,

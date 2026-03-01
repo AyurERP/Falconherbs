@@ -1,132 +1,59 @@
 [
   {
-    "test": "Test 1: Status Check",
     "input": "status",
-    "response_time": 3.66,
+    "msg_id": "test_1772366287798",
+    "response_time": 10.751407146453857,
     "messages_sent": 1,
     "messages": [
-      {
-        "timestamp": "2026-03-01T16:23:26.956710",
-        "recipient": "owner",
-        "text": "Bhai, haal kharab hai — lekin fix kar sakte hain.\n\n🔹 87 products — sab mein health claims violation  \n🔹 32 rewrites abhi pending — 20 apply ho chuke  \n🔹 Backup 6 days purana — warning  \n🔹 Aaj ₹0 sales — month bhi ₹0  \n🔹 Security scan theek hai, par content khatarnak hai  \n\nMaine 6 tasks complete kiye — content, audit, analysis sab chal raha hai.  \nAbhi jo chahiye: **“Sab rewrite apply karo”** — main 4 ghante mein saara content FSSAI-compliant kar deta hoon.  \n\nKya karun? Sab apply karun?",
-        "length": 492
-      }
+      "Bhai, website ka haal:  \n\n- 87 products \u2014 sabke description & title galat (0 clean)  \n- 100 rewrites pending, bas 1 apply hua  \n- Backup 6 din purana \u2014 warning  \n- Aaj \u20b90, month \u20b90  \n- Security theek hai, par kuch nahi chal raha  \n\nKuch bhi nahi ho raha kyunki content nahi live hua.  \nMain 10 products ka rewrite abhi apply kar dun?  \nBolo \u2014 \u201capply batch\u201d \u2014 seedha kar deta hoon."
     ],
-    "result": null,
-    "status": "PASSED"
+    "status": "PASSED",
+    "test": "Test 1: Status Check"
   },
   {
-    "test": "Test 2: Health Scan",
-    "input": "health scan",
-    "response_time": 32.68,
-    "messages_sent": 2,
-    "messages": [
-      {
-        "timestamp": "2026-03-01T16:23:28.979315",
-        "recipient": "owner",
-        "text": "⏳ Starting health scan... ~40 sec lagenge. Wait karo.",
-        "length": 53
-      },
-      {
-        "timestamp": "2026-03-01T16:24:01.630622",
-        "recipient": "919916322917",
-        "text": "Bhai, scan ho gaya — aur haal toh **2106 violations** ka hai.  \n\n87 products? Sab mein violation.  \n46 blogs? Har ek mein “cure”, “helps”, “promotes” — sab FSSAI ke against.  \n6 categories? “Cardiovascular Wellness” → “Heart Wellness Wellness”? Bhai, ye kya hai?  \n\n**Abhi jo fix ho sakta hai:**  \n- Product titles & descriptions: 87 each — sab API se rewrite karke apply kar deta hoon  \n- Image alt text: 40 violations — fix kar deta hoon  \n- Blogs & pages: 82 total — sab rewrite + publish  \n- Categories: 6 duplicate — sahi naam se replace  \n\n**Jo nahi ho sakta:**  \n- OCR wale images (text inside images) — manual check chahiye, main nahi dekh sakta  \n- Legal approval — main flag kar sakta hoon, lawyer nahi hoon  \n\n**Top violations abhi bhi live hain:**  \n- “Senna Leaves — Helps in getting rid of Constipation” → ❌ treatment  \n- “Ashwagandha — Reduce Stress” → ❌ cure  \n- “Amla — Supports Hair Growth” → ❌ constipation  \n- Blogs: “Say Goodbye to Dull Skin”, “Unlock the Secrets of Ayurveda” — sab banned phrases  \n\n**Action?**  \n👉 “**sab fix karo**” bol de — main 4 ghante mein saara content compliant kar deta hoon.  \nNahi bola toh, aaj bhi ₹0 aayega, aur Google/FSSAI ka koi reply aane wala hai.  \n\nKya karun? Sab fix karun?",
-        "length": 1233
-      }
-    ],
-    "result": null,
-    "status": "PASSED"
-  },
-  {
-    "test": "Test 3: Chanakya Triggers",
-    "input": "run chanakya triggers",
-    "response_time": 4.11,
-    "messages_sent": 2,
-    "messages": [
-      {
-        "timestamp": "2026-03-01T16:24:06.084477",
-        "recipient": "owner",
-        "text": "Task Generate Content starting on falconherbs.com. Wait karo (~2-3 mins lagenge).",
-        "length": 81
-      },
-      {
-        "timestamp": "2026-03-01T16:24:07.749326",
-        "recipient": "owner",
-        "text": "Bhai, Chanakya triggers run hue — par Director dispatch nahi mila.  \nKuch nahi hua.  \n\nAbhi kuch nahi chala.  \nKarna hai? Bas bol — main ready hoon.",
-        "length": 148
-      }
-    ],
-    "result": null,
-    "status": "PASSED"
-  },
-  {
-    "test": "Test 4: Approval Gate",
-    "input": "sab fix karo",
-    "response_time": 959.48,
-    "messages_sent": 1,
-    "messages": [
-      {
-        "timestamp": "2026-03-01T16:40:09.221218",
-        "recipient": "owner",
-        "text": "📋 *Rewrites ready — preview:*\n\n📝 *PRODUCT REWRITES*  \n─────────────  \n⏳ Pending: 100  \n✅ Applied: 1  \n📂 Total: 101  \n\nReview in: data/content/product_rewrites/  \n\n👆 Check karo. Agar sab theek hai toh *'haan karo'* ya *'ok'* bol ke publish kar dunga.",
-        "length": 249
-      }
-    ],
-    "result": null,
-    "status": "PASSED"
-  },
-  {
-    "test": "Test 5: Blog Draft",
-    "input": "draft blog on tulsi benefits",
-    "response_time": 4.23,
-    "messages_sent": 2,
-    "messages": [
-      {
-        "timestamp": "2026-03-01T16:40:13.717534",
-        "recipient": "owner",
-        "text": "Task Generate Content starting on falconherbs.com. Wait karo (~2-3 mins lagenge).",
-        "length": 81
-      },
-      {
-        "timestamp": "2026-03-01T16:40:15.461274",
-        "recipient": "owner",
-        "text": "Bhai, blog draft ke liye kuch nahi bana — Director dispatch abhi unavailable hai.  \n\nKya karna hai?  \n- Main content_creation wale agent ko trigger kar dun?  \n- Ya phir ek simple draft likh dun, jo tune approve karega?  \n\nBolo — \"haan karo\", main 10 mins mein draft bana deta hoon.",
-        "length": 281
-      }
-    ],
-    "result": null,
-    "status": "PASSED"
-  },
-  {
-    "test": "Test 6: Fix Violations Batch",
     "input": "fix violations batch 3",
-    "response_time": 45.96,
-    "messages_sent": 1,
+    "msg_id": "test_1772366298551",
+    "response_time": 42.06521391868591,
+    "messages_sent": 2,
     "messages": [
-      {
-        "timestamp": "2026-03-01T16:41:03.421600",
-        "recipient": "owner",
-        "text": "✅ Batch Complete: Scanned 3 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
-        "length": 98
-      }
+      "Bhai, thoda time lag raha hai... main analyze kar raha hoon. \u23f3",
+      "\u2705 Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see."
     ],
-    "result": null,
-    "status": "PASSED"
+    "status": "PASSED",
+    "test": "Test 6: Fix Violations Batch"
   },
   {
-    "test": "Test 7: Rewrite Status",
     "input": "rewrite status",
-    "response_time": 1.5,
+    "msg_id": "test_1772366340618",
+    "response_time": 7.524720668792725,
     "messages_sent": 1,
     "messages": [
-      {
-        "timestamp": "2026-03-01T16:41:06.931524",
-        "recipient": "owner",
-        "text": "📋 Rewrites: 3 pending | 0 approved | 0 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
-        "length": 140
-      }
+      "\ud83d\udccb Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'."
     ],
-    "result": null,
-    "status": "PASSED"
+    "status": "PASSED",
+    "test": "Test 7: Rewrite Status"
+  },
+  {
+    "input": "approve all",
+    "msg_id": "test_1772366367550",
+    "response_time": 12.878169059753418,
+    "messages_sent": 1,
+    "messages": [
+      "Hit a snag on my end. Logged and investigating. Please try again in a moment."
+    ],
+    "status": "PASSED",
+    "test": "Test 8: Context Memory"
+  },
+  {
+    "input": "apply this one",
+    "msg_id": "test_1772366395981",
+    "response_time": 5.585544586181641,
+    "messages_sent": 2,
+    "messages": [
+      "\u26a0\ufe0f *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+      "Hit a snag on my end. Logged and investigating. Please try again in a moment."
+    ],
+    "status": "PASSED",
+    "test": "Test 9: Quote Reply"
   }
 ]

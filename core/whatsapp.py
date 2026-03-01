@@ -141,61 +141,53 @@ class WhatsAppNotifier:
                 ", ".join(missing),
             )
 
+    @property
+    def latest_pending_id(self) -> Optional[str]:
+        """Get the ID of the most recent unanswered approval request."""
+        return self._latest_pending_id
+
     # ══════════════════════════════════════════════════════════════════
     #  CORE: send_message
     # ══════════════════════════════════════════════════════════════════
 
-    def send_message(self, text: str) -> bool:
+    def send_message(self, text: str, reply_to: Optional[str] = None) -> Optional[str]:
         """
         Send a text message to the owner via WhatsApp Business API.
-
-        Handles message chunking automatically if *text* exceeds
-        the 4000-character limit.
-
-        Parameters
-        ----------
-        text : str
-            The message body.
-
-        Returns
-        -------
-        bool
-            ``True`` if all chunks were delivered successfully.
-            ``False`` on any error, missing credentials, or API failure.
+        Returns the message ID of the last chunk if successful, else None.
         """
         if not self._configured:
             log.warning("WhatsApp not configured — message not sent")
-            return False
+            return None
 
         if not text or not text.strip():
             log.warning("WhatsApp: empty message — skipping")
-            return False
+            return None
 
         chunks = self._chunk_message(text)
-        all_ok = True
+        last_id = None
 
         for i, chunk in enumerate(chunks):
-            ok = self._send_single(chunk)
-            if not ok:
-                all_ok = False
+            msg_id = self._send_single(chunk, reply_to=reply_to)
+            if not msg_id:
                 log.warning(
                     "WhatsApp chunk %d/%d failed  |  preview=%s",
                     i + 1, len(chunks), chunk[:60],
                 )
             else:
+                last_id = msg_id
                 log.info(
-                    "WhatsApp sent  |  chunk %d/%d  |  %d chars",
-                    i + 1, len(chunks), len(chunk),
+                    "WhatsApp sent  |  chunk %d/%d  |  id=%s",
+                    i + 1, len(chunks), msg_id,
                 )
 
             # Small delay between chunks to maintain ordering
             if i < len(chunks) - 1:
                 time.sleep(0.5)
 
-        return all_ok
+        return last_id
 
-    def _send_single(self, text: str) -> bool:
-        """Send a single message chunk. Never raises."""
+    def _send_single(self, text: str, reply_to: Optional[str] = None) -> Optional[str]:
+        """Send a single message chunk. Returns message ID on success."""
         try:
             url = f"{META_API_BASE}/{self._phone_id}/messages"
             headers = {
@@ -210,18 +202,23 @@ class WhatsAppNotifier:
                 "text": {"body": text},
             }
 
+            if reply_to:
+                payload["context"] = {"message_id": reply_to}
+
             resp = requests.post(
                 url, headers=headers, json=payload, timeout=HTTP_TIMEOUT,
             )
 
             if resp.status_code == 200:
+                data = resp.json()
+                msg_id = data.get("messages", [{}])[0].get("id")
                 log.log_action(
                     action="whatsapp_send",
                     agent="whatsapp",
                     status="success",
-                    details={"chars": len(text), "preview": text[:80]},
+                    details={"chars": len(text), "id": msg_id},
                 )
-                return True
+                return msg_id
 
             log.warning(
                 "WhatsApp API returned %d: %s",
@@ -237,23 +234,24 @@ class WhatsAppNotifier:
                     "response": resp.text[:300],
                 },
             )
-            return False
+            return None
 
         except requests.exceptions.Timeout:
             log.warning("WhatsApp API timed out after %ds", HTTP_TIMEOUT)
-            return False
+            return None
         except requests.RequestException as exc:
             log.warning("WhatsApp API request error: %s", exc)
-            return False
+            return None
         except Exception as exc:
-            log.critical("WhatsApp send crashed: %s", exc, exc_info=True)
-            return False
+            log.error("WhatsApp _send_single failed: %s", exc)
+            return None
 
     def send_document(
         self,
         file_path: str | Path,
         caption: str = "",
         filename: str | None = None,
+        reply_to: Optional[str] = None,
     ) -> bool:
         """
         Upload a file and send it as a WhatsApp document to the owner.
@@ -330,6 +328,8 @@ class WhatsAppNotifier:
                     "filename": display_name,
                 },
             }
+            if reply_to:
+                payload["context"] = {"message_id": reply_to}
             if caption:
                 payload["document"]["caption"] = caption[:1024]
 

@@ -196,5 +196,489 @@
     "recipient": "owner",
     "text": "❌ Rejected product 7800 rewrite.",
     "length": 32
+  },
+  {
+    "timestamp": "2026-03-01T17:26:19.375786",
+    "recipient": "owner",
+    "text": "Bhai, website ka haal kharab hai — lekin fix kar sakte hain.\n\n- 87 products hain… aur sabke description + title galat hain. 100 rewrites pending, bas 1 apply hua.\n- Backup 6 days purana hai — warning hai, abhi koi crash aaya toh data kho jayega.\n- Aaj ₹0 sales, month bhi ₹0. Kuch bhi nahi chal raha.\n- Security scan theek hai, lekin koi content nahi bana raha, koi ads nahi chal rahi, koi traffic nahi.\n\nHumne 6 tasks kiye — audit, analysis, content creation — lekin kuch bhi live nahi hua.\n\nAbhi ka sabse bada issue:  \n**Products ke descriptions sahi nahi hain → SEO nahi chal raha → koi nahi mil raha → sales zero.**\n\nAction?  \nMain 10 product descriptions abhi rewrite kar deta hoon — aur backup bhi trigger kar deta hoon.  \nBata de — shuru karo ya phir thoda aur soch le?",
+    "length": 776,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:26:32.420768",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:27:31.481646",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:27:31.492108",
+    "recipient": "owner",
+    "text": "⚠️ *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+    "length": 152,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:03.687333",
+    "recipient": "owner",
+    "text": "Bhai, batch 3 ke violations fix karne ke liye pehle bata — kya main unhein rewrite kar dun?  \nYa phir status check karun ki abhi tak kaunse products ke description galat hain?  \n\nBas ek command de:  \n- “rewrite batch 3” → main 10 products update kar deta hoon  \n- “status violations” → sabhi pending dikha deta hoon  \n\nTere liye ready hoon — bas bolo kya chahiye.",
+    "length": 363,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:08.123221",
+    "recipient": "owner",
+    "text": "Bhai, rewrite status yeh hai:  \n📋 3 pending | 1 approved | 1 rejected  \n\nPending products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' ya 'approve product <id>'.",
+    "length": 162,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:08.134426",
+    "recipient": "owner",
+    "text": "⚠️ *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+    "length": 152,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:10.946665",
+    "recipient": "owner",
+    "text": "Bhai, rewrite status yeh hai:  \n⏳ Pending: 100  \n✅ Applied: 1  \n📂 Total: 101  \n\nBackup 6 din purana — warning hai.  \nAaj ₹0 sales.  \n87 products ke description abhi bhi galat hain.  \n\nKya karun?  \n10 products ka rewrite abhi apply kar dun?  \nBolo — “apply batch” — main seedha update kar deta hoon.",
+    "length": 298,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:15.542086",
+    "recipient": "owner",
+    "text": "Bhai, website ka haal:  \n\n- 87 products — sabke description & title galat (0 clean)  \n- 100 rewrites pending, bas 1 apply hua  \n- Backup 6 din purana — warning  \n- Aaj ₹0, month ₹0  \n- Security theek hai, par kuch nahi chal raha  \n\nKuch bhi nahi ho raha kyunki content nahi live hua.  \nMain 10 products ka rewrite abhi apply kar dun?  \nBolo — “apply batch” — seedha kar deta hoon.",
+    "length": 380,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:23.973924",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:28.582772",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:49.759767",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:49.769733",
+    "recipient": "owner",
+    "text": "⚠️ *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+    "length": 152,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:54.268309",
+    "recipient": "owner",
+    "text": "Task Health Claim Audit starting on falconherbs.com. Wait karo (~1 min lagenge).",
+    "length": 80,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:57.262976",
+    "recipient": "owner",
+    "text": "Bhai, health claim audit ho gaya:  \n✅ 87 products scanned — sabme violation hai  \n✅ 1 description apply hua  \n❌ 97 abhi pending approval  \n\nSab kuch ready hai, bas tumhari approval ki zaroorat hai.  \nAgar sab apply karna hai — bas bolo: **“approve all”**  \nMain seedha live kar deta hoon.  \n\nBackup bhi purana hai — uska bhi ek baar dekh lo?",
+    "length": 341,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:28:57.578707",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:05.127603",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 140,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:07.627111",
+    "recipient": "owner",
+    "text": "Hit a snag on my end. Logged and investigating. Please try again in a moment.",
+    "length": 77,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:18.184887",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:20.678652",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:22.521081",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:28.630758",
+    "recipient": "owner",
+    "text": "Bhai, rewrite status:  \n✅ 1 product apply hua  \n⏳ 100 abhi pending  \n87 products mein health claims galat — sabka rewrite taiyaar hai, bas approve karo.  \n\nBackup 6 din purana — warning hai.  \nAaj ₹0 sales — kuch push karna padega.  \n\nBolo — “approve all” — seedha live kar deta hoon.",
+    "length": 284,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:31.687163",
+    "recipient": "owner",
+    "text": "⚠️ *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+    "length": 152,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:37.418836",
+    "recipient": "owner",
+    "text": "Hit a snag on my end. Logged and investigating. Please try again in a moment.",
+    "length": 77,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:41.092914",
+    "recipient": "owner",
+    "text": "Bhai, apply kar diya — 1 product update ho gaya.  \n\nAbhi 100 pending rewrites hain, sab ready hai.  \nBackup 6 din purana — warning hai.  \nAaj ₹0 sales… kuch push karna padega.  \n\nBolo — “approve all” — main seedha live kar deta hoon.",
+    "length": 233,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:50.451016",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:52.968233",
+    "recipient": "owner",
+    "text": "Bhai, rewrite status:  \n✅ 1 product apply hua  \n⏳ 100 abhi pending  \n87 products mein health claims galat — sabka rewrite taiyaar hai, bas tumhari approval chahiye.  \n\nBackup 6 din purana — warning hai.  \nAaj ₹0 sales… kuch push karna padega.  \n\nBolo — “approve all” — main seedha live kar deta hoon.",
+    "length": 300,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:56.005706",
+    "recipient": "owner",
+    "text": "⚠️ *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
+    "length": 152,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:29:58.557883",
+    "recipient": "owner",
+    "text": "Hit a snag on my end. Logged and investigating. Please try again in a moment.",
+    "length": 77,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:31:33.018800",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:31:40.713535",
+    "recipient": "owner",
+    "text": "Bhai, website ka haal:  \n\n- 87 products — sabme health claim violation (kuch bhi nahi likha, bas rewrite ready hai — 100 pending, 1 apply)  \n- Backup 6 din purana — warning hai  \n- Aaj ₹0 sales, month bhi ₹0  \n- Security scan theek hai  \n- Serper zero — SEO kuch nahi chal raha  \n- Developer, media sab idle — bas tumhari approval ka intezaar hai  \n\nBolo — “approve all” — main seedha live kar deta hoon.  \nYa phir kuch aur push karna hai?",
+    "length": 439,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:31:53.753342",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:32:30.661104",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:32:35.165758",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected\n\nPending Products: 7807, 7803, 7800\n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 136,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:32:48.236422",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:32:58.313122",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:33:13.375824",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:38:06.472873",
+    "recipient": "owner",
+    "text": "Bhai, website ka haal:  \n\n- 87 products — sabke description aur title galat (0 clean)  \n- 90 rewrites pending, 11 apply hue  \n- Backup 6 din purana — warning  \n- Aaj ₹0, month bhi ₹0  \n- SEO: Serper zero  \n- Security theek hai  \n\nDeveloper, media sab idle… bas tumhari approval ka intezaar hai.  \nBolo — “approve all” — main seedha live kar deta hoon.",
+    "length": 351,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:38:19.512238",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:38:42.341270",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:38:46.499434",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected\n\nPending Products: 7807, 7803, 7800\n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 136,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:38:59.545593",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:39:16.514177",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:39:31.566205",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": null
+  },
+  {
+    "timestamp": "2026-03-01T17:42:32.582233",
+    "recipient": "owner",
+    "text": "Bhai, status:\n\n- 87 products — sabme health claim violation (0 clean)  \n- 75 rewrites pending, 26 applied  \n- Backup 6 din purana — warning  \n- Aaj ₹0, month ₹0  \n- Serper: 0/2500 — SEO kuch nahi chal raha  \n- Security theek hai  \n\nDeveloper, media sab idle… approval ka intezaar hai.  \nBolo — “approve all” — main seedha live kar deta hoon.",
+    "length": 341,
+    "reply_to": null,
+    "id": "mock_1772367152582"
+  },
+  {
+    "timestamp": "2026-03-01T17:42:32.584913",
+    "recipient": "owner",
+    "text": "Bhai, status:\n\n- 87 products — sabme health claim violation (0 clean)  \n- 75 rewrites pending, 26 applied  \n- Backup 6 din purana — warning  \n- Aaj ₹0, month ₹0  \n- Serper: 0/2500 — SEO kuch nahi chal raha  \n- Security theek hai  \n\nDeveloper, media sab idle… approval ka intezaar hai.  \nBolo — “approve all” — main seedha live kar deta hoon.",
+    "length": 341,
+    "reply_to": null,
+    "id": "mock_1772367152584"
+  },
+  {
+    "timestamp": "2026-03-01T17:42:45.612519",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367155594",
+    "id": "mock_1772367165612"
+  },
+  {
+    "timestamp": "2026-03-01T17:42:59.332868",
+    "recipient": "owner",
+    "text": "Bhai, status:  \n\n- 87 products — sabme health claim violation (0 clean)  \n- 73 rewrites pending, 28 apply hue  \n- Backup 6 din purana — warning  \n- Aaj ₹0 sales, month bhi ₹0  \n- SEO: Serper zero  \n- Security theek hai  \n\nDeveloper aur media idle — bas tumhari approve ka intezaar hai.  \nBolo “approve all” — main seedha live kar deta hoon.",
+    "length": 340,
+    "reply_to": null,
+    "id": "mock_1772367179332"
+  },
+  {
+    "timestamp": "2026-03-01T17:42:59.334571",
+    "recipient": "owner",
+    "text": "Bhai, status:  \n\n- 87 products — sabme health claim violation (0 clean)  \n- 73 rewrites pending, 28 apply hue  \n- Backup 6 din purana — warning  \n- Aaj ₹0 sales, month bhi ₹0  \n- SEO: Serper zero  \n- Security theek hai  \n\nDeveloper aur media idle — bas tumhari approve ka intezaar hai.  \nBolo “approve all” — main seedha live kar deta hoon.",
+    "length": 340,
+    "reply_to": null,
+    "id": "mock_1772367179334"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:12.384528",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367182347",
+    "id": "mock_1772367192384"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:37.613659",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367182347",
+    "id": "mock_1772367217613"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:37.616173",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367182347",
+    "id": "mock_1772367217616"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:37.737112",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367155594",
+    "id": "mock_1772367217737"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:37.747280",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367155594",
+    "id": "mock_1772367217747"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:42.268626",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 140,
+    "reply_to": "test_1772367220765",
+    "id": "mock_1772367222268"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:42.272377",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 140,
+    "reply_to": "test_1772367220765",
+    "id": "mock_1772367222272"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:42.340703",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 140,
+    "reply_to": "test_1772367220634",
+    "id": "mock_1772367222340"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:42.350577",
+    "recipient": "owner",
+    "text": "📋 Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'.",
+    "length": 140,
+    "reply_to": "test_1772367220634",
+    "id": "mock_1772367222350"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:55.317635",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367225289",
+    "id": "mock_1772367235317"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:55.386548",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367225370",
+    "id": "mock_1772367235386"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:58.531366",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367225289",
+    "id": "mock_1772367238531"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:58.534585",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367225289",
+    "id": "mock_1772367238534"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:59.728865",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367225370",
+    "id": "mock_1772367239728"
+  },
+  {
+    "timestamp": "2026-03-01T17:43:59.731565",
+    "recipient": "owner",
+    "text": "✅ Batch Complete: Scanned 2 products.  \nIdentified 1 for rewrites.  \nType 'rewrite status' to see.",
+    "length": 98,
+    "reply_to": "test_1772367225370",
+    "id": "mock_1772367239731"
+  },
+  {
+    "timestamp": "2026-03-01T17:44:13.590908",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367243556",
+    "id": "mock_1772367253590"
+  },
+  {
+    "timestamp": "2026-03-01T17:44:14.780802",
+    "recipient": "owner",
+    "text": "Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳",
+    "length": 62,
+    "reply_to": "test_1772367244751",
+    "id": "mock_1772367254780"
   }
 ]

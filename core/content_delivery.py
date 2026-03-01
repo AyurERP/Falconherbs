@@ -20,12 +20,13 @@ import os
 import time
 from datetime import datetime
 
-def _send_msg(text):
+def _send_msg(text, metadata=None):
     from core.whatsapp import WhatsAppNotifier
     import os
     recipient = os.getenv("WHATSAPP_RECIPIENT", "919916322917")
-    notifier = WhatsAppNotifier(recipient=recipient)
-    notifier.send_message(text)
+    reply_to = metadata.get("reply_to") if metadata else None
+    notifier = WhatsAppNotifier()
+    notifier.send_message(text, reply_to=reply_to)
 
 
 class ContentDelivery:
@@ -48,32 +49,32 @@ class ContentDelivery:
         length = len(content)
         
         if length <= self.TIER1_LIMIT:
-            return self._deliver_direct(content)
+            return self._deliver_direct(content, metadata=metadata)
         elif length <= self.TIER2_LIMIT:
-            return self._deliver_chunked(content)
+            return self._deliver_chunked(content, metadata=metadata)
         else:
             return self._deliver_link(content, content_type, metadata)
     
-    def _deliver_direct(self, content: str):
+    def _deliver_direct(self, content: str, metadata: dict = None):
         """Tier 1: Send as single message"""
-        _send_msg(content)
+        _send_msg(content, metadata=metadata)
         return {"method": "direct", "messages_sent": 1}
     
-    def _deliver_chunked(self, content: str):
+    def _deliver_chunked(self, content: str, metadata: dict = None):
         """Tier 2: Split into chunks on paragraph boundaries"""
         chunks = self._smart_split(content, self.CHUNK_SIZE)
         total = len(chunks)
         
         for i, chunk in enumerate(chunks):
             header = f"📄 Part {i+1}/{total}\n\n"
-            _send_msg(header + chunk)
+            _send_msg(header + chunk, metadata=metadata)
             if i < total - 1:
                 time.sleep(1)  # Rate limit buffer
         
         return {"method": "chunked", "messages_sent": total}
     
     def _deliver_link(self, content: str, content_type: str, metadata: dict = None):
-        """Tier 3: Send link based on content type"""
+        """Tier 3: Send link or document based on content type"""
         metadata = metadata or {}
         
         if content_type == "blog_draft" and metadata.get("wp_draft_id"):
@@ -82,7 +83,7 @@ class ContentDelivery:
             preview_url = f"https://www.falconherbs.com/?p={draft_id}&preview=true"
             summary = self._generate_summary(content, max_chars=500)
             msg = f"📝 Blog Draft Ready\n\n{summary}\n\n🔗 Full draft: {preview_url}\n\nBhai, review karke bolo — publish karun?"
-            _send_msg(msg)
+            _send_msg(msg, metadata=metadata)
             return {"method": "link", "type": "wp_preview", "draft_id": draft_id}
         
         elif content_type == "product_rewrite":
@@ -96,11 +97,12 @@ class ContentDelivery:
             
             summary = self._generate_summary(content, max_chars=500)
             msg = f"✏️ Product Rewrite Ready (ID: {product_id})\n\n{summary}\n\n📁 Full draft saved: {filename}\n\nBhai, approve karo toh apply kar deta hun."
-            _send_msg(msg)
+            _send_msg(msg, metadata=metadata)
             return {"method": "link", "type": "staging_file", "filepath": filepath}
         
         else:
-            # General large content — save as file
+            # General large content — save as file AND send as document
+            from core.whatsapp import WhatsAppNotifier
             filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             filepath = os.path.join(self.STAGING_DIR, filename)
             
@@ -108,9 +110,13 @@ class ContentDelivery:
                 f.write(content)
             
             summary = self._generate_summary(content, max_chars=800)
-            msg = f"📊 Report Ready\n\n{summary}\n\n📁 Full report: {filename}\n\n'show {filename}' type karo full dekhne ke liye."
-            _send_msg(msg)
-            return {"method": "link", "type": "file", "filepath": filepath}
+            _send_msg(f"📊 Report ready. File bhej raha hoon...", metadata=metadata)
+            
+            wa = WhatsAppNotifier()
+            reply_to = metadata.get("reply_to") if metadata else None
+            wa.send_document(filepath, caption=summary[:200], filename=filename, reply_to=reply_to)
+            
+            return {"method": "document", "type": "file", "filepath": filepath}
     
     def _smart_split(self, text: str, max_size: int) -> list:
         """Split text on paragraph boundaries, not mid-sentence"""

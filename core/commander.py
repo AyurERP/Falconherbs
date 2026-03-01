@@ -198,19 +198,18 @@ class FalconCommander:
     #  MAIN HANDLER
     # ══════════════════════════════════════════════════════════════════
 
-    def _safe_send(self, text: str, content_type: str = "general", metadata=None) -> None:
-        """Sends a message, using smart chunking for long text."""
+    def _safe_send(self, text, sender="owner", context_delivery=None, reply_to=None) -> Optional[str]:
+        """Send message safely, using content delivery if available. Returns message ID."""
         try:
-            from core.content_delivery import content_delivery
-            if len(text) > 500:
-                content_delivery.deliver(text, content_type=content_type, metadata=metadata)
-            else:
-                self._whatsapp.send_message(text)
+            from core.content_delivery import content_delivery as cd
+            cd.deliver(text, metadata={"sender": sender, "reply_to": reply_to})
+            # Also store in memory for context
+            return self._whatsapp.send_message(text, reply_to=reply_to)
         except Exception as e:
             log.error(f"Failed to safe_send: {e}")
-            self._whatsapp.send_message(text)
+            return self._whatsapp.send_message(text, reply_to=reply_to)
 
-    def handle_message(self, text: str, message_id: str, user_id: str = "owner") -> None:
+    def handle_message(self, text: str, message_id: str, sender: str = "owner", context_message_id: str = None) -> None:
         """
         Process an incoming WhatsApp message with a 10-second timeout.
         If logic takes longer, sends a 'working on it' message and continues in background.
@@ -218,11 +217,11 @@ class FalconCommander:
         import concurrent.futures
         
         # Immediate memory storage to prevent lost context if things crash
-        memory.add_message(user_id, "user", text)
-        memory.track_topic(user_id, text)
+        memory.add_message(sender, "user", text, message_id=message_id)
+        memory.track_topic(sender, text)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(self._handle_message_logic, text, message_id, user_id)
+            future = executor.submit(self._handle_message_logic, text, message_id, sender, context_message_id)
             try:
                 # Wait for 10 seconds (WhatsApp webhook limit)
                 future.result(timeout=10)
@@ -231,7 +230,7 @@ class FalconCommander:
                 log.info("Message processing taking > 10s, sending placeholder and continuing: %s", message_id)
                 # Send "Working on it" message so owner knows we're not dead
                 try:
-                    self._whatsapp.send_message("Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳")
+                    self._whatsapp.send_message("Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳", reply_to=message_id)
                 except Exception:
                     pass
                 # The task continues in the background thread.
@@ -239,16 +238,23 @@ class FalconCommander:
                 log.critical("Commander.handle_message wrapper crashed: %s", e, exc_info=True)
                 self._whatsapp.send_message("Bhai, system mein kuch gadbad hui. Main check kar raha hoon. 🛠️")
 
-    def _handle_message_logic(self, text: str, message_id: str, user_id: str = "owner") -> None:
+    def _handle_message_logic(self, text: str, message_id: str, sender: str = "owner", context_message_id: str = None) -> None:
         """
         Internal logic for processing messages.
         Formerly handle_message.
         """
+        # If user replied to a specific message, find that message's context
+        reply_context = ""
+        if context_message_id:
+            msg_obj = memory.get_message_by_id(sender, context_message_id)
+            if msg_obj:
+                reply_context = f"[Replying to: {msg_obj['content'][:200]}]\n"
+                text = reply_context + text
         # Budget check: typical message = classify + wrap + maybe generate (~0.01)
         if self._director and hasattr(self._director, "check_budget"):
             if not self._director.check_budget(0.01):
-                self._safe_send(BUDGET_EXHAUSTED_MSG)
-                memory.add_message(user_id, "assistant", BUDGET_EXHAUSTED_MSG)
+                self._safe_send(BUDGET_EXHAUSTED_MSG, sender=sender)
+                memory.add_message(sender, "assistant", BUDGET_EXHAUSTED_MSG)
                 return
 
         log.info(
@@ -280,8 +286,8 @@ class FalconCommander:
                         "Be direct — a real director, not a yes-man."
                     )
                     reply = self._generate_reply(text, ctx)
-                    self._safe_send(reply)
-                    memory.add_message(user_id, "assistant", reply)
+                    self._safe_send(reply, sender=sender, reply_to=message_id)
+                    memory.add_message(sender, "assistant", reply, message_id=message_id)
                     return
             except Exception as exc:
                 log.warning("Scope check failed (continuing): %s", exc)
@@ -302,7 +308,7 @@ class FalconCommander:
                         is_direct_confirm = True
                     
                     if is_direct_confirm and not ext_result:
-                        pending = memory.get_context(user_id, "pending_action")
+                        pending = memory.get_context(sender, "pending_action")
                         if pending:
                             handler_name = pending if pending.startswith("handle_") else f"handle_{pending.replace('-', '_')}"
                             ext_result = {
@@ -313,11 +319,11 @@ class FalconCommander:
                             }
                             response = self._extended_handler.handle(ext_result)
                             if response.get("success"):
-                                memory.set_context(user_id, "pending_action", None)  # clear
+                                memory.set_context(sender, "pending_action", None)  # clear
                             raw_reply = response.get("response", "")
                             if raw_reply:
                                 try:
-                                    recent_msgs = memory.get_recent_messages(user_id, limit=8)
+                                    recent_msgs = memory.get_recent_messages(sender, limit=8)
                                 except Exception:
                                     recent_msgs = []
                                 reply_text = director_brain.wrap_raw_response(
@@ -325,8 +331,8 @@ class FalconCommander:
                                     recent_messages=recent_msgs,
                                 )
                                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                                self._safe_send(reply_text)
-                                memory.add_message(user_id, "assistant", reply_text)
+                                out_id = self._safe_send(reply_text, sender=sender, reply_to=message_id)
+                                memory.add_message(sender, "assistant", reply_text, message_id=out_id)
                                 return
                     if ext_result:
                         ext_result["message_text"] = text
@@ -363,7 +369,7 @@ class FalconCommander:
                         response = self._extended_handler.handle(ext_result)
                         # Store pending_action for confirmation flow
                         if response.get("needs_confirmation") and response.get("pending_action"):
-                            memory.set_context(user_id, "pending_action", response["pending_action"])
+                            memory.set_context(sender, "pending_action", response["pending_action"])
                         # ALWAYS send if intent was classified — even on errors.
                         # Previously fell through on success=False which caused
                         # old keyword classifier to misroute (e.g. "price scan"
@@ -374,7 +380,7 @@ class FalconCommander:
                             # DirectorBrain for personality wrapping before WhatsApp.
                             # Flow: Handler → RAW DATA → DirectorBrain → Send
                             try:
-                                recent_msgs = memory.get_recent_messages(user_id, limit=8)
+                                recent_msgs = memory.get_recent_messages(sender, limit=8)
                             except Exception:
                                 recent_msgs = []
                             reply_text = director_brain.wrap_raw_response(
@@ -384,9 +390,9 @@ class FalconCommander:
                                 recent_messages=recent_msgs,
                             )
                             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                            self._safe_send(reply_text)
+                            out_id = self._safe_send(reply_text, sender=sender, reply_to=message_id)
                             memory.add_message(
-                                user_id, "assistant", reply_text
+                                sender, "assistant", reply_text, message_id=out_id
                             )
                             # If handler returned a document (e.g. changelog report), send it
                             doc_path = response.get("document_path")
@@ -400,6 +406,11 @@ class FalconCommander:
                                 ext_result["intent"],
                                 response.get("success"),
                             )
+
+                            # Handle extra actions from extended intents
+                            if response.get("action") == "batch_approve_all":
+                                self._handle_approve_all_rewrites({"sender": sender})
+
                             return
                 except Exception as e:
                     log.warning("Extended intent failed (falling through): %s", e)
@@ -1447,8 +1458,52 @@ class FalconCommander:
         )
         return result
 
-    @staticmethod
-    def _task_to_agent(task: str) -> str:
+    def _handle_approve_all_rewrites(self, intent):
+        """Approve all pending rewrites in batches of 10 with progress updates."""
+        sender = intent.get("sender", "owner")
+        from core.rewrite_staging import rewrite_staging
+        pending = rewrite_staging.get_pending()
+        
+        if not pending:
+            return {"response": "Bhai, koi pending rewrite nahi hai. Pehle 'fix violations batch 5' run karo.", "success": True}
+        
+        total = len(pending)
+        self._safe_send(f"🚀 {total} rewrites approve ho rahe hain... Batches of 10 mein karunga. Progress updates aate rahenge.", sender=sender)
+        
+        def batch_process():
+            import time
+            batch_size = 10
+            approved = 0
+            failed = 0
+            
+            for i in range(0, total, batch_size):
+                batch = pending[i:i+batch_size]
+                for pid in batch:
+                    entry = rewrite_staging.get_rewrite(pid)
+                    if entry and self._bridge:
+                        # Use apply_product_rewrite from bridge
+                        res = self._bridge.apply_product_rewrite(pid, entry.get("new_description", ""))
+                        if res.get("success"):
+                            rewrite_staging.approve(pid)
+                            approved += 1
+                        else:
+                            failed += 1
+                    else:
+                        failed += 1
+                    time.sleep(2) # Don't hammer API
+                
+                # Progress update
+                done = min(i + batch_size, total)
+                self._safe_send(f"📊 Progress: {done}/{total} done. ({approved} approved, {failed} failed)", sender=sender)
+                time.sleep(1)
+            
+            self._safe_send(f"✅ Final Summary:\nTotal: {total}\nApproved: {approved}\nFailed: {failed}\n\n'rewrite status' se verify kar lo.", sender=sender)
+
+        # Run in background to avoid blocking
+        threading.Thread(target=batch_process, daemon=True).start()
+        return {"response": None, "success": True}
+
+    def _task_to_agent(self, task: str) -> str:
         """Map a task name to the responsible agent."""
         agent_map = {
             "security_scan": "sentinel",

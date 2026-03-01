@@ -3,6 +3,7 @@
 import json
 import sqlite3
 import threading
+from core.logger import log
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -26,9 +27,10 @@ class ConversationMemory:
         self._init_db()
     
     def _init_db(self):
-        """Create tables if they don't exist."""
+        """Create tables if they don't exist and run simple migrations."""
         with self._lock:
             conn = sqlite3.connect(str(self._db_path))
+            # Basic table creation
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +40,17 @@ class ConversationMemory:
                     timestamp TEXT NOT NULL
                 )
             """)
+            
+            # Migration: Add message_id column if missing (Task 3)
+            try:
+                cursor = conn.execute("PRAGMA table_info(messages)")
+                cols = [row[1] for row in cursor.fetchall()]
+                if "message_id" not in cols:
+                    log.info("Migration: Adding 'message_id' column to messages table")
+                    conn.execute("ALTER TABLE messages ADD COLUMN message_id TEXT")
+            except Exception as e:
+                log.warning("Migration failed: %s", e)
+
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS context (
                     user_id TEXT NOT NULL,
@@ -62,7 +75,7 @@ class ConversationMemory:
                 )
             """)
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_topics_user
+                CREATE INDEX IF NOT EXISTS idx_topics_user 
                 ON topics(user_id, frequency DESC)
             """)
             conn.commit()
@@ -72,14 +85,14 @@ class ConversationMemory:
         """Get a thread-local connection."""
         return sqlite3.connect(str(self._db_path))
     
-    def add_message(self, user_id: str, role: str, content: str) -> None:
+    def add_message(self, user_id: str, role: str, content: str, message_id: Optional[str] = None) -> None:
         """Add message to conversation history (persisted)."""
         with self._lock:
             conn = self._conn()
             try:
                 conn.execute(
-                    "INSERT INTO messages (user_id, role, content, timestamp) VALUES (?, ?, ?, ?)",
-                    (user_id, role, content, datetime.now().isoformat())
+                    "INSERT INTO messages (user_id, role, content, timestamp, message_id) VALUES (?, ?, ?, ?, ?)",
+                    (user_id, role, content, datetime.now().isoformat(), message_id)
                 )
                 # Keep only last N messages per user
                 conn.execute("""
@@ -100,18 +113,38 @@ class ConversationMemory:
         return self.get_history(user_id, last_n=limit)
 
     def get_history(self, user_id: str, last_n: int = 10) -> List[Dict]:
-        """Get recent conversation history."""
+        """Get recent conversation history (max 10 MSGs, 30m expiry)."""
+        from datetime import timedelta
+        cutoff = (datetime.now() - timedelta(minutes=30)).isoformat()
+        
         with self._lock:
             conn = self._conn()
             try:
                 rows = conn.execute(
-                    "SELECT role, content, timestamp FROM messages WHERE user_id = ? ORDER BY timestamp DESC LIMIT ?",
-                    (user_id, last_n)
+                    """SELECT role, content, timestamp, message_id FROM messages 
+                       WHERE user_id = ? AND timestamp > ?
+                       ORDER BY timestamp DESC LIMIT ?""",
+                    (user_id, cutoff, last_n)
                 ).fetchall()
                 return [
-                    {"role": r[0], "content": r[1], "timestamp": r[2]}
+                    {"role": r[0], "content": r[1], "timestamp": r[2], "message_id": r[3]}
                     for r in reversed(rows)
                 ]
+            finally:
+                conn.close()
+    
+    def get_message_by_id(self, user_id: str, message_id: str) -> Optional[Dict]:
+        """Find a specific message by its WhatsApp message_id"""
+        with self._lock:
+            conn = self._conn()
+            try:
+                row = conn.execute(
+                    "SELECT role, content, timestamp, message_id FROM messages WHERE user_id = ? AND message_id = ?",
+                    (user_id, message_id)
+                ).fetchone()
+                if row:
+                    return {"role": row[0], "content": row[1], "timestamp": row[2], "message_id": row[3]}
+                return None
             finally:
                 conn.close()
     

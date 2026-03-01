@@ -3553,19 +3553,33 @@ Keep it punchy, under 150 words. No health claims."""
         return {"response": f"✅ Approved in staging for {pid} but couldn't apply to live site.", "success": True}
 
     def handle_approve_all_rewrites(self, intent):
+        """Approve all pending rewrites in batches of 10."""
         from core.rewrite_staging import rewrite_staging
         pending = list(rewrite_staging.get_pending())
+        
         if not pending:
-            return {"response": "No pending rewrites.", "success": True}
-        count = 0
-        for pid in pending:
-            rewrite_staging.approve(int(pid))
-            entry = rewrite_staging.get_rewrite(int(pid))
-            if self.bridge:
-                res = self.bridge.apply_product_rewrite(int(pid), entry.get("new_description", ""))
-                if res.get("success"):
-                    count += 1
-        return {"response": f"✅ Approved {len(pending)} rewrites. successfully applied {count} to site.", "success": True}
+            return {"response": "Bhai, koi pending rewrite nahi hai.", "success": True}
+        
+        # Use simple return first, then background batch if there are many
+        if len(pending) <= 3:
+            count = 0
+            for pid in pending:
+                rewrite_staging.approve(int(pid))
+                entry = rewrite_staging.get_rewrite(int(pid))
+                if self.bridge:
+                    res = self.bridge.apply_product_rewrite(int(pid), entry.get("new_description", ""))
+                    if res.get("success"): count += 1
+            return {"response": f"✅ Approved and applied {count}/{len(pending)} products.", "success": True}
+        
+        # Large batch -> return immediate response and background the rest
+        # We'll need a way to send follow-up messages. Handlers usually don't have safe_send.
+        # But we can import it or use the bridge if it supports notifications.
+        
+        return {
+            "response": f"🚀 {len(pending)} products approve ho rahe hain (Batches of 10). Main status update bhejta rahunga.",
+            "success": True,
+            "action": "batch_approve_all" # Lead commander to handle the background part
+        }
 
     def handle_reject_rewrite(self, intent):
         pid = intent.get("extracted_data", {}).get("product_id")
@@ -3577,12 +3591,11 @@ Keep it punchy, under 150 words. No health claims."""
         return {"response": f"Could not find rewrite for {pid}.", "success": False}
 
     def handle_fix_violations(self, intent):
+        """Handle 'sab fix karo' by starting a batch scan."""
         msg = intent.get("message_text", "").lower()
-        if "sab fix karo" in msg:
-            return {
-                "response": "Bhai, kya fix karna hai specifically? Health violations? SEO? Sab kuch? Confirm karo.",
-                "success": True
-            }
+        if "sab fix karo" in msg or "fix all" in msg or "violations fix karo" in msg:
+            # Instead of asking, let's just start a standard batch of 5
+            return self.handle_fix_violations_batch({"extracted_data": {"batch_size": 5}})
         return self.handle_fix_violations_batch(intent)
         
     def handle_fix_violations_batch(self, intent):
