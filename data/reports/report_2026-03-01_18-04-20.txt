@@ -1,0 +1,497 @@
+======================================================================
+  FALCON AGENCY — PRODUCT REWRITE REPORT
+  Generated: 01 Mar 2026 at 06:04 PM
+  Total Changes: 32
+======================================================================
+
+──────────────────────────────────────────────────────────────────────
+  PRODUCT DESCRIPTIONS (27 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Green Flavored Mix 180gm – Mouth Freshners, Mukhwas
+    Field: description
+
+  BEFORE:
+    <p>Green Flavored Mix Mouth Freshener, a meticulously crafted oral rejuvenation solution designed to breathe new life into your breath and cleanse your palate. This product serves as an exceptional choice post-meals or whenever you desire a revitalizing burst of freshness. <a href="https://www.falconherbs.com/">Green Flavored</a> Mix <a href="https://www.amazon.in/stores/page/D7596742-2893-4BE5-83C6-573DAF749D36?ingress=2&amp;visitId=93a85aa4-ee05-4d63-94b3-2df2ff2fba46&amp;ref_=ast_bln">Mouth Freshener</a> boasts a harmonious blend of natural ingredients that delivers a delightful green, herbal flavor.</p>
+    <h3>Benefits of Green Flavored Mix:</h3>
+    <ul>
+    <li>Expertly neutralizes undesirable breath, ensuring a refreshed and invigorated mouth.</li>
+    <li>Its convenient, portable packaging guaran
+    ... [1074 chars total]
+
+  AFTER:
+    <p>Green Flavored Mix is a thoughtful blend of natural ingredients, offering a delightful green, herbal flavor experience. This mix is designed to provide a refreshing sensation, perfect for use after meals or whenever desired. With its convenient packaging, Green Flavored Mix is easy to take on-the-go, allowing for effortless use wherever you are. The combination of natural ingredients in Green Flavored Mix may help support a refreshing oral experience. <br />---<br />Mouth Freshener, Mukhwas, Oral Rejuvenation, Natural Ingredients, Herbal Flavor, Ayurvedic, Oral Hygiene, Digestion, Breath Refreshment, Green Flavored Mix</p>
+
+
+[2] Hing Peda Mouth Freshener – 180gm
+    Field: description
+
+  BEFORE:
+    <p>Introducing Hing Peda Mouth Freshener by Zaarah Herbals, a timeless Indian confectionary delight expertly composed from a harmonious blend of natural components, featuring the distinctive essence of <a href="https://www.amazon.in/stores/page/4020F64C-4A8B-4753-AA7E-1D99227D28DE?ingress=2&amp;visitId=93a85aa4-ee05-4d63-94b3-2df2ff2fba46&amp;ref_=ast_bln">hing</a> , also known as asafoetida, and sugar. Hing, renowned for its unique pungency and aromatic charm, holds a sacred position in traditional Ayurvedic medicine, serving as both a digestive ally and breath refresher. Presented in petite, bite-sized portions,<a href="https://www.falconherbs.com/"> Hing peda</a> offers an enchanting fusion of sweet and savory notes, creating a refreshing and invigorating sensory experience. Designed fo
+    ... [1651 chars total]
+
+  AFTER:
+    <p>Introducing Hing Peda Mouth Freshener, a traditional Indian confectionary delight featuring a blend of natural components, including the distinctive essence of hing and sugar. This timeless treat offers a unique fusion of sweet and savory notes, creating a refreshing sensory experience. Presented in petite, bite-sized portions, Hing Peda is a convenient choice for on-the-go indulgence, perfect for elevating your spirits anytime, anywhere. With its traditional ingredients, including hing, black pepper, dry ginger powder, amchur powder, and sugar powder, Hing Peda is a delightful treat that combines natural goodness with a touch of traditional charm.</p>
+    <p>---<br />Hing Peda, mouth freshener, natural ingredients, Ayurvedic, asafoetida, sugar, black pepper, dry ginger powder, amchur powde
+    ... [917 chars total]
+
+
+[3] Kesari Saunf Mouth Fresheners – 180gm
+    Field: description
+
+  BEFORE:
+    <p>Introducing Kesari Saunf Mouth Freshener by ZAARA Herbals, a traditional Indian mouth revitalizer meticulously crafted from a harmonious fusion of natural constituents, featuring <a href="https://www.falconherbs.com/">saunf</a> (fennel seeds) and kesar (saffron). Saunf, renowned for its sweet and aromatic allure, assumes a revered position in traditional Ayurvedic medicine, recognized for its dual attributes as a digestive aid and breath rejuvenator. Meanwhile, kesar, a treasured spice celebrated for its delicate floral notes and vibrant yellow hue, plays a pivotal role in traditional Indian gastronomic and medicinal traditions.</p>
+    <p><a href="https://www.amazon.in/stores/page/1418525D-8C50-4554-8D6B-FC1CCC0BDE30?ingress=2&amp;visitId=93a85aa4-ee05-4d63-94b3-2df2ff2fba46&amp;ref_=ast_b
+    ... [1936 chars total]
+
+  AFTER:
+    <p>Kesari Saunf Mouth Fresheners are a traditional Indian blend of natural ingredients, featuring saunf (fennel seeds) and kesar (saffron). This unique combination brings together the sweetness of saunf and the delicate flavor of kesar, creating a refreshing experience. The portable packaging makes it easy to enjoy Kesari Saunf Mouth Fresheners anywhere, anytime.</p>
+    <p>The ingredients in Kesari Saunf Mouth Fresheners include sugar, fennel seeds, sugar-coated saunf (fennel seeds), and sugar balls. With its traditional Indian roots, Kesari Saunf Mouth Fresheners offer a flavorful and refreshing experience, combining the natural goodness of saunf and kesar.</p>
+    <p>Kesari Saunf Mouth Fresheners unite the potency of natural elements, incorporating saunf and kesar, to create a unique and refres
+    ... [1260 chars total]
+
+
+[4] Mumbaiya Mix Mouth Freshener-180gm
+    Field: description
+
+  BEFORE:
+    <p><strong>Mumbaiya Mix Mouth Freshener – 180g | A Taste of Mumbai’s Street Soul</strong></p>
+    <p>Savor the vibrant essence of Mumbai’s iconic street corners with <em>Mumbaiya Mix Mouth Freshener</em> — a thoughtfully curated blend of natural ingredients rooted in the city’s beloved culinary traditions. This aromatic mix invites you to experience a symphony of sweet, tangy, spicy, and savory notes, crafted to delight the senses and honor time-honored flavors.</p>
+    <p>Each spoonful reflects the authenticity of generations-old preparations — made with whole, minimally processed ingredients, free from artificial additives, preservatives, or refined sugars. No shortcuts. Just the pure, unadulterated character of nature’s harvest.</p>
+    <p><strong>A Flavor Journey, Inspired by the Streets:</strong>
+    ... [1835 chars total]
+
+  AFTER:
+    <p>Mumbaiya Mix Mouth Freshener – 180g | A Taste of Mumbai’s Street Soul<br />Savor the vibrant essence of Mumbai’s iconic street corners with Mumbaiya Mix Mouth Freshener — a thoughtfully curated blend of natural ingredients rooted in the city’s beloved culinary traditions. This aromatic mix invites you to experience a symphony of sweet, tangy, spicy, and savory notes, crafted to delight the senses and honor time-honored flavors.<br />Each spoonful reflects the authenticity of generations-old preparations — made with whole, minimally processed ingredients, free from artificial additives, preservatives, or refined sugars. No shortcuts. Just the pure, unadulterated character of nature’s harvest.<br />A Flavor Journey, Inspired by the Streets:<br />- Sweet Undertones: Candied fennel seeds an
+    ... [2015 chars total]
+
+
+[5] Punjabi Mix Mouth Freshener – 180gm
+    Field: description
+
+  BEFORE:
+    <p><a href="https://www.amazon.in/stores/page/9C3F6665-F813-4CD9-9F74-3F0A93018D48?ingress=2&amp;visitId=93a85aa4-ee05-4d63-94b3-2df2ff2fba46&amp;ref_=ast_bln">Mast Punjabi Mix Mouth Freshener,</a> an exquisite Indian mouth revitalizer that pays homage to the rich tapestry of Punjabi cuisine. This aromatic amalgamation is painstakingly curated by infusing an array of seeds, nuts, and handpicked ingredients with a vibrant palette of flavors and fragrances, showcasing the captivating notes of fennel, cardamom, and invigorating mint. As a final flourish, select elements are thoughtfully incorporated to ascend its taste and fragrance to a zenith of perfection.</p>
+    <p>Breath Freshening Brand Mast <a href="https://www.falconherbs.com/">Punjabi Mix</a> Mouth Freshener stands as a testament to its
+    ... [1726 chars total]
+
+  AFTER:
+    <p>Punjabi Mix Mouth Freshener is a traditional Indian blend of seeds, nuts, and handpicked ingredients, carefully crafted to create a unique and refreshing experience. This exquisite mix combines the flavors of fennel, cardamom, and mint, showcasing the rich culinary heritage of Punjabi cuisine. With its vibrant palette of flavors and fragrances, Punjabi Mix Mouth Freshener is a delightful treat for the senses.</p>
+    <p>As a post-meal companion, Punjabi Mix Mouth Freshener offers a refreshing and soothing experience. Its crisp, dry form makes it a convenient and enjoyable snack or addition to your daily routine. With its carefully selected ingredients and traditional preparation method, Punjabi Mix Mouth Freshener is a timeless and authentic Indian mouth freshener.</p>
+    <p>Punjabi Mix Mouth 
+    ... [1415 chars total]
+
+
+[6] Rim Jhim Mix Mouth Freshener – 180gm
+    Field: description
+
+  BEFORE:
+    <p>Rim Jhim Mix Mouth Freshener –  Imagine taking a stroll through bustling Indian streets, where the aroma of spices mingles with the chatter of vendors, and the vibrant colors of local delicacies beckon you. This vivid and sensorial experience is encapsulated in<a href="https://www.falconherbs.com/"> Rim Jhim</a> Mix Mouth Freshener. ZAARAH Herbals has crafted this delightful blend of flavors, offering you the opportunity to savor the essence of India’s street food culture in a convenient and flavorful form. Let’s embark on a journey to explore the vivid world of <a href="https://www.amazon.in/stores/page/C159AF4F-598E-4F70-B7F5-4F44B5874C51?ingress=2&amp;visitId=93a85aa4-ee05-4d63-94b3-2df2ff2fba46&amp;ref_=ast_bln">Rim Jhim</a> Mix Mouth Freshener.</p>
+    <p><strong>The Inspiration: India
+    ... [2442 chars total]
+
+  AFTER:
+    <p>Rim Jhim Mix Mouth Freshener is a delightful blend of flavors, inspired by the vibrant street food culture of India. This mix is a sensory experience, combining sweet, tangy, spicy, and savory elements that evoke the spirit of Indian cuisine. With its unique blend of ingredients, Rim Jhim Mix Mouth Freshener offers a symphony of flavors that dance on your taste buds.</p>
+    <p>The mix incorporates a variety of ingredients, including candied fennel seeds, dried fruits, and other sweet elements, which create a tantalizing sweetness. Tangy flavors, reminiscent of classic Indian chaat, are provided by ingredients like tamarind and an array of spices. A subtle but exciting kick of spice is added, leaving your taste buds craving more. Roasted nuts, seeds, and spices add a savory depth and a sati
+    ... [1686 chars total]
+
+
+[7] Shahi Gulab Mouth Freshener - 180gm Pack
+    Field: description
+
+  BEFORE:
+    <p>Mouth Freshener, a breath rejuvenator adorned with the enchanting essence of rose water, evoking the cherished memories of the traditional Indian confection known as<a href="https://www.falconherbs.com/"> Shahii Gulab.</a> This delectable elixir is masterfully composed by infusing rose water essence or oil into a liquid canvas, often accompanied by a symphony of additional flavors and ingredients, orchestrating a grand celebration of taste and aroma. <a href="https://www.amazon.in/stores/page/293DA349-2216-4C37-93C3-589476F90367?ingress=2&amp;visitId=c5c63c11-d298-4562-90f1-0d11e6bbdffd&amp;ref_=ast_bln">Gulab</a> breath freshener is the quintessential choice for your post-meal rituals, poised to orchestrate a harmonious dance of breath refreshment and palate cleansing. It elegantly pre
+    ... [1570 chars total]
+
+  AFTER:
+    <p>Shahi Gulab Mouth Freshener is a traditional Indian-inspired blend, featuring the captivating essence of rose water. This delightful formulation combines rose water essence with a selection of complementary flavors and ingredients, creating a unique sensory experience. The convenient 180gm pack offers a straightforward way to enjoy the refreshing properties of Shahi Gulab, making it an ideal choice for everyday use. With its elegant presentation and effortless application, Shahi Gulab Mouth Freshener is poised to become a cherished part of your daily rituals. <br />Ingredients:<br />1. Sugar<br />2. Fennel seeds<br />3. Sugar-coated saunf (fennel seeds)<br />4. Sugar balls<br />---<br />Ayurvedic mouth freshener, rose water, traditional Indian confection, breath refreshment, palate clea
+    ... [976 chars total]
+
+
+[8] The New Ilu Ilu Mouth Freshener -180gm
+    Field: description
+
+  BEFORE:
+    <p>Introducing<a href="https://www.amazon.in/stores/page/030C84E5-ACB8-4E6C-8776-DC8EEDE022D0?ingress=2&amp;visitId=c5c63c11-d298-4562-90f1-0d11e6bbdffd&amp;ref_=ast_bln"> Ilu Ilu</a> Mouth Freshener by <a href="https://www.zaarahherbals.com/">ZAARAH Herbals,</a> a delectable confectionery born from the essence of tamarind, a tropical fruit originally hailing from Africa and now extensively cultivated across India, as well as various regions in South and Southeast Asia. The crafting of Ilu Ilu tamarind digestive candy is a labor of love, typically involving the gentle simmering of tamarind pulp alongside sugar and an array of other ingredients until they coalesce into a lush, adhesive concoction. This sumptuous mixture is then meticulously poured into molds or meticulously rolled into peti
+    ... [2113 chars total]
+
+  AFTER:
+    <p>Ilu Ilu Mouth Freshener is a delightful confectionery inspired by the essence of tamarind, a tropical fruit with a rich history and widespread cultivation across India and Southeast Asia. The creation of Ilu Ilu involves a thoughtful process of simmering tamarind pulp with sugar and other ingredients to form a rich, adhesive mixture, which is then carefully poured into molds or rolled into small spheres. The result is a collection of candies with a chewy texture and a subtle balance of sour and sweet flavors, often finished with a delicate coating of sugar or other sweeteners. This traditional candy is cherished for its unique flavor profile and pleasing texture. Ilu Ilu Mouth Freshener is made with organic jaggery, tamarind, chilli powder, and vanilla powder, combining to create a dist
+    ... [1055 chars total]
+
+
+[9] New Tini Mini Goli Mouth Freshener – 180gm
+    Field: description
+
+  BEFORE:
+    <p><strong><a href="https://www.zaarahherbals.com/product/tini-mini-goli-mouth-freshners/">Tini Mini Goli</a></strong> Mouth Freshener, the petite, spherical marvel meticulously forged to breathe new life into your breath and bestow purity upon your oral realm. This dainty delight is the quintessential choice post-meals or whenever your senses crave an infusion of freshness. It stands as a testament to the artistry of nature, a harmonious composition of herbs and essential oils, celebrated for their invigorating and revitalizing attributes<a href="https://www.falconherbs.com">.Tini Mini Goli</a> Mouth Fresheners manifest as a miniature explosion of freshness and flavor, standing guard against the incursion of undesirable breath and ushering in a sense of rejuvenation within your oral domai
+    ... [1645 chars total]
+
+  AFTER:
+    <p>New Tini Mini Goli Mouth Freshener is a unique blend of herbs and essential oils, carefully crafted to provide a refreshing experience. This petite, spherical delight is perfect for use after meals or whenever you desire a burst of freshness. With its compact size, it is easy to take with you on-the-go, ensuring a refreshing moment is always within reach. The combination of natural ingredients in New Tini Mini Goli Mouth Freshener creates a revitalizing sensation, making it a great addition to your daily routine. <br />Ingredients:<br />- Sugar-coated aniseeds<br />- Menthol<br />- Permitted food color<br />---<br />Ayurvedic mouth freshener, herbal mouth freshener, natural ingredients, oral refreshment, sugar-coated aniseeds, menthol, permitted food color, compact mouth freshener, port
+    ... [889 chars total]
+
+
+[10] Amla Powder 100gm – Supports Hair Growth
+    Field: description
+
+  BEFORE:
+    <p>Zaarah Herbals <a href="https://www.amazon.in/Zaarah-Herbals-Amla-Powder-flatulence/dp/B0B23CKN75?ref_=ast_sto_dp">Amla Powder</a> is one of the most powerful revitalising and antioxidant traditional plants. It is thought to provide a number of health benefits. It may assist to balance stomach functions and improve overall well-being and body functions. It helps with digestion and immunity. Zaarah Herbals 100% <a href="https://www.falconherbs.com/">Amla Powder</a> is thought to contain antioxidant capabilities that can protect cells from free radical damage. It may also aid in the promotion of normal bowel movement and the prevention of constipation. Amla is considered to be one of the strongest rejuvenating and antioxidant traditional herb. It is considered to have several health benef
+    ... [1080 chars total]
+
+  AFTER:
+    <p>Amla Powder 100gm is a traditional Ayurvedic herb known for its rich nutritional profile and potential to support overall wellness. This powder is derived from the fruit of the Amla tree, which has been used in traditional practices for centuries. Amla Powder is believed to possess antioxidant properties, which may help maintain cellular health. It is also thought to support digestive function and promote a healthy metabolic rate. As a natural and traditional herb, Amla Powder is considered a valuable addition to a balanced lifestyle.</p>
+    <p>Benefits of Amla Powder include:<br />* Antioxidant properties<br />* Support for digestive function<br />* Promotion of healthy metabolism</p>
+    <p>---<br />Amla Powder, Ayurvedic herb, antioxidant properties, digestive function, healthy metabolism, 
+    ... [906 chars total]
+
+
+[11] Arjuna Powder 100gm – Healthy Lipid Levels
+    Field: description
+
+  BEFORE:
+    <p>Zaarah Herbals <a href="https://www.amazon.in/Zaarah-Herbals-considered-support-pressure/dp/B0CB6746GP?ref_=ast_sto_dp">Arjuna Powder</a> is the greatest plant for maintaining heart health and alleviating mental tension and anxiousness. Arjuna promotes cardiovascular function and a healthy circulatory system. Arjuna may help maintain healthy lipid levels, according to research. Arjuna is a heart tonic and may help maintain <a href="https://www.falconherbs.com/">healthy blood pressure</a> levels.</p>
+    <h2>Benefits of Arjuna Powder:</h2>
+    <ul>
+    <li>It is considered a heart tonic</li>
+    <li>It may support healthy blood pressure levels</li>
+    <li>This supplement can support healthy lipid levels</li>
+    <li>It can also help to improve blood circulation</li>
+    <li>It can help relieve mental stress and ne
+    ... [920 chars total]
+
+  AFTER:
+    <p>Arjuna Powder is a traditional Ayurvedic herb known for its potential to support overall well-being. This ancient plant has been used for centuries in Ayurvedic practices to promote a sense of calm and relaxation. Arjuna is often considered a heart tonic and is used in traditional Ayurvedic medicine to support a healthy lifestyle. <br />Benefits of Arjuna Powder include:<br />* Considered a heart tonic in traditional Ayurvedic practices<br />* Used in Ayurvedic medicine to support a healthy lifestyle<br />* May be used to support emotional balance and relaxation<br />* Traditionally used to support overall cardiovascular health<br />* May help support healthy circulation and overall well-being<br />* Used in Ayurvedic practices to promote relaxation and reduce mental stress<br />---<br 
+    ... [961 chars total]
+
+
+[12] New Ashwagandha Powder 100gm – Reduce Stress
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Falcon Herbs New Ashwagandha Powder – 100gm | Pure, Traditional Ayurvedic Herb</strong></p>
+    <p>Rooted in centuries-old Ayurvedic tradition, Falcon Herbs Ashwagandha Powder is made from 100% pure, sun-dried <em>Withania somnifera</em> root, carefully ground to preserve its natural integrity. Sourced from ethical farms in India, this fine powder reflects the timeless wisdom of Ayurveda — where herbs are honored not for quick results, but for their enduring role in daily wellness rituals.</p>
+    <p><strong>How to Use</strong><br />
+    Traditionally, a half to one teaspoon of Ashwagandha Powder is blended into warm milk, water, or herbal tea, often enjoyed in the evening as part of a calming routine. It may also be added to smoothies, desserts, or golden elixirs according to personal 
+    ... [1987 chars total]
+
+  AFTER:
+    <p>### <strong>Falcon Herbs New Ashwagandha Powder – 100gm | Pure, Traditional Ayurvedic Herb</strong></p>
+    <p>Rooted in centuries-old Ayurvedic tradition, Falcon Herbs Ashwagandha Powder is made from 100% pure, sun-dried <em>Withania somnifera</em> root, carefully ground to preserve its natural integrity. Sourced from ethical farms in India, this fine powder reflects the timeless wisdom of Ayurveda — where herbs are honored for their role in daily wellness rituals.</p>
+    <p><strong>How to Use</strong><br />Traditionally, a half to one teaspoon of Ashwagandha Powder is blended into warm milk, water, or herbal tea, often enjoyed in the evening as part of a calming routine. It may also be added to smoothies, desserts, or golden elixirs according to personal preference and dietary practice.</p>
+    
+    ... [1980 chars total]
+
+
+[13] Avipattikar Powder 100gm – Control Acidity
+    Field: description
+
+  BEFORE:
+    <p>Avipattikar Powder 100gm –<a href="https://www.amazon.in/Zaarah-Herbals-Avipattikar-intestine-eliminate/dp/B0CB66XFSC?ref_=ast_sto_dp"> Control Acidity</a></p>
+    <p><a href="https://www.falconherbs.com/">Avipattikar Powder</a> is an herbal mix enriched with Triphala, Trikatu, Trvrit (Nishottar) that may help to stimulate digestion and metabolism. It may soothe the stomach tissues and promote normal, comfortable levels of acidity during the digestive process. This cooling blend may help balance the digestive fire and eliminate natural toxins from the system. It may help control the formation of gas and the discomfort associated with it.</p>
+    <h3>Benefits of Avipattikar Powder Control Acidity</h3>
+    <ul>
+    <li>May promote normal levels of acidity in the stomach and intestine.</li>
+    <li>May suppor
+    ... [1026 chars total]
+
+  AFTER:
+    <p>Avipattikar Powder is a traditional herbal blend featuring Triphala, Trikatu, and Trvrit (Nishottar). This unique combination of herbs is designed to support digestive well-being. The cooling properties of Avipattikar Powder may help balance the digestive system, while its natural ingredients may aid in maintaining a healthy stomach and intestine.</p>
+    <p>The traditional use of Avipattikar Powder is rooted in Ayurvedic principles, which emphasize the importance of a balanced digestive system for overall well-being. By incorporating Avipattikar Powder into your daily routine, you may experience a soothing and calming effect on the stomach tissues.</p>
+    <p>Direction for use: Take 3-5gms powder, 1 to 2 times a day</p>
+    <p>---<br />Ayurvedic herbs, Triphala, Trikatu, Trvrit, digestive well-bei
+    ... [923 chars total]
+
+
+[14] Bhringraj Powder 100gm–Supports Hair Growth
+    Field: description
+
+  BEFORE:
+    <p><a href="https://www.falconherbs.com/">Bhringraj Powde</a>r is an ancient herb found throughout India. Bhringraj means “<a href="https://www.amazon.in/s?k=zaarah+herbals&amp;crid=2LJQXTGK7BO17&amp;sprefix=%2Caps%2C227&amp;ref=nb_sb_ss_recent_6_0_recent">Ruler of the hair</a>”. It is also considered as a genera I tonic for debility. It is considered to maintain healthy digestive health.</p>
+    <h3>Benefits of Bhringraj Powder</h3>
+    <ul>
+    <li>May encourage hair growth.</li>
+    <li>May support overall health of hair.</li>
+    <li>May help maintain natural hair luster.</li>
+    </ul>
+    <p><strong>Direction for use:</strong> Take 3 gms powder, 1 to 2 times a day</p>
+    
+
+  AFTER:
+    <p>Bhringraj Powder is an ancient herb native to India, revered for its traditional significance. The name Bhringraj translates to "Ruler of the hair", reflecting its historical importance. This herbal powder has been a part of traditional practices for centuries, valued for its potential to support overall well-being. <br />---<br />Bhringraj Powder, hair growth, hair health, herbal powder, Ayurvedic herbs, natural hair care, traditional Indian herbs</p>
+
+
+[15] New Dudhi Powder 100gm – Acts as Liver tonic
+    Field: description
+
+  BEFORE:
+    <p>Dudhi Powder – Acts as Liver tonic and help in lowering lipid levels.</p>
+    <p>Zaarah Herbals <a href="https://www.falconherbs.com/">Dudhi Powder</a> has a lot of fibre, vitamin C, riboflavin, zinc, thiamine, iron, magnesium, manganese, and other nutrients. Dudhi (bottle gourd) is grown organically in the pollution-free Sahyadri mountain region and organically processed according to Indian standards. It is a liver tonic and can help decrease lipid levels. Zaarah Herbals <a href="https://www.amazon.in/Zaarah-Herbals-Natural-Dudhi-Powder/dp/B0BS1C5WY4?ref_=ast_sto_dp">100% Dudhi Powder</a> may aid in the reduction of lipid levels. It may also be effective against acidity and liver tonic. Dudhi is a fantastic liver tonic.</p>
+    <p>Dudhi (Bottle gourd) is high in dietary fiber, Vitamin C, Ribof
+    ... [1346 chars total]
+
+  AFTER:
+    <p>New Dudhi Powder 100gm is a rich source of essential nutrients, including dietary fiber, vitamin C, riboflavin, zinc, thiamine, iron, magnesium, and manganese. Our Dudhi is organically grown in the pristine Sahyadri mountain region and processed according to Indian organic standards. This powder is made from 100% Dudhi (bottle gourd) and is a popular choice among those seeking to support their overall well-being. Our Dudhi Powder is carefully crafted to provide a concentrated dose of this nutrient-rich ingredient. To experience the benefits of Dudhi Powder, take 3 grams of powder, 1 to 2 times a day.<br />--- <br />Ayurvedic herbs, liver support, digestive health, bowel movement, organic Dudhi powder, natural ingredients, vitamin C, riboflavin, zinc, thiamine, iron, magnesium, manganese
+    ... [805 chars total]
+
+
+[16] New Giloy Powder 100g -For detox & Boosts Immunity
+    Field: description
+
+  BEFORE:
+    <p><strong>Giloy Powder-For detox &amp; Boosts Immunity and help to maintain healthy blood sugar level.</strong></p>
+    <p><a href="https://www.falconherbs.com/">Giloy/Guduchi,</a> is a shrub which is known to possess a number of wonderful therapeutic values through its use. This herb is considered as health rejuvenator which is widely known for its effectivity in enhancing natural <a href="https://www.amazon.in/Zaarah-Herbals-Tinospora-Cardifolia-Detoxification/dp/B0B2FDJRTM?ref_=ast_sto_dp">immunity</a> to fight against a number of conditions. It is considered to have antioxidant properties and effective in general debility.</p>
+    <h3>Benifits of Giloy Powder:</h3>
+    <ul>
+    <li>It is considered to have antioxidant properties.</li>
+    <li>Considered to possess antiseptic properties.</li>
+    <li>May help
+    ... [971 chars total]
+
+  AFTER:
+    <p>New Giloy Powder 100g is a traditional Ayurvedic herbal supplement made from the Guduchi plant, also known as Giloy. This shrub has been used for centuries in Ayurvedic practices for its potential to support overall well-being. The Guduchi plant is believed to have adaptogenic properties, which may help the body adapt to stress. Our Giloy Powder is made from high-quality, pure Guduchi extract, carefully processed to preserve its natural properties.</p>
+    <p>The Guduchi plant has been a part of traditional Ayurvedic practices for its potential to promote balance and harmony in the body. It is believed to have antioxidant properties, which may help protect the body from oxidative stress. Our Giloy Powder is a convenient way to incorporate this traditional herb into your daily routine.</p>
+    <
+    ... [1018 chars total]
+
+
+[17] Gurmar Powder 100gm – Helps Sugar Control
+    Field: description
+
+  BEFORE:
+    <p><a href="https://www.amazon.in/stores/page/1E241A10-6870-4459-B46C-B83321E10539?ingress=2&amp;visitId=17eef6c0-4080-4491-a84b-175039d8d66c&amp;ref_=ast_bln">Gurmar Powder</a> – Helps Sugar Control and It can help to maintain good health of the kidney.</p>
+    <p><a href="https://www.falconherbs.com/">Gurmar</a> means “sugar destroyer” in Sanskrit. Gurmar (Gymnema) has been shown in human and animal research to assist maintain blood sugar levels. It is said to contain astringent and hepatic stimulating effects that may operate on the pancreas, adrenal glands, and digestive glands to keep blood sugar levels balanced.</p>
+    <h3>Benefits of  Gurmar Powder:</h3>
+    <ul>
+    <li>It can help maintain the metabolic activities of the liver, kidney and spleen</li>
+    <li>It also can help to reduce pain in calves
+    ... [1052 chars total]
+
+  AFTER:
+    <p>Gurmar Powder is a traditional Ayurvedic herb known as "sugar destroyer" in Sanskrit. This powder has been used for centuries in Ayurvedic practices to support overall well-being. The unique properties of Gurmar are believed to have a positive effect on the body's natural processes.</p>
+    <p>Gurmar Powder is thought to support the body's natural ability to maintain balance and promote healthy metabolic functions. It is also believed to have a positive impact on the liver, kidney, and spleen, helping to maintain their natural functions. Additionally, it may help reduce discomfort in the calves and alleviate numbness and tingling sensations.</p>
+    <p>To use Gurmar Powder, take 2-3 grams twice a day, or as directed by a healthcare professional.</p>
+    <p>---<br />Gurmar Powder, Ayurvedic herb, su
+    ... [928 chars total]
+
+
+[18] Haritaki Powder 100gm – For Healthy Immunity
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Haritaki Powder 100gm – Traditional Ayurvedic Formulation</strong></p>
+    <p>Rooted in ancient Ayurvedic tradition, Haritaki Powder is made from the dried fruit of <em>Terminalia chebula</em>, revered for its grounding and balancing properties in classical texts. Sourced from ethically harvested, sun-dried fruits and stone-ground into a fine, pure powder, this formulation honors the wisdom of time-honored practices.</p>
+    <p>Haritaki is traditionally used in Ayurveda as part of daily wellness rituals, often combined with other natural ingredients to support holistic well-being. Its gentle nature makes it suitable for regular use within a balanced lifestyle.</p>
+    <p>This 100gm pack offers a convenient, unadulterated form of Haritaki — free from additives, fillers, or artificial pre
+    ... [2096 chars total]
+
+  AFTER:
+    <p>### <strong>Haritaki Powder 100gm – Traditional Ayurvedic Formulation</strong><br />Rooted in ancient Ayurvedic tradition, Haritaki Powder is made from the dried fruit of <em>Terminalia chebula</em>, revered for its properties in classical texts. Sourced from ethically harvested, sun-dried fruits and stone-ground into a fine, pure powder, this formulation honors the wisdom of time-honored practices.<br />Haritaki is traditionally used in Ayurveda as part of daily rituals, often combined with other natural ingredients. Its gentle nature makes it suitable for regular use within a balanced lifestyle.<br />This 100gm pack offers a convenient, unadulterated form of Haritaki — free from additives, fillers, or artificial preservatives. Ideal for those seeking to incorporate traditional botanic
+    ... [1613 chars total]
+
+
+[19] New Moringa Powder 100gm – Highly Nutritious
+    Field: description
+
+  BEFORE:
+    <p>### <strong>New Moringa Powder – 100gm | Pure, Traditional Ayurvedic Herb</strong></p>
+    <p>Sourced from the revered <em>Moringa oleifera</em> plant, our <strong>New Moringa Powder</strong> is crafted using time-honored Ayurvedic principles. Gently dried and stone-ground to preserve its natural essence, this fine, vibrant green powder is a cherished ingredient in traditional wellness rituals.</p>
+    <p>Rich in naturally occurring phytonutrients and plant-based minerals, Moringa has long been valued in Ayurvedic practices for its grounding and nourishing qualities. Its gentle nature makes it a preferred addition to daily routines for those seeking to support balance and vitality through wholesome, plant-based nourishment.</p>
+    <p>#### <strong>How to Use (Traditional Guidance):</strong><br />
+    T
+    ... [1800 chars total]
+
+  AFTER:
+    <p>### <strong>New Moringa Powder – 100gm | Pure, Traditional Ayurvedic Herb</strong></p>
+    <p>Sourced from the revered <em>Moringa oleifera</em> plant, our <strong>New Moringa Powder</strong> is crafted using time-honored Ayurvedic principles. Gently dried and stone-ground to preserve its natural essence, this fine, vibrant green powder is a cherished ingredient in traditional wellness rituals.</p>
+    <p>Rich in naturally occurring phytonutrients and plant-based minerals, Moringa has long been valued in Ayurvedic practices for its traditional use. Its gentle nature makes it a preferred addition to daily routines for those seeking to support balance and vitality through wholesome, plant-based nourishment.</p>
+    <p>#### <strong>How to Use (Traditional Guidance):</strong><br />Take 1–2 teaspoons da
+    ... [1719 chars total]
+
+
+[20] Jamun Seed Powder 100gm - Enhance Liver Function Naturally
+    Field: description
+
+  BEFORE:
+    <p>Jamun seed powder is a traditional herb that is said to be useful for healthy blood sugar control due to its astringency. seeds Powder support liver function and also have antioxidant properties. <a href="https://www.falconherbs.com/">Jamun Seed</a> help promote the work of the digestive system. Jamun has been shown to be beneficial in promoting pancreatic function. Jamun has fewer calories and is perfect for a healthy diet.</p>
+    <p>Because of its astringent properties,<a href="https://www.amazon.in/Zaarah-Herbals-BlackBerry-Supplement-preservatives/dp/B0B23S8D2Z?ref_=ast_sto_dp"> seed</a> Powder is a traditional plant thought to aid in good blood sugar management.  seeds Powder have antioxidant qualities and promote liver function. They aid in the proper functioning of the digestive sys
+    ... [1310 chars total]
+
+  AFTER:
+    <p>Jamun seed powder is a traditional herb known for its astringent properties. This powder may support the body's natural processes, including those related to digestion and overall well-being. Jamun has been a part of traditional practices for its potential to promote general health. With its potential antioxidant properties, Jamun seed powder is considered a valuable addition to a balanced diet.</p>
+    <p>The astringent properties of Jamun seed powder make it a popular choice among those seeking to support their overall health. This powder is thought to aid in the body's natural functions, including digestion and liver support. Jamun is also believed to have antioxidant qualities, which may contribute to its traditional use.</p>
+    <p>Jamun Seed Powder is available in a 100gm package, making 
+    ... [1136 chars total]
+
+
+[21] Licorice Powder 100gm - Promotes Gastric Health
+    Field: description
+
+  BEFORE:
+    <p>Licorice Powder is an ayurvedic medicine that relieves cough and throat pain. It is also excellent for eliminating tanning and pigmentation. It also helps to increase immunity. It possesses anti-oxidant and anti-inflammatory characteristics that aid to improve skin hydration and nourish the skin.</p>
+    <p>Also known as Yashtimadhu, licorice is known to aid digestion. There are several ancient <a href="https://www.falconherbs.com">Ayurveda texts</a> that licorice can help the adrenal glands and other systems of your body. The element glycyrrhizin acid that is found in licorice helps it do the same. The 100% Licorice Powder from<a href="https://www.zaarahherbals.com"> Zaarah Herbals</a> has carminative properties that can help make your digestive process much healthier. Its hypoglycemic pro
+    ... [2539 chars total]
+
+  AFTER:
+    <p>Licorice Powder, also known as Yashtimadhu, is a traditional Ayurvedic herb. The 100% Licorice Powder is rich in glycyrrhizin acid and has carminative properties. This natural powder can be a valuable addition to one's daily routine. The recommended dosage is 3 gms of powder one or two times every day.</p>
+    <p>To use, take 2 – 5 gm or one teaspoon of powder twice a day, or as directed by the physician. Licorice Powder is a popular choice among those who appreciate the traditional wisdom of Ayurveda.</p>
+    <p>---<br />Ayurvedic herbs, Licorice Powder, Yashtimadhu, carminative properties, glycyrrhizin acid, traditional Ayurvedic herb, natural powder, digestive health, Ayurvedic routine.</p>
+
+
+[22] Pippali Powder 100gm–For Respiratory System
+    Field: description
+
+  BEFORE:
+    <p><strong>Pippali Powder – 100g | Traditional Ayurvedic Herb for Respiratory Support</strong></p>
+    <p>Authentic Pippali Powder, sourced with care and traditionally processed, is a revered herb in Ayurvedic practice. Known for its warming, aromatic qualities, this fine powder is often used as part of daily wellness rituals to support natural respiratory comfort and internal balance.</p>
+    <p>Derived from the dried fruit of <em>Piper longum</em>, Pippali has been valued for centuries in classical Ayurvedic texts for its unique properties. Many individuals incorporate it into warm water, honey, or herbal preparations as part of a mindful daily routine.</p>
+    <p>For those familiar with Ayurvedic traditions, Pippali is often paired with practices such as Anulom Vilom or gentle pranayama to support 
+    ... [1480 chars total]
+
+  AFTER:
+    <p>Pippali Powder, a traditional Ayurvedic herb, is sourced with care and processed using time-honored methods. This fine powder is known for its warming, aromatic qualities and is often used as part of daily wellness rituals. Derived from the dried fruit of Piper longum, Pippali has been valued for centuries in classical Ayurvedic texts for its unique properties. Many individuals incorporate it into warm water, honey, or herbal preparations as part of a mindful daily routine. Pippali is often paired with practices such as Anulom Vilom or gentle pranayama to support mindful well-being. Note: If you are pregnant, lactating, or under medical care, we recommend consulting with a qualified healthcare provider before incorporating this herb into your routine. Packaged in a resealable, eco-frien
+    ... [1215 chars total]
+
+
+[23] Punarnava Powder 100gm-For Positive Energy
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Punarnava Powder – 100g | A Time-Honored Ayurvedic Herb for Daily Rituals</strong></p>
+    <p>Punarnava (Boerhavia diffusa) is an herb deeply rooted in Ayurvedic tradition, cherished for its naturally bitter, cooling, and astringent character. For centuries, its roots have been gently dried and prepared as part of holistic wellness customs across India, often integrated into daily routines for their grounding presence.</p>
+    <p>Falcon Herbs’ Punarnava Powder is made from hand-harvested, sun-dried roots, stone-ground using traditional methods to honor the herb’s natural essence. No additives. No fillers. No artificial preservatives. Just 100% pure Punarnava, sourced ethically from organic farms in India and batch-tested for authenticity.</p>
+    <p>In classical Ayurvedic practice, Puna
+    ... [2184 chars total]
+
+  AFTER:
+    <p>### <strong>Punarnava Powder – 100g | A Traditional Ayurvedic Herb</strong></p>
+    <p>Punarnava (Boerhavia diffusa) is a herb with a long history in Ayurvedic tradition, known for its naturally bitter, cooling, and astringent properties. The roots of the Punarnava plant have been used in traditional practices for centuries, often as part of daily customs.</p>
+    <p>Falcon Herbs’ Punarnava Powder is made from hand-harvested, sun-dried roots, stone-ground using traditional methods. The powder contains no additives, fillers, or artificial preservatives, ensuring it remains true to its natural form. Sourced ethically from organic farms in India, each batch is tested for authenticity.</p>
+    <p>In traditional Ayurvedic contexts, Punarnava is often used in conjunction with other botanicals. Many choos
+    ... [1917 chars total]
+
+
+[24] Shatavari Powder 100gm–To Hormonal Balance
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Shatavari Powder – 100g | Traditional Ayurvedic Herb for Women’s Wellness</strong></p>
+    <p>Rooted in ancient Ayurvedic wisdom, <strong>Shatavari (Asparagus racemosus)</strong> is a revered herb traditionally valued for its gentle, nourishing nature. Sourced from organic farms and carefully stone-ground into fine powder, this pure Shatavari supports the body’s natural rhythms through the lens of Ayurvedic tradition.</p>
+    <p>A cornerstone in classical texts for its cooling and grounding qualities, Shatavari has long been used as part of daily wellness rituals — particularly in formulations designed to support vitality, resilience, and inner balance.</p>
+    <p><strong>Why Choose Zaarah Herbals Shatavari Powder?</strong><br />
+    - Sustainably harvested, 100% organic, and free from addi
+    ... [2100 chars total]
+
+  AFTER:
+    <p>### <strong>Shatavari Powder 100gm</strong><br />Rooted in ancient Ayurvedic wisdom, Shatavari (Asparagus racemosus) is a revered herb traditionally valued for its gentle, nourishing nature. Sourced from organic farms and carefully stone-ground into fine powder, this pure Shatavari is made available in its traditional form.<br />A cornerstone in classical texts for its cooling and grounding qualities, Shatavari has long been used as part of daily wellness rituals — particularly in formulations designed to support overall well-being.<br /><strong>Why Choose Our Shatavari Powder?</strong><br />- Sustainably harvested, 100% organic, and free from additives, fillers, or preservatives<br />- Traditionally prepared using time-honored methods to preserve natural integrity<br />- Ideal for incl
+    ... [1999 chars total]
+
+
+[25] Sitopaladi Powder 100gm - Promote Healthy Respiratory Function
+    Field: description
+
+  BEFORE:
+    <p>Sitopaladi Powder is a herbal powder containing cardamom, cinnamon, bamboo, long pepper, and sugar candy. It is anti-inflammatory and antioxidant in nature. The best <a href="https://www.falconherbs.com/">fitness supplement</a> is<a href="https://www.amazon.in/Zaarah-Herbals-Sitopaladi-Respiratory-congestion/dp/B0B23GQNFB?ref_=ast_sto_dp"> Sitopaladi churan.</a> It is a natural product composed of seven mountain herbs that work together to provide a renewing, energising, cleansing, and stimulating impact. Cleanse your body and revitalise your life by taking one or two teaspoons of this potent herbal powder daily, or as advised by your doctor.</p>
+    <h3>Benefits of Sitopaladi Powder:</h3>
+    <ul>
+    <li>It provides relief from flu, cold and chest congestion</li>
+    <li>It can help enhance respirato
+    ... [935 chars total]
+
+  AFTER:
+    <p>Sitopaladi Powder is a traditional herbal blend featuring cardamom, cinnamon, bamboo, long pepper, and sugar candy. This timeless formulation combines seven mountain herbs, carefully selected for their synergistic properties. To experience its full potential, mix one or two teaspoons of Sitopaladi Powder with a suitable medium, as recommended by a healthcare professional.</p>
+    <p>--- <br />Ayurvedic herbs, herbal powder, respiratory health, traditional herbal blend, natural wellness, cardamom, cinnamon, bamboo, long pepper, sugar candy</p>
+
+
+[26] Tulsi Powder 100gm – Support Immune System
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Tulsi Powder – 100g | Pure, Sun-Dried Holy Basil for Daily Rituals</strong></p>
+    <p>Experience the timeless essence of Tulsi — also known as Holy Basil — a revered herb in Ayurvedic tradition for centuries. Our 100g pack of pure Tulsi Powder is carefully hand-harvested, gently sun-dried, and stone-ground to preserve its natural aroma and subtle potency. Each batch is meticulously cleaned, sorted, and inspected by skilled artisans to ensure purity, consistency, and integrity.</p>
+    <p>Tulsi has long been valued in holistic wellness practices for its grounding qualities and gentle nature. Many find it a soothing addition to warm water, herbal infusions, or daily rituals — offering a moment of calm and connection to nature’s rhythm.</p>
+    <p>This unadulterated powder is free from ad
+    ... [1911 chars total]
+
+  AFTER:
+    <p>### <strong>Tulsi Powder – 100g | Pure, Sun-Dried Holy Basil for Daily Rituals</strong></p>
+    <p>Experience the timeless essence of Tulsi — also known as Holy Basil — a revered herb in Ayurvedic tradition for centuries. Our 100g pack of pure Tulsi Powder is carefully hand-harvested, gently sun-dried, and stone-ground to preserve its natural aroma and subtle potency. Each batch is meticulously cleaned, sorted, and inspected by skilled artisans to ensure purity, consistency, and integrity.</p>
+    <p>Tulsi has long been valued in holistic wellness practices for its grounding qualities and gentle nature. Many find it a soothing addition to warm water, herbal infusions, or daily rituals — offering a moment of calm and connection to nature’s rhythm.</p>
+    <p>This unadulterated powder is free from ad
+    ... [2002 chars total]
+
+
+[27] Vasaka Powder 100gm–For productive cough
+    Field: description
+
+  BEFORE:
+    <p>### <strong>Vasaka Powder – 100g | Traditional Ayurvedic Herb for Respiratory Support</strong></p>
+    <p>Rooted in the ancient wisdom of Ayurveda, <strong>Vasaka Powder</strong> is prepared from the dried leaves of <em>Adhatoda vasica</em>, a herb long revered in traditional Indian systems for its association with respiratory well-being. Known in Sanskrit as <em>Vasaka</em> or <em>Adulsa</em>, this botanical has been gently incorporated into daily rituals and herbal preparations across generations.</p>
+    <p>In Ayurvedic tradition, Vasaka is understood to have a balancing influence on <em>Kapha</em> and <em>Pitta</em> energies, often associated with natural moisture and warmth in the body. Its subtle properties are traditionally valued for their role in maintaining internal harmony during sea
+    ... [2674 chars total]
+
+  AFTER:
+    <p>### <strong>Vasaka Powder – 100g | Traditional Ayurvedic Herb</strong></p>
+    <p>Rooted in the ancient wisdom of Ayurveda, <strong>Vasaka Powder</strong> is prepared from the dried leaves of <em>Adhatoda vasica</em>, a herb long revered in traditional Indian systems. Known in Sanskrit as <em>Vasaka</em> or <em>Adulsa</em>, this botanical has been gently incorporated into daily rituals and herbal preparations across generations.</p>
+    <p>In Ayurvedic tradition, Vasaka is understood to have a balancing influence on <em>Kapha</em> and <em>Pitta</em> energies. Its subtle properties are traditionally valued for their role in maintaining internal harmony.</p>
+    <p>This finely ground powder offers a pure, unadulterated form of the herb — ideal for those who prefer traditional methods of herbal use. I
+    ... [2058 chars total]
+
+
+──────────────────────────────────────────────────────────────────────
+  BLOG POST TITLES (5 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Flax Seeds in Ayurveda: A Traditional Ingredient for Everyday Use
+    Field: title
+
+  BEFORE:
+    Flax Seeds in Ayurveda: A Traditional Ingredient for Everyday Use
+
+  AFTER:
+    <p>Exploring Flax Seeds in Ayurveda: Traditional Uses and Benefits</p>
+
+
+[2] Terminalia Arjuna: Botanical Overview and Historical Use in Ayurvedic Practices
+    Field: title
+
+  BEFORE:
+    Terminalia Arjuna: Botanical Overview and Historical Use in Ayurvedic Practices
+
+  AFTER:
+    <p>Exploring Terminalia Arjuna: Traditional Uses and Significance in Ayurvedic Herbalism</p>
+
+
+[3] Top Uses and Traditional Applications of Calendula Flowers in Herbal Practices
+    Field: title
+
+  BEFORE:
+    Top Uses and Traditional Applications of Calendula Flowers in Herbal Practices
+
+  AFTER:
+    <p>Exploring Calendula Flowers in Herbal Traditions: Uses and Applications</p>
+
+
+[4] Long Pepper: An Ayurvedic Herb Traditionally Used in Digestive Wellness Practices
+    Field: title
+
+  BEFORE:
+    Long Pepper: An Ayurvedic Herb Traditionally Used in Digestive Wellness Practices
+
+  AFTER:
+    <p>Exploring Long Pepper: Its Traditional Role in Ayurvedic Digestive Health Practices</p>
+
+
+[5] 5 Nutritional Insights into Drumstick and Moringa Seeds: An Ayurvedic Tradition
+    Field: title
+
+  BEFORE:
+    5 Nutritional Insights into Drumstick and Moringa Seeds: An Ayurvedic Tradition
+
+  AFTER:
+    <p>Exploring the Nutritional Profile and Traditional Uses of Drumstick and Moringa Seeds in Ayurveda</p>
+
+
+======================================================================
+  Falcon Agency — Automated Compliance Fix
+  All changes recorded in: data/reports/changelog_2026-03-01.json
+======================================================================

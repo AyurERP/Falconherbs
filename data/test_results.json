@@ -1,22 +1,24 @@
 [
   {
     "input": "status",
-    "msg_id": "test_1772366287798",
-    "response_time": 10.751407146453857,
-    "messages_sent": 1,
+    "msg_id": "test_1772377664101",
+    "response_time": 11.27168345451355,
+    "messages_sent": 2,
     "messages": [
-      "Bhai, website ka haal:  \n\n- 87 products \u2014 sabke description & title galat (0 clean)  \n- 100 rewrites pending, bas 1 apply hua  \n- Backup 6 din purana \u2014 warning  \n- Aaj \u20b90, month \u20b90  \n- Security theek hai, par kuch nahi chal raha  \n\nKuch bhi nahi ho raha kyunki content nahi live hua.  \nMain 10 products ka rewrite abhi apply kar dun?  \nBolo \u2014 \u201capply batch\u201d \u2014 seedha kar deta hoon."
+      "Bhai, website ka haal kharab hai \u2014 lekin sahi raste pe hai.\n\n- 87 products, lekin sabke description aur title pe violation hai. 0 clean.\n- 19 product descriptions abhi pending rewrite ke liye. 82 apply ho chuke.\n- Backup 6+ days purana hai \u2014 warning hai, abhi backup chalao ya toh crash ho jayega.\n- Aaj \u20b90 sales, month bhi \u20b90. Kuch bhi nahi chal raha.\n- Security scan last 2026 mein hua? \ud83e\udd28 \u2014 ye date galat hai, scan actually hua ya nahi? Check karun?\n- Content queue khali hai. Media aur developer idle hain \u2014 kaam hai, kaun karega?\n\n**Action?**  \nAaj hi backup chalwa du? Aur 19 pending product rewrites ko priority du?  \nBata, main seedha shuru kar deta hoon.",
+      "Bhai, website ka haal kharab hai \u2014 lekin sahi raste pe hai.\n\n- 87 products, lekin sabke description aur title pe violation hai. 0 clean.\n- 19 product descriptions abhi pending rewrite ke liye. 82 apply ho chuke.\n- Backup 6+ days purana hai \u2014 warning hai, abhi backup chalao ya toh crash ho jayega.\n- Aaj \u20b90 sales, month bhi \u20b90. Kuch bhi nahi chal raha.\n- Security scan last 2026 mein hua? \ud83e\udd28 \u2014 ye date galat hai, scan actually hua ya nahi? Check karun?\n- Content queue khali hai. Media aur developer idle hain \u2014 kaam hai, kaun karega?\n\n**Action?**  \nAaj hi backup chalwa du? Aur 19 pending product rewrites ko priority du?  \nBata, main seedha shuru kar deta hoon."
     ],
     "status": "PASSED",
     "test": "Test 1: Status Check"
   },
   {
     "input": "fix violations batch 3",
-    "msg_id": "test_1772366298551",
-    "response_time": 42.06521391868591,
-    "messages_sent": 2,
+    "msg_id": "test_1772377675375",
+    "response_time": 27.77869701385498,
+    "messages_sent": 3,
     "messages": [
       "Bhai, thoda time lag raha hai... main analyze kar raha hoon. \u23f3",
+      "\u2705 Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see.",
       "\u2705 Batch Complete: Scanned 4 products.  \nIdentified 3 for rewrites.  \nType 'rewrite status' to see."
     ],
     "status": "PASSED",
@@ -24,34 +26,44 @@
   },
   {
     "input": "rewrite status",
-    "msg_id": "test_1772366340618",
-    "response_time": 7.524720668792725,
-    "messages_sent": 1,
+    "msg_id": "test_1772377703156",
+    "response_time": 14.534094333648682,
+    "messages_sent": 3,
     "messages": [
-      "\ud83d\udccb Rewrites: 3 pending | 1 approved | 1 rejected  \n\nPending Products: 7807, 7803, 7800  \n\nType 'show rewrite <id>' or 'approve product <id>'."
+      "Bhai, thoda time lag raha hai... main analyze kar raha hoon. \u23f3",
+      "\ud83d\udccb Rewrites: 4 pending | 3 approved | 1 rejected\n\nPending Products: 7739, 7807, 7803, 7800\n\nType 'show rewrite <id>' or 'approve product <id>'.",
+      "\ud83d\udccb Rewrites: 4 pending | 3 approved | 1 rejected\n\nPending Products: 7739, 7807, 7803, 7800\n\nType 'show rewrite <id>' or 'approve product <id>'."
     ],
     "status": "PASSED",
     "test": "Test 7: Rewrite Status"
   },
   {
     "input": "approve all",
-    "msg_id": "test_1772366367550",
-    "response_time": 12.878169059753418,
-    "messages_sent": 1,
+    "msg_id": "test_1772377749706",
+    "response_time": 4.299673318862915,
+    "messages_sent": 4,
     "messages": [
-      "Hit a snag on my end. Logged and investigating. Please try again in a moment."
+      "\ud83d\ude80 4 products approve ho rahe hain (Batches of 10). Main status update bhejta rahunga.",
+      "\ud83d\ude80 4 products approve ho rahe hain (Batches of 10). Main status update bhejta rahunga.",
+      "\ud83d\ude80 4 rewrites approve ho rahe hain... Batches of 10 mein karunga. Progress updates aate rahenge.",
+      "\ud83d\ude80 4 rewrites approve ho rahe hain... Batches of 10 mein karunga. Progress updates aate rahenge."
     ],
     "status": "PASSED",
     "test": "Test 8: Context Memory"
   },
   {
-    "input": "apply this one",
-    "msg_id": "test_1772366395981",
-    "response_time": 5.585544586181641,
-    "messages_sent": 2,
+    "input": "Apply this one",
+    "msg_id": "test_1772377754009",
+    "response_time": 13.528682231903076,
+    "messages_sent": 7,
     "messages": [
-      "\u26a0\ufe0f *Falcon Agency Alert*\n\nIntent classifier crashed. Error: name 'user_id' is not defined\n\nFalling back to basic classifier. Check logs if this repeats.",
-      "Hit a snag on my end. Logged and investigating. Please try again in a moment."
+      "\ud83d\udcca Progress: 4/4 done. (0 approved, 4 failed)",
+      "\ud83d\udcca Progress: 4/4 done. (0 approved, 4 failed)",
+      "\u2705 Final Summary:\nTotal: 4\nApproved: 0\nFailed: 4\n\n'rewrite status' se verify kar lo.",
+      "\u2705 Final Summary:\nTotal: 4\nApproved: 0\nFailed: 4\n\n'rewrite status' se verify kar lo.",
+      "Bhai, thoda time lag raha hai... main analyze kar raha hoon. \u23f3",
+      "Bhai, yeh \"Apply this one\" ka kya matlab hai? Kya apply karna hai \u2014 product description? SEO? Image? Backup?  \n\nMujhe thoda context chahiye, warna main kya karun?  \n\nBatao, kya target hai \u2014 main seedha kaam kar deta hoon.",
+      "Bhai, yeh \"Apply this one\" ka kya matlab hai? Kya apply karna hai \u2014 product description? SEO? Image? Backup?  \n\nMujhe thoda context chahiye, warna main kya karun?  \n\nBatao, kya target hai \u2014 main seedha kaam kar deta hoon."
     ],
     "status": "PASSED",
     "test": "Test 9: Quote Reply"

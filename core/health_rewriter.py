@@ -56,14 +56,7 @@ class HealthClaimsRewriter:
             
         import re
         
-        # 1. Extract and Strip SEO Keywords section (usually at the end)
-        # Patterns like "**SEO Keywords Naturally Integrated:** ..."
-        keywords_pattern = r"(?i)(?:\*\*|###|#)?\s*SEO Keywords\s*(?:Naturally Integrated)?\s*[:：]?(.*?)(?:\n\n|\n---|\n\*\*\*|$)"
-        # We don't return them here to keep signature simple, 
-        # but we strip them from the text.
-        text = re.sub(r"(?i)(?:\n)?(?:\*\*|###|#)?\s*SEO Keywords.*?(?:\n\n|\n---|\n\*\*\*|$)", "", text, flags=re.DOTALL)
-
-        # 2. Strip common conversational prefixes/suffixes
+        # 1. Strip common conversational prefixes/suffixes from the top
         lines = text.split("\n")
         cleaned_lines = []
         skip_header = True
@@ -93,36 +86,39 @@ class HealthClaimsRewriter:
 
         text = "\n".join(cleaned_lines).strip()
         
-        # 3. Strip trailing AI commentary and justification blocks
+        # 2. Strip trailing SEO Keywords, separators, and AI commentary
         lines = text.split('\n')
+        chop_idx = -1
         
-        # We process from the bottom up to chop off the tail
-        if len(lines) > 3:
-            commentary_keywords = [
-                "this version", "this rewrite", "this description", 
-                "let me know", "hope this", "it invites", "matched packaging",
-                "why this works", "100% compliant", "ftc/fda-aligned",
-                "amazon product listings", "a+ content version",
-                "seo-rich keywords", "perfect for amazon"
-            ]
+        commentary_keywords = [
+            "this version", "this rewrite", "this description", 
+            "let me know", "hope this", "it invites", "matched packaging",
+            "why this works", "100% compliant", "ftc/fda-aligned",
+            "amazon product listings", "a+ content version",
+            "seo-rich keywords", "perfect for amazon",
+            "seo keywords", "target keywords"
+        ]
+        
+        # Scan the bottom 20 lines for indicators of a metadata/commentary tail
+        for i in range(len(lines)-1, max(-1, len(lines)-20), -1):
+            l_line = lines[i].lower()
             
-            for i in range(len(lines)-1, max(0, len(lines)-15), -1):
-                l_line = lines[i].lower()
-                if any(k in l_line for k in commentary_keywords):
-                    # We found a commentary line, chop everything from here down
-                    # But if the previous line is "---" or "***", chop that too
-                    chop_idx = i
-                    if i > 0 and re.match(r'^\s*[-*]{3,}\s*$', lines[i-1]):
-                        chop_idx = i - 1
-                    # Or if it's "### ✅ Why This Works", we chop at that heading
-                    lines = lines[:chop_idx]
-                    break
-                    
-        text = "\n".join(lines).strip()
+            # Found a separator or SEO header
+            if re.match(r'^\s*[-*]{3,}\s*$', lines[i]) or re.match(r'^\s*(?:\*\*|###|#)?\s*seo keywords', l_line):
+                chop_idx = i
+                
+            # Found commentary text
+            elif any(k in l_line for k in commentary_keywords):
+                chop_idx = i
+                # If the line before this one is a separator, chop from there instead
+                if i > 0 and re.match(r'^\s*[-*]{3,}\s*$', lines[i-1]):
+                    chop_idx = i - 1
 
-        # 4. Strip multiple trailing separators if they survived
-        while text.endswith("---") or text.endswith("***"):
-            text = re.sub(r"\s*[*-]{3,}$", "", text).strip()
+        if chop_idx != -1:
+            tail_len = sum(len(l) for l in lines[chop_idx+1:])
+            if tail_len < 1000:
+                lines = lines[:chop_idx]
+                text = "\n".join(lines).strip()
             
         # 5. Convert Markdown to HTML
         text = self._md_to_html(text)

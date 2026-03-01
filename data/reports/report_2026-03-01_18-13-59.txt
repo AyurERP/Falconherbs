@@ -1,0 +1,32 @@
+======================================================================
+  FALCON AGENCY — PRODUCT REWRITE REPORT
+  Generated: 01 Mar 2026 at 06:13 PM
+  Total Changes: 1
+======================================================================
+
+──────────────────────────────────────────────────────────────────────
+  PRODUCT DESCRIPTIONS (1 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] Naagkesar - 100gm | Improve digestion, appetite, bad breath and excessive sweating
+    Field: description
+
+  BEFORE:
+    <div id="productDescription_feature_div" class="celwidget" data-feature-name="productDescription" data-csa-c-type="widget" data-csa-c-content-id="productDescription" data-csa-c-slot-id="productDescription_feature_div" data-csa-c-asin="" data-csa-c-is-in-initial-active-row="false" data-csa-c-id="lx42j-gdwe6g-ix7nr9-nanvq1" data-cel-widget="productDescription_feature_div">
+    <div id="productDescription_feature_div" class="a-row feature" data-feature-name="productDescription" data-template-name="productDescription" data-cel-widget="productDescription_feature_div">
+    <div id="productDescription" class="a-section a-spacing-small">
+    <p><strong>Falcon Herbs Naagkesar (Mesua ferrea) – 100g Pure Powder</strong></p>
+    <p>Authentically sourced from the fragrant flowers of the Mesua ferrea tree, our Naagkesa
+    ... [3504 chars total]
+
+  AFTER:
+    <p><strong>Falcon Herbs Naagkesar (Mesua ferrea) – 100g Pure Powder</strong></p>
+    <p>Authentically sourced from the fragrant flowers of the Mesua ferrea tree, our Naagkesar powder is traditionally valued in Ayurvedic practices for its distinctive aroma and natural qualities. Hand-harvested and sun-dried to preserve its subtle floral essence, this fine powder is ideal for those who appreciate the timeless wisdom of herbal traditions.</p>
+    <p>Naagkesar has long been used in classical formulations for its cooling nature and aromatic profile. Its delicate fragrance is often appreciated in personal care rituals and herbal blends, offering a soothing sensory experience. In traditional preparations, it is sometimes blended with other herbs to support holistic well-being as part of daily routines.</
+    ... [2353 chars total]
+
+
+======================================================================
+  Falcon Agency — Automated Compliance Fix
+  All changes recorded in: data/reports/changelog_2026-03-01.json
+======================================================================

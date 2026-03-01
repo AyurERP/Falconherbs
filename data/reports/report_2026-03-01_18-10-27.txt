@@ -1,0 +1,34 @@
+======================================================================
+  FALCON AGENCY — PRODUCT REWRITE REPORT
+  Generated: 01 Mar 2026 at 06:10 PM
+  Total Changes: 2
+======================================================================
+
+──────────────────────────────────────────────────────────────────────
+  BLOG POST TITLES (2 changes)
+──────────────────────────────────────────────────────────────────────
+
+[1] 5 Traditional Ayurvedic Ways to Use Mulethi Sticks (Liquorice Sticks)
+    Field: title
+
+  BEFORE:
+    5 Traditional Ayurvedic Ways to Use Mulethi Sticks (Liquorice Sticks)
+
+  AFTER:
+    <p>Exploring Traditional Ayurvedic Uses of Mulethi Sticks (Liquorice Sticks) for Overall Wellbeing</p>
+
+
+[2] Ayurvedic Herbal Tea Powder for Everyday Rituals and Flavor
+    Field: title
+
+  BEFORE:
+    Ayurvedic Herbal Tea Powder for Everyday Rituals and Flavor
+
+  AFTER:
+    <p>Exploring the Role of Ayurvedic Herbal Tea Powder in Daily Wellness Rituals</p>
+
+
+======================================================================
+  Falcon Agency — Automated Compliance Fix
+  All changes recorded in: data/reports/changelog_2026-03-01.json
+======================================================================

@@ -116,8 +116,14 @@ core/whatsapp.py — send_message() to owner
 
 ---
 
-## WHAT WAS LAST WORKED ON (Feb 28, 2026)
+## WHAT WAS LAST WORKED ON
 
+### March 1, 2026
+1. **Product & blog compliance rewrites** — 32 changes: 27 product descriptions + 5 blog titles. All in `data/reports/changelog_2026-03-01.json`. Pattern: remove health claims, use "traditionally used", "may support".
+2. **Staging flow** — `data/staging/rewrites/index.json`: approved [7803, 7807, 7800], pending []. New rewrites: products 7758–7807, blogs 7853–8148.
+3. **Full summary** — `docs/CONTINUATION_SUMMARY_2026-03-01.md` for IDE handoff.
+
+### Feb 28, 2026
 1. **Health flow fix** — `core/commander_intents.py` handle_push_all_fixes: first call = generate rewrites only (no publish), show preview, ask permission; second call (on "haan karo") = apply.
 2. **_is_confirmation fix** — Excluded "fix karo", "sab fix" — was treating "sab fix karo" as confirmation. Now only explicit yes phrases.
 3. **run_generate_all_fixes** — New method in `core/integration_bridge.py`; run_push_all(apply_immediately=False) for generate-only.
@@ -159,6 +165,7 @@ core/whatsapp.py — send_message() to owner
 
 ## REFERENCE DOCS
 
+- `docs/CONTINUATION_SUMMARY_2026-03-01.md` — Full summary for IDE handoff (March 1)
 - `docs/FULL_CONTEXT_REPORT_OPINION.md` — Full gap assessment
 - `docs/AGENCY_VISION_VS_CURRENT.md` — Vision vs current state
 - `docs/DIRECTOR_PROMPTS_GUIDE.md` — User commands for WhatsApp
