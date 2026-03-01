@@ -174,7 +174,7 @@ class FalconCommander:
             self._bridge = IntegrationBridge()
             self._extended_classifier = ExtendedIntentClassifier(self._bridge)
             self._extended_handler = IntentResponseHandler(
-                self._bridge, director=getattr(self, "_director", None)
+                self._bridge, director=getattr(self, "_director", None), memory=memory
             )
             log.info("Extended intents loaded (bridge OK)")
         except Exception as e:

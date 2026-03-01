@@ -1091,7 +1091,7 @@ class ExtendedIntentClassifier:
             "description": "Approve product rewrite"
         }
         self.intents["approve_all_rewrites"] = {
-            "patterns": [r"^approve\s+all\s+rewrites$"],
+            "patterns": [r"^approve\s+all(?:\s+rewrites)?$", r"^apply\s+all(?:\s+rewrites)?$"],
             "handler": "handle_approve_all_rewrites",
             "description": "Approve all product rewrites"
         }
@@ -1109,7 +1109,7 @@ class ExtendedIntentClassifier:
             "description": "Show rewrite staging status"
         }
         self.intents["fix_violations"] = {
-            "patterns": [r"^fix\s+violations$", r"^sab\s+fix\s+karo$", r"\bsab\s+fix\b", r"\bfix\s+karo\b"],
+            "patterns": [r"^fix\s+violations$", r"^sab\s+fix\s+karo$", r"\bsab\s+fix\b", r"\bfix\s+karo\b", r"^apply\s+batch$"],
             "handler": "handle_fix_violations",
             "description": "Fix health violations with clarification flow"
         }
@@ -1319,9 +1319,10 @@ class IntentResponseHandler:
     Each handler returns a WhatsApp-ready response.
     """
     
-    def __init__(self, integration_bridge, director=None):
+    def __init__(self, integration_bridge, director=None, memory=None):
         self.bridge = integration_bridge
         self._director = director
+        self.memory = memory
     
     def handle(self, intent_result):
         """Route to appropriate handler"""
@@ -3592,9 +3593,19 @@ Keep it punchy, under 150 words. No health claims."""
 
     def handle_fix_violations(self, intent):
         """Handle 'sab fix karo' by starting a batch scan."""
+        sender = intent.get("sender", "owner")
         msg = intent.get("message_text", "").lower()
-        if "sab fix karo" in msg or "fix all" in msg or "violations fix karo" in msg:
-            # Instead of asking, let's just start a standard batch of 5
+        
+        # Check context if the command is very vague
+        if self.memory and ("sab fix" in msg or "fix karo" in msg):
+            history = self.memory.get_recent_messages(sender, limit=5)
+            # If recent messages mention 'health', 'violations', or 'rewarding', assume health
+            context_text = " ".join([m.get("content", "").lower() for m in history])
+            if any(k in context_text for k in ["health", "violation", "describe", "product", "rewrite"]):
+                return self.handle_fix_violations_batch({"extracted_data": {"batch_size": 10}})
+        
+        # Default or if context matched health
+        if "sab fix karo" in msg or "fix all" in msg or "violations fix karo" in msg or "apply batch" in msg:
             return self.handle_fix_violations_batch({"extracted_data": {"batch_size": 5}})
         return self.handle_fix_violations_batch(intent)
         
