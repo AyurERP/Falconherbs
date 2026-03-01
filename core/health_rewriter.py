@@ -17,6 +17,8 @@ class HealthClaimsRewriter:
 
     def __init__(self, bridge):
         self.bridge = bridge
+        from core.rewrite_staging import rewrite_staging
+        self.staging = rewrite_staging
         self.rewrites_dir = Path("data/content/product_rewrites")
         self.rewrites_dir.mkdir(parents=True, exist_ok=True)
 
@@ -323,27 +325,15 @@ class HealthClaimsRewriter:
                         except Exception:
                             pass
 
-                # Save original + rewrite
-                rewrite_data = {
-                    "product_id": pid,
-                    "name": name,
-                    "original_description": desc,
-                    "original_short_description": short_desc,
-                    "rewritten_name": new_name if new_name != name else None,
-                    "rewritten_description": new_desc,
-                    "safety_issues": check.get(
-                        "violations", []
-                    ),
-                    "title_issues": product.get("title_safety_check", {}).get("violations", []),
-                    "status": "pending_approval",
-                    "created_at": datetime.now().isoformat(),
-                    "applied_at": None,
-                }
-
-                out = self.rewrites_dir / f"{pid}.json"
-                with open(out, "w", encoding="utf-8") as f:
-                    json.dump(rewrite_data, f, indent=2,
-                              ensure_ascii=False)
+                # Stage the rewrite for approval
+                v_texts = [str(v.get("matched", v.get("issue", ""))) for v in (check.get("violations", []) + product.get("title_safety_check", {}).get("violations", []))]
+                self.staging.stage_rewrite(
+                    product_id=pid,
+                    product_name=name,
+                    old_description=desc,
+                    new_description=new_desc,
+                    violations_found=v_texts
+                )
                 count += 1
 
             return {"success": True, "rewrites": count}

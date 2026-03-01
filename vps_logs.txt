@@ -1,0 +1,150 @@
+Mar 01 10:06:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:06:17 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:06:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:06:17 | INFO     | Cycle #666 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:07:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:07:17 | INFO     | ♥  Heartbeat #667  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.04/$10.00  |  2026-03-01T10:07:17.862367+00:00
+Mar 01 10:07:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:07:17 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:07:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:07:17 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:07:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:07:17 | INFO     | Cycle #667 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:08:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:17 | INFO     | ♥  Heartbeat #668  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.04/$10.00  |  2026-03-01T10:08:17.945181+00:00
+Mar 01 10:08:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:17 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:08:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:17 | INFO     | Due tasks this cycle: 1
+Mar 01 10:08:17 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:17 | INFO     | Dispatching  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com
+Mar 01 10:08:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:28 | INFO     | Uptime OK  |  falconherbs.com  |  10135ms
+Mar 01 10:08:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:28 | INFO     | [SENTINEL] dispatch_sentinel → UP
+Mar 01 10:08:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:28 | INFO     | Dispatch complete  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com  |  status=up  |  10.14s
+Mar 01 10:08:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:08:28 | INFO     | Cycle #668 complete  |  scheduled=1  |  executed=1  |  ext=0  |  10.2s
+Mar 01 10:09:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:28 | INFO     | ♥  Heartbeat #669  |  site=idle  |  task=none  |  spend=$0.04/$10.00  |  2026-03-01T10:09:28.208277+00:00
+Mar 01 10:09:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:28 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:09:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:28 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:09:28 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:28 | INFO     | Cycle #669 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:09:30 instance-20260221-2034 systemd[1]: Stopping Falcon Agency...
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     | FALCON AGENCY DIRECTOR — SHUTTING DOWN
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     |   Reason : Main loop exited
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     |   Time   : 2026-03-01T10:09:30.229973+00:00
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     |   Cycles : 669
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     |   Spend  : day=$0.04  month=$0.04
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     | Stopping webhook server…
+Mar 01 10:09:30 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:30 | INFO     | Webhook server stopped
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | [WHATSAPP] whatsapp_send → SUCCESS
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | WhatsApp sent  |  chunk 1/1  |  121 chars
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | [DIRECTOR] director_shutdown → SUCCESS
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | Goodbye.
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 2026-03-01 10:09:31 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: morning_report — Send morning WhatsApp report
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]:   📱 WhatsApp sent for: morning_report
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: site_health_check — Quick site uptime + response check
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: order_check — Check for new orders
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]:   💾 Saved: data/woocommerce/orders.json
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: content_generation — Generate daily content drafts
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: 📝 Blog draft saved: data/content/drafts/blog_20260301_complete-guide-to-ashwagandha-benefits.json
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]:   📱 WhatsApp sent for: content_generation
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: ⏰ Running scheduled task: vps_health_check — VPS CPU/memory/disk monitoring
+Mar 01 10:09:31 instance-20260221-2034 python3[122437]: [FALCON] Signal SIGTERM received — initiating shutdown…
+Mar 01 10:09:31 instance-20260221-2034 systemd[1]: falcon.service: Deactivated successfully.
+Mar 01 10:09:31 instance-20260221-2034 systemd[1]: Stopped Falcon Agency.
+Mar 01 10:09:31 instance-20260221-2034 systemd[1]: falcon.service: Consumed 2min 10.267s CPU time.
+Mar 01 10:09:31 instance-20260221-2034 systemd[1]: Started Falcon Agency.
+Mar 01 10:09:33 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:32 | INFO     | DirectorBrain initialised (reply: qwen3-80b via NVIDIA | intent: llama-70b via NVIDIA)
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | =================================================================
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | FALCON AGENCY — Starting up
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | =================================================================
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] KeyVault — credentials loaded from .env
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] Settings — production=True
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] SafetyGuard — active
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | WhatsAppNotifier ready  |  phone_id=103572…  |  recipient=9199…2917
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ApprovalSystem created  |  chat_id=WhatsApp  |  timeout=900s
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] ApprovalSystem — WhatsApp connected
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | Sentinel initialised  |  scan_interval=30m  |  max_failed_logins=5  |  blocked_ip_ttl=24h
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] Sentinel — security watchdog ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] Goals — 28 goals loaded
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [OK] Profile — https://falconherbs.com loaded
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | =================================================================
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [FALCON] All systems nominal (7/7)
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | =================================================================
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [FALCON] Starting Director loop...
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | [FALCON] Press Ctrl+C to stop safely
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | =================================================================
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ KeyVault ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ AgencySettings ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ SafetyGuard ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | WhatsAppNotifier ready  |  phone_id=103572…  |  recipient=9199…2917
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ApprovalSystem created  |  chat_id=WhatsApp  |  timeout=900s
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ ApprovalSystem ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | Sentinel initialised  |  scan_interval=30m  |  max_failed_logins=5  |  blocked_ip_ttl=24h
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ Sentinel ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | WhatsAppNotifier ready  |  phone_id=103572…  |  recipient=9199…2917
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ WhatsAppNotifier ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | WhatsAppNotifier ready  |  phone_id=103572…  |  recipient=9199…2917
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ApprovalSystem created  |  chat_id=WhatsApp  |  timeout=900s
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | Extended intents loaded (bridge OK)
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | FalconCommander initialised
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ FalconCommander ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | FalconWebhook initialised  |  verify_token=set  |  allowed_sender=9199…
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   ✔ FalconWebhook ready
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | DeveloperAgent initialised  |  project_root=/home/ubuntu/falcon-agency
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | StrategistAgent initialised  |  reports_dir=/home/ubuntu/falcon-agency/data/reports
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | CRITICAL | MediaAgent: 'google-genai' package not installed — run: pip install google-genai
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | MediaAgent initialised  |  api=❌  |  queue=/home/ubuntu/falcon-agency/data/content_queue  |  spend=$0.0000
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | BackupAgent initialised  |  cpanel=❌  |  ftp=❌  |  db=NOT SET
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | Extended schedule loaded (bridge OK)
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | FALCON AGENCY DIRECTOR — Initialised
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Project root : /home/ubuntu/falcon-agency
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Data dir     : /home/ubuntu/falcon-agency/data
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Daily limit  : $10.00
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Monthly limit: $150.00
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Cycle        : 60s
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     |   Production   : True
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | 🦅  FALCON AGENCY DIRECTOR — STARTING MAIN LOOP
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | Webhook server started  |  http://0.0.0.0:8000/webhook
+Mar 01 10:09:34 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:34 | INFO     | WhatsApp webhook listening on port 8000
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | [WHATSAPP] whatsapp_send → SUCCESS
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | WhatsApp sent  |  chunk 1/1  |  134 chars
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | ♥  Heartbeat #1  |  site=idle  |  task=none  |  spend=$0.04/$10.00  |  2026-03-01T10:09:35.506757+00:00
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:09:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:35 | INFO     | Cycle #1 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:09:51 instance-20260221-2034 python3[140817]: 2026-03-01 10:09:51 | WARNING  | Webhook: invalid JSON body: Invalid \escape: line 1 column 10 (char 9)
+Mar 01 10:10:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:10:35 | INFO     | ♥  Heartbeat #2  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.04/$10.00  |  2026-03-01T10:10:35.625792+00:00
+Mar 01 10:10:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:10:35 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:10:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:10:35 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:10:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:10:35 | INFO     | Cycle #2 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:10:42 instance-20260221-2034 python3[140817]: 2026-03-01 10:10:42 | WARNING  | Webhook: invalid JSON body: Invalid \escape: line 1 column 12 (char 11)
+Mar 01 10:11:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:11:35 | INFO     | ♥  Heartbeat #3  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.04/$10.00  |  2026-03-01T10:11:35.707674+00:00
+Mar 01 10:11:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:11:35 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:11:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:11:35 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:11:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:11:35 | INFO     | Cycle #3 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:11:55 instance-20260221-2034 python3[140817]: 2026-03-01 10:11:55 | WARNING  | Webhook: UNKNOWN sender ignored | from=919844072345 (norm=919844072345) | expected=91991632… (norm=919916322917)
+Mar 01 10:12:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:12:35 | INFO     | ♥  Heartbeat #4  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.04/$10.00  |  2026-03-01T10:12:35.791032+00:00
+Mar 01 10:12:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:12:35 | INFO     | [DIRECTOR] heartbeat → SUCCESS
+Mar 01 10:12:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:12:35 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 10:12:35 instance-20260221-2034 python3[140817]: 2026-03-01 10:12:35 | INFO     | Cycle #4 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 10:13:00 instance-20260221-2034 python3[140817]: 2026-03-01 10:13:00 | INFO     | Webhook: incoming message  |  from=919916…  |  id=test_msg_sab_fix  |  text='sab fix karo'
+Mar 01 10:13:00 instance-20260221-2034 python3[140817]: 2026-03-01 10:13:00 | INFO     | [WEBHOOK] whatsapp_received → SUCCESS
+Mar 01 10:13:00 instance-20260221-2034 python3[140817]: 2026-03-01 10:13:00 | INFO     | Commander processing  |  msg_id=test_msg_sab_fix  |  text='sab fix karo'

@@ -778,20 +778,18 @@ class ExtendedIntentClassifier:
 
             "push_all_fixes": {
                 "patterns": [
-                    r"\bsab\s+fix\s+karo\b",
                     r"\bfix\s+all\b",
-                    r"\bsab\s+fix\b",
                     r"\bfix\s+sab\b",
                     r"\ball\s+fix\b",
                     r"\b125\s+fix\b",
                     r"\bpura\s+fix\b",
-                    r"\bfix\s+karo\b",
                     r"\bsab\s+theek\s+karo\b",
                     r"\bcompliance\s+fix\b",
                     r"\bhealth\s+claims?\s+fix\b",
                     r"\bviolations?\s+fix\b",
                     r"\brewrite\s+sab\b",
                     r"\bsab\s+rewrite\b",
+                    r"\bapply\s+all\s+fixes\b",
                 ],
                 "handler": "handle_push_all_fixes",
                 "description": "Apply ALL fixes: products + blogs + pages + categories"
@@ -1076,6 +1074,50 @@ class ExtendedIntentClassifier:
             "handler": "handle_director_complaint",
             "description": "Handle owner complaints about the Director",
         }
+
+        self.intents["show_staging_file"] = {
+            "patterns": [r"^show\s+file\s+(.+)$"],
+            "handler": "handle_show_staging_file",
+            "description": "Show long staging file from content delivery"
+        }
+        self.intents["show_rewrite"] = {
+            "patterns": [r"^show\s+rewrite\s+(\d+)$"],
+            "handler": "handle_show_rewrite",
+            "description": "Show pending rewrite for a product"
+        }
+        self.intents["approve_rewrite"] = {
+            "patterns": [r"^approve\s+product\s+(\d+)$"],
+            "handler": "handle_approve_rewrite",
+            "description": "Approve product rewrite"
+        }
+        self.intents["approve_all_rewrites"] = {
+            "patterns": [r"^approve\s+all\s+rewrites$"],
+            "handler": "handle_approve_all_rewrites",
+            "description": "Approve all product rewrites"
+        }
+        self.intents["reject_rewrite"] = {
+            "patterns": [r"^reject\s+product\s+(\d+)$"],
+            "handler": "handle_reject_rewrite",
+            "description": "Reject product rewrite"
+        }
+        self.intents["rewrite_status"] = {
+            "patterns": [
+                r"^rewrite\s+status$",
+                r"^show\s+pending\s+rewrites$"
+            ],
+            "handler": "handle_rewrite_status",
+            "description": "Show rewrite staging status"
+        }
+        self.intents["fix_violations"] = {
+            "patterns": [r"^fix\s+violations$", r"^sab\s+fix\s+karo$", r"\bsab\s+fix\b", r"\bfix\s+karo\b"],
+            "handler": "handle_fix_violations",
+            "description": "Fix health violations with clarification flow"
+        }
+        self.intents["fix_violations_batch"] = {
+            "patterns": [r"^fix\s+violations\s+batch\s+(\d+)$"],
+            "handler": "handle_fix_violations_batch",
+            "description": "Fix health violations in batch"
+        }
     
     def classify(self, message):
         """
@@ -1252,6 +1294,21 @@ class ExtendedIntentClassifier:
                 ).strip()
                 if len(stripped) > 3:
                     data["topic"] = stripped
+
+        elif intent == "show_staging_file":
+            m = re.search(r"^show\s+(.+)$", message, re.IGNORECASE)
+            if m:
+                data["filename"] = m.group(1).strip()
+        elif intent in ["show_rewrite", "approve_rewrite", "reject_rewrite"]:
+            m = re.search(r"product\s+(\d+)$", message, re.IGNORECASE)
+            if not m:
+                m = re.search(r"rewrite\s+(\d+)$", message, re.IGNORECASE)
+            if m:
+                data["product_id"] = m.group(1).strip()
+        elif intent == "fix_violations_batch":
+            m = re.search(r"batch\s+(\d+)$", message, re.IGNORECASE)
+            if m:
+                data["batch_size"] = int(m.group(1).strip())
 
         return data
 
@@ -3442,6 +3499,105 @@ Keep it punchy, under 150 words. No health claims."""
             ),
             "success": True,
         }
+
+    def handle_show_staging_file(self, intent):
+        filename = intent.get("extracted_data", {}).get("filename", "")
+        if not filename:
+            return {"response": "Need filename to show.", "success": False}
+        import os
+        from core.content_delivery import content_delivery
+        path = os.path.join(content_delivery.STAGING_DIR, filename)
+        if not os.path.exists(path):
+            return {"response": f"❌ File not found: {filename}", "success": False}
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return {"response": content, "success": True}
+
+    def handle_rewrite_status(self, intent):
+        from core.rewrite_staging import rewrite_staging
+        summary = rewrite_staging.get_summary()
+        pending = rewrite_staging.get_pending()
+        if pending:
+            summary += "\n\nPending Products: " + ", ".join(map(str, pending[:10]))
+            if len(pending) > 10:
+                summary += f" ...and {len(pending) - 10} more"
+            summary += "\n\nType 'show rewrite <id>' or 'approve product <id>'."
+        return {"response": summary, "success": True}
+
+    def handle_show_rewrite(self, intent):
+        pid = intent.get("extracted_data", {}).get("product_id")
+        if not pid:
+            return {"response": "Need product ID. Example: show rewrite 123", "success": False}
+        from core.rewrite_staging import rewrite_staging
+        entry = rewrite_staging.get_rewrite(int(pid))
+        if not entry:
+            return {"response": f"❌ No rewrite found for product {pid}", "success": False}
+        msg = f"📄 REWRITE FOR PRODUCT {pid} ({entry.get('product_name')})\n\n"
+        msg += f"VIOLATIONS FOUND:\n{', '.join(entry.get('violations_found', []))}\n\n"
+        msg += f"NEW DESCRIPTION:\n{entry.get('new_description')[:1000]}...\n\n"
+        msg += "Type 'approve product <id>' or 'reject product <id>'."
+        return {"response": msg, "success": True}
+
+    def handle_approve_rewrite(self, intent):
+        pid = intent.get("extracted_data", {}).get("product_id")
+        if not pid:
+            return {"response": "Need product ID. Example: approve product 123", "success": False}
+        from core.rewrite_staging import rewrite_staging
+        if not rewrite_staging.approve(int(pid)):
+            return {"response": f"❌ Failed to approve {pid} or not found.", "success": False}
+        entry = rewrite_staging.get_rewrite(int(pid))
+        if self.bridge:
+            res = self.bridge.apply_product_rewrite(int(pid), entry.get("new_description", ""))
+            if res.get("success"):
+                return {"response": f"✅ Approved and live on site for product {pid}!", "success": True}
+        return {"response": f"✅ Approved in staging for {pid} but couldn't apply to live site.", "success": True}
+
+    def handle_approve_all_rewrites(self, intent):
+        from core.rewrite_staging import rewrite_staging
+        pending = list(rewrite_staging.get_pending())
+        if not pending:
+            return {"response": "No pending rewrites.", "success": True}
+        count = 0
+        for pid in pending:
+            rewrite_staging.approve(int(pid))
+            entry = rewrite_staging.get_rewrite(int(pid))
+            if self.bridge:
+                res = self.bridge.apply_product_rewrite(int(pid), entry.get("new_description", ""))
+                if res.get("success"):
+                    count += 1
+        return {"response": f"✅ Approved {len(pending)} rewrites. successfully applied {count} to site.", "success": True}
+
+    def handle_reject_rewrite(self, intent):
+        pid = intent.get("extracted_data", {}).get("product_id")
+        if not pid:
+            return {"response": "Need product ID.", "success": False}
+        from core.rewrite_staging import rewrite_staging
+        if rewrite_staging.reject(int(pid)):
+            return {"response": f"❌ Rejected product {pid} rewrite.", "success": True}
+        return {"response": f"Could not find rewrite for {pid}.", "success": False}
+
+    def handle_fix_violations(self, intent):
+        msg = intent.get("message_text", "").lower()
+        if "sab fix karo" in msg:
+            return {
+                "response": "Bhai, kya fix karna hai specifically? Health violations? SEO? Sab kuch? Confirm karo.",
+                "success": True
+            }
+        return self.handle_fix_violations_batch(intent)
+        
+    def handle_fix_violations_batch(self, intent):
+        batch = intent.get("extracted_data", {}).get("batch_size", 5)
+        if not self.bridge:
+            return {"response": "Bridge offline.", "success": False}
+        res = self.bridge.scan_and_rewrite_violations(batch_size=batch)
+        if res.get("success"):
+            return {
+                "response": f"✅ Batch Complete: Scanned {res.get('scanned')} products.\n"
+                            f"Identified {len(res.get('staged_ids', []))} for rewrites.\n"
+                            "Type 'rewrite status' to see.",
+                "success": True
+            }
+        return {"response": f"❌ Batch scan failed: {res.get('error')}", "success": False}
 
 if __name__ == "__main__":
     import sys

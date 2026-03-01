@@ -1899,6 +1899,86 @@ class IntegrationBridge:
 
         return "\n".join(lines)
 
+    def scan_and_rewrite_violations(self, batch_size=5):
+        """Scan WooCommerce for violations, generate rewrites, and stage them."""
+        try:
+            woo = self.tools.get("woocommerce")
+            if not woo: return {"success": False, "error": "WooCommerce offline"}
+            scanner = self.tools.get("health_scanner")
+            if not scanner: return {"success": False, "error": "Scanner offline"}
+            from core.health_rewriter import HealthClaimsRewriter
+            rewriter = self.tools.get("rewriter")
+            if not rewriter:
+                rewriter = HealthClaimsRewriter(bridge=self)
+
+            from bs4 import BeautifulSoup
+            from core.rewrite_staging import rewrite_staging
+
+            # Get products
+            req = woo._make_request("products", {"per_page": 50})
+            if not req.get("success"): return req
+            
+            products = req["data"]
+            scanned = 0
+            staged = []
+
+            for p in products:
+                if len(staged) >= batch_size:
+                    break
+                    
+                raw = (p.get("description", "") or "") + " " + (p.get("short_description", "") or "")
+                desc_text = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
+                
+                s = scanner.scan_page(p.get("permalink", ""), desc_text, p["name"], is_product=True)
+                scanned += 1
+                
+                violations = s.get("high_risk", []) + s.get("medium_risk", [])
+                if violations:
+                    # Generate rewrite!
+                    ai = self.tools.get("ai_client")
+                    if not ai:
+                        return {"success": False, "error": "AI client offline for rewrite"}
+
+                    prompt = (
+                        "Rewrite this product description "
+                        f"for '{p['name']}' using safe, compliant "
+                        "Ayurvedic language. Remove ALL "
+                        "health claims. Keep it compelling "
+                        "and SEO-friendly.\n\n"
+                        "IMPORTANT RULES:\n"
+                        "1. Return ONLY the rewritten description.\n"
+                        "2. Do NOT include conversational filler.\n"
+                        f"Original:\n{raw}"
+                    )
+                    newHtml = ai.generate(prompt)
+                    if newHtml:
+                        v_texts = [str(v.get("matched", v.get("issue", ""))) for v in violations]
+                        staged.append(p["id"])
+                        rewrite_staging.stage_rewrite(
+                            product_id=p["id"],
+                            product_name=p["name"],
+                            old_description=raw,
+                            new_description=newHtml.strip(),
+                            violations_found=v_texts
+                        )
+            
+            return {"success": True, "scanned": scanned, "staged_ids": staged}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def apply_product_rewrite(self, product_id, new_description):
+        """Update WooCommerce product description."""
+        try:
+            woo = self.tools.get("woocommerce")
+            if not woo: return {"success": False, "error": "WooCommerce offline"}
+            
+            payload = {"description": new_description}
+            res = woo._make_request(f"products/{product_id}", data=payload, method="PUT")
+            if res.get("success"):
+                return {"success": True, "message": "Product updated"}
+            return {"success": False, "error": "WP API failed"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 # ==================== TEST ====================
 

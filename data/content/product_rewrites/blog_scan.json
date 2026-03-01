@@ -1,16 +1,16 @@
 {
-  "scanned_at": "2026-02-28T18:07:12.455078",
+  "scanned_at": "2026-03-01T16:39:50.146859",
   "total": 46,
   "flagged": 10,
   "posts": [
     {
       "id": 8148,
-      "title": "Ayurvedic Herbal Tea Powder for Daily Wellness Support",
+      "title": "Ayurvedic Herbal Tea Powder for Everyday Rituals and Flavor",
       "link": "https://www.falconherbs.com/ayurvedic-herbal-tea-powder-diabetes-relief/",
       "content_preview": "<h2>Experience Natural Diabetes Relief with Ayurvedic Herbal Tea Powder</h2>\n<p>Discover the power of Ayurveda with our specially formulated herbal tea powder designed to help manage diabetes naturally. Crafted from a blend of traditional herbs and spices known for their therapeutic properties, our ",
       "safety_check": {
-        "original_length": 447,
-        "cleaned_content": "Ayurvedic Herbal Tea Powder for Daily Wellness Support <p>Experience Natural metabolic wellness support with Ayurvedic Herbal Tea Powder Discover the power of Ayurveda with our specially formulated herbal tea powder designed to help manage diabetes naturally. Crafted from a blend of traditional herbs and spices known for their therapeutic properties, our Ayurvedic herbal tea powder offers a holistic approach to metabolic wellness support, supporting overall […]</p>",
+        "original_length": 452,
+        "cleaned_content": "Ayurvedic Herbal Tea Powder for Everyday Rituals and Flavor <p>Experience Natural metabolic wellness support with Ayurvedic Herbal Tea Powder Discover the power of Ayurveda with our specially formulated herbal tea powder designed to help manage diabetes naturally. Crafted from a blend of traditional herbs and spices known for their therapeutic properties, our Ayurvedic herbal tea powder offers a holistic approach to metabolic wellness support, supporting overall […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -36,12 +36,12 @@
     },
     {
       "id": 7922,
-      "title": "5 Uses for Mulethi Sticks (Liquorice Sticks) in Traditional Ayurvedic Practices",
+      "title": "5 Traditional Ayurvedic Ways to Use Mulethi Sticks (Liquorice Sticks)",
       "link": "https://www.falconherbs.com/benefits-uses-of-mulethi-liquorice-sticks/",
       "content_preview": "\n<p>Aayurvedaa Liquorice Sticks | <a href=\"https://www.falconherbs.com/\">Mulethi Sticks</a> is an ayurvedic medicine that supports the respiratory system and relieves cough and bronchitis. It can aid digestion while also protecting the liver. It may help with weight loss. Aayurvedaa Mulethi Sticks a",
       "safety_check": {
-        "original_length": 462,
-        "cleaned_content": "5 Uses for Mulethi Sticks (Liquorice Sticks) in Traditional Ayurvedic Practices <p>Aayurvedaa Liquorice Sticks | Mulethi Sticks is an ayurvedic medicine that supports the respiratory system and supports cough and bronchitis. It can aid digestion while also protecting the liver. It may help with metabolic support. Aayurvedaa Mulethi Sticks are utilised for their stomach relaxing and supports naturaling properties. It aids in the restoration of the stomach lining, which […]</p>",
+        "original_length": 452,
+        "cleaned_content": "5 Traditional Ayurvedic Ways to Use Mulethi Sticks (Liquorice Sticks) <p>Aayurvedaa Liquorice Sticks | Mulethi Sticks is an ayurvedic medicine that supports the respiratory system and supports cough and bronchitis. It can aid digestion while also protecting the liver. It may help with metabolic support. Aayurvedaa Mulethi Sticks are utilised for their stomach relaxing and wellness supporting properties. It aids in the restoration of the stomach lining, which […]</p>",
         "changes_made": 5,
         "changes": [
           {
@@ -62,8 +62,8 @@
             "severity": "MEDIUM"
           },
           {
-            "found": "heal",
-            "replaced_with": "supports natural",
+            "found": "healing",
+            "replaced_with": "wellness supporting",
             "action": "AUTO-REPLACED",
             "severity": "MEDIUM"
           },
@@ -79,12 +79,12 @@
     },
     {
       "id": 7919,
-      "title": "Discover Mulethi Sticks: 5 Traditional Uses of Liquorice Root in Ayurveda",
+      "title": "Explore Mulethi Sticks: 5 Traditional Ayurvedic Uses of Liquorice Root",
       "link": "https://www.falconherbs.com/liquorice-root-mulethi-sticks-benefits-health/",
       "content_preview": "\n<p>Aayurvedaa Liquorice root | <a href=\"https://www.falconherbs.com/\">Mulethi Sticks</a> is an ayurvedic medicine that supports the respiratory system and relieves cough and bronchitis. It can aid digestion while also protecting the liver. It may help with weight loss. Aayurvedaa Mulethi Sticks are",
       "safety_check": {
-        "original_length": 454,
-        "cleaned_content": "Discover Mulethi Sticks: 5 Traditional Uses of Liquorice Root in Ayurveda <p>Aayurvedaa Liquorice root | Mulethi Sticks is an ayurvedic medicine that supports the respiratory system and supports cough and bronchitis. It can aid digestion while also protecting the liver. It may help with metabolic support. Aayurvedaa Mulethi Sticks are utilised for their stomach relaxing and supports naturaling properties. It aids in the restoration of the stomach lining, which […]</p>",
+        "original_length": 451,
+        "cleaned_content": "Explore Mulethi Sticks: 5 Traditional Ayurvedic Uses of Liquorice Root <p>Aayurvedaa Liquorice root | Mulethi Sticks is an ayurvedic medicine that supports the respiratory system and supports cough and bronchitis. It can aid digestion while also protecting the liver. It may help with metabolic support. Aayurvedaa Mulethi Sticks are utilised for their stomach relaxing and wellness supporting properties. It aids in the restoration of the stomach lining, which […]</p>",
         "changes_made": 5,
         "changes": [
           {
@@ -105,8 +105,8 @@
             "severity": "MEDIUM"
           },
           {
-            "found": "heal",
-            "replaced_with": "supports natural",
+            "found": "healing",
+            "replaced_with": "wellness supporting",
             "action": "AUTO-REPLACED",
             "severity": "MEDIUM"
           },
@@ -122,12 +122,12 @@
     },
     {
       "id": 7911,
-      "title": "5 Nutritional Benefits of Drumstick and Moringa Seeds: A Traditional Ayurvedic Perspective",
+      "title": "5 Nutritional Insights into Drumstick and Moringa Seeds: An Ayurvedic Tradition",
       "link": "https://www.falconherbs.com/drumstick-seeds-moringa-seeds/",
       "content_preview": "\n<p><a href=\"https://www.falconherbs.com/\">Aayurvedaa Moringa Seeds</a> | Drumstick Seeds  contains the natural herb Moringa. It provides protein, vitamins, minerals, antioxidants, and other components that your diet may be lacking. It not only defends against free radicals, but it also boosts immun",
       "safety_check": {
-        "original_length": 460,
-        "cleaned_content": "5 Nutritional Benefits of Drumstick and Moringa Seeds: A Traditional Ayurvedic Perspective <p>Aayurvedaa Moringa Seeds | Drumstick Seeds  contains the natural herb Moringa. It provides protein, vitamins, minerals, antioxidants, and other components that your diet may be lacking. It not only defends against free radicals, but it also supports supports naturalthy immune function. It supports liver wellness supports naturalth and lowers the risk of diabetes. It is an effective may help withment for illnesses […]</p>",
+        "original_length": 449,
+        "cleaned_content": "5 Nutritional Insights into Drumstick and Moringa Seeds: An Ayurvedic Tradition <p>Aayurvedaa Moringa Seeds | Drumstick Seeds  contains the natural herb Moringa. It provides protein, vitamins, minerals, antioxidants, and other components that your diet may be lacking. It not only defends against free radicals, but it also supports supports naturalthy immune function. It supports liver wellness supports naturalth and lowers the risk of diabetes. It is an effective may help withment for illnesses […]</p>",
         "changes_made": 7,
         "changes": [
           {
@@ -176,12 +176,12 @@
     },
     {
       "id": 7904,
-      "title": "Long Pepper: A Traditional Ayurvedic Herb for Digestive Support",
+      "title": "Long Pepper: An Ayurvedic Herb Traditionally Used in Digestive Wellness Practices",
       "link": "https://www.falconherbs.com/long-pepper-reduces-heart-burn-provide-relief-in-constipation/",
       "content_preview": "\n<p><a href=\"https://www.falconherbs.com/\">Aayurvedaa Long Pepper</a> Piper is an expectorant and laxative herb. Long pepper is used to cure coughs and colds. It helps to relieve constipation and encourages bowel movements. Furthermore, it aids in the reduction of tooth discomfort and inflammation.<",
       "safety_check": {
-        "original_length": 422,
-        "cleaned_content": "Long Pepper: A Traditional Ayurvedic Herb for Digestive Support <p>Aayurvedaa Long Pepper Piper is an expectorant and laxative herb. Long pepper is used to traditionally used to support coughs and colds. It helps to relieve constipation and encourages bowel movements. Furthermore, it aids in the reduction of tooth discomfort and inflammation. Because of its expectorant properties, it may aid in the release of mucus from the airways and […]</p>",
+        "original_length": 440,
+        "cleaned_content": "Long Pepper: An Ayurvedic Herb Traditionally Used in Digestive Wellness Practices <p>Aayurvedaa Long Pepper Piper is an expectorant and laxative herb. Long pepper is used to traditionally used to support coughs and colds. It helps to relieve constipation and encourages bowel movements. Furthermore, it aids in the reduction of tooth discomfort and inflammation. Because of its expectorant properties, it may aid in the release of mucus from the airways and […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -207,12 +207,12 @@
     },
     {
       "id": 7880,
-      "title": "Top Uses and Traditional Applications of Calendula Flowers",
+      "title": "Top Uses and Traditional Applications of Calendula Flowers in Herbal Practices",
       "link": "https://www.falconherbs.com/top-benefits-of-calendula-flowers-calenula/",
       "content_preview": "\n<p><a href=\"https://www.amazon.in/Aayurvedaa-Calendula-Flowers-problems-disorder/dp/B0BS99BZH5?ref_=ast_sto_dp\" target=\"_blank\" rel=\"noreferrer noopener\">Calendula flower</a> is used to prevent muscle spasms, start menstrual periods, and reduce fever. It is also used for treating sore throat and mo",
       "safety_check": {
-        "original_length": 431,
-        "cleaned_content": "Top Uses and Traditional Applications of Calendula Flowers <p>Calendula flower is used to prevent muscle spasms, start menstrual periods, and reduce fever. It is also used for may help withing sore throat and mouth, menstrual cramps, cancer, and stomach and duodenal ulcers. 100% Authentic Product, the results will differ depending on the lifestyle and nutrition chosen and the colour of the product may vary somewhat depending on […]</p>",
+        "original_length": 451,
+        "cleaned_content": "Top Uses and Traditional Applications of Calendula Flowers in Herbal Practices <p>Calendula flower is used to prevent muscle spasms, start menstrual periods, and reduce fever. It is also used for may help withing sore throat and mouth, menstrual cramps, cancer, and stomach and duodenal ulcers. 100% Authentic Product, the results will differ depending on the lifestyle and nutrition chosen and the colour of the product may vary somewhat depending on […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -238,12 +238,12 @@
     },
     {
       "id": 7876,
-      "title": "Top Uses and Traditional Insights Into Black Harde (Terminalia chebula)",
+      "title": "Black Harde (Terminalia chebula): Traditional Applications and Cultural Significance",
       "link": "https://www.falconherbs.com/top-benefits-of-black-harde-terminalia-chebula/",
       "content_preview": "\n<p><a href=\"https://www.falconherbs.com/\">Aayurvedaa Black Harde</a> aids digestion by establishing a healthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism. It aids digestion by ",
       "safety_check": {
-        "original_length": 490,
-        "cleaned_content": "Top Uses and Traditional Insights Into Black Harde (Terminalia chebula) <p>Aayurvedaa Black Harde aids digestion by establishing a supports naturalthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism. It aids digestion by creating a supports naturalthy intestinal environment. It could aid in providing appropriate nourishment to the scalp. Harad benefits the whole digestive tract. It is […]</p>",
+        "original_length": 503,
+        "cleaned_content": "Black Harde (Terminalia chebula): Traditional Applications and Cultural Significance <p>Aayurvedaa Black Harde aids digestion by establishing a supports naturalthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism. It aids digestion by creating a supports naturalthy intestinal environment. It could aid in providing appropriate nourishment to the scalp. Harad benefits the whole digestive tract. It is […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -269,12 +269,12 @@
     },
     {
       "id": 7874,
-      "title": "Black Harde (Terminalia chebula): Traditional Ayurvedic Herb and Its Historical Uses",
+      "title": "Black Harde (Terminalia chebula): An Ayurvedic Herb with a Legacy of Traditional Use",
       "link": "https://www.falconherbs.com/black-harde-terminalia-chebula/",
       "content_preview": "\n<p><a href=\"https://www.falconherbs.com/\">Aayurvedaa Black Harde</a> aids digestion by establishing a healthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism.</p>\n\n\n\n<p>It aids dig",
       "safety_check": {
         "original_length": 503,
-        "cleaned_content": "Black Harde (Terminalia chebula): Traditional Ayurvedic Herb and Its Historical Uses <p>Aayurvedaa Black Harde aids digestion by establishing a supports naturalthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism. It aids digestion by creating a supports naturalthy intestinal environment. It could aid in providing appropriate nourishment to the scalp. Harad benefits the whole digestive tract. It is […]</p>",
+        "cleaned_content": "Black Harde (Terminalia chebula): An Ayurvedic Herb with a Legacy of Traditional Use <p>Aayurvedaa Black Harde aids digestion by establishing a supports naturalthy intestinal environment and improving nutrient absorption from food. It also aids with metabolic improvement. It improves the body’s immunity, strength, and metabolism. It aids digestion by creating a supports naturalthy intestinal environment. It could aid in providing appropriate nourishment to the scalp. Harad benefits the whole digestive tract. It is […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -300,12 +300,12 @@
     },
     {
       "id": 7863,
-      "title": "Terminalia Arjuna: Traditional Use and Botanical Profile in Ayurveda",
+      "title": "Terminalia Arjuna: Botanical Overview and Historical Use in Ayurvedic Practices",
       "link": "https://www.falconherbs.com/terminalia-arjuna/",
       "content_preview": "\n<p><a href=\"https://www.falconherbs.com/\" data-type=\"link\" data-id=\"https://www.falconherbs.com/\">Terminalia Arjuna</a> Promotes Cardiac functioning and helps in Urinary Disorders, strengthen the heart muscles as well as reduces blood pressure</p>\n\n\n\n<figure class=\"wp-block-image size-large is-resi",
       "safety_check": {
-        "original_length": 470,
-        "cleaned_content": "Terminalia Arjuna: Traditional Use and Botanical Profile in Ayurveda <p>Terminalia Arjuna supports heart wellness functioning and helps in Urinary Disorders, strengthen the heart muscles as well as reduces blood pressure Terminalia arjuna, commonly known as arjuna, belongs to the family of Combretaceae. Its bark decoction is being used in the Indian subcontinent for anginal pain, hypertension, congestive heart failure, and dyslipidemia, based on the observations of […]</p>",
+        "original_length": 481,
+        "cleaned_content": "Terminalia Arjuna: Botanical Overview and Historical Use in Ayurvedic Practices <p>Terminalia Arjuna supports heart wellness functioning and helps in Urinary Disorders, strengthen the heart muscles as well as reduces blood pressure Terminalia arjuna, commonly known as arjuna, belongs to the family of Combretaceae. Its bark decoction is being used in the Indian subcontinent for anginal pain, hypertension, congestive heart failure, and dyslipidemia, based on the observations of […]</p>",
         "changes_made": 3,
         "changes": [
           {
@@ -331,12 +331,12 @@
     },
     {
       "id": 7853,
-      "title": "Flax Seeds: A Traditional Ayurvedic Ingredient for Daily Wellness",
+      "title": "Flax Seeds in Ayurveda: A Traditional Ingredient for Everyday Use",
       "link": "https://www.falconherbs.com/alsi-flax-seeds-for-healthy-weight-loss/",
       "content_preview": "\n<figure class=\"wp-block-gallery has-nested-images columns-default is-cropped wp-block-gallery-19 is-layout-flex wp-block-gallery-is-layout-flex\">\n<figure class=\"wp-block-image size-large\"><img loading=\"lazy\" decoding=\"async\" width=\"1024\" height=\"1024\" data-id=\"7854\" src=\"https://www.falconherbs.com",
       "safety_check": {
         "original_length": 422,
-        "cleaned_content": "Flax Seeds: A Traditional Ayurvedic Ingredient for Daily Wellness <p>Alsi Flax Seeds 200 gm -A great source of fiber to promote a supports naturalthy metabolic support Aayurveda Alsi Flax seeds promotes supports naturalthy hair, skin, eyes, and nails. It protects the skin from dryness and flakiness. Flax seed promotes a supports naturalthy cardiovascular system and lowers the risk of heart attack and stroke. Daily consumption of flaxseeds can result in […]</p>",
+        "cleaned_content": "Flax Seeds in Ayurveda: A Traditional Ingredient for Everyday Use <p>Alsi Flax Seeds 200 gm -A great source of fiber to promote a supports naturalthy metabolic support Aayurveda Alsi Flax seeds promotes supports naturalthy hair, skin, eyes, and nails. It protects the skin from dryness and flakiness. Flax seed promotes a supports naturalthy cardiovascular system and lowers the risk of heart attack and stroke. Daily consumption of flaxseeds can result in […]</p>",
         "changes_made": 4,
         "changes": [
           {

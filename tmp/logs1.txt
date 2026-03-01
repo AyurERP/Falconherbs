@@ -1,0 +1,20 @@
+Mar 01 09:36:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:09 | INFO     | â™¥  Heartbeat #637  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.02/$10.00  |  2026-03-01T09:36:09.590240+00:00
+Mar 01 09:36:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:09 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:36:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:09 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 09:36:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:09 | INFO     | Cycle #637 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 09:36:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:24 | INFO     | [HEALTH_SCANNER] health_scan â†’ SUCCESS
+Mar 01 09:36:30 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:30 | INFO     | AI call OK  |  role=commander  provider=nvidia  model=qwen/qwen3-next-80b-a3b-instruct  chars=1014  attempt=1
+Mar 01 09:36:30 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:30 | INFO     | DirectorBrain reply generated (1014 chars)
+Mar 01 09:36:30 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:30 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.02/$10.00  |  month=$0.02/$150.00
+Mar 01 09:36:30 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:30 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:36:31 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:31 | INFO     | [WHATSAPP] whatsapp_send â†’ SUCCESS
+Mar 01 09:36:31 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:31 | INFO     | WhatsApp sent  |  chunk 1/1  |  1014 chars
+Mar 01 09:36:31 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:31 | INFO     | Extended intent: health_scan (success=True)
+Mar 01 09:37:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:09 | INFO     | â™¥  Heartbeat #638  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.02/$10.00  |  2026-03-01T09:37:09.742365+00:00
+Mar 01 09:37:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:09 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:37:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:09 | INFO     | Due tasks this cycle: 1
+Mar 01 09:37:09 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:09 | INFO     | Dispatching  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com
+Mar 01 09:37:14 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:14 | INFO     | Uptime OK  |  falconherbs.com  |  5087ms
+Mar 01 09:37:14 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:14 | INFO     | [SENTINEL] dispatch_sentinel â†’ UP
+Mar 01 09:37:14 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:14 | INFO     | Dispatch complete  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com  |  status=up  |  5.09s
+Mar 01 09:37:14 instance-20260221-2034 python3[122437]: 2026-03-01 09:37:14 | INFO     | Cycle #638 complete  |  scheduled=1  |  executed=1  |  ext=0  |  5.1s

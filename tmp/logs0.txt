@@ -1,0 +1,40 @@
+Mar 01 09:28:55 instance-20260221-2034 python3[122437]: 2026-03-01 09:28:55 | INFO     | â™¥  Heartbeat #630  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.01/$10.00  |  2026-03-01T09:28:55.002963+00:00
+Mar 01 09:28:55 instance-20260221-2034 python3[122437]: 2026-03-01 09:28:55 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:29:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:00 | INFO     | Director idle: Monitoring: 6 draft(s) need review | site responding OK
+Mar 01 09:29:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:00 | INFO     | Cycle #630 complete  |  scheduled=0  |  executed=0  |  ext=0  |  5.5s
+Mar 01 09:29:12 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:12 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_001_1772357  |  text='status'
+Mar 01 09:29:12 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:12 | INFO     | [WEBHOOK] whatsapp_received â†’ SUCCESS
+Mar 01 09:29:12 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:12 | INFO     | Commander processing  |  msg_id=test_001_1772357  |  text='status'
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | AI call OK  |  role=commander_fast  provider=nvidia  model=meta/llama-3.3-70b-instruct  chars=169  attempt=1
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.01/$10.00  |  month=$0.01/$150.00
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | Intent classified via DirectorBrain (DeepSeek R1)
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | Intent classified  |  intent=status_check  |  task=None  |  site=falconherbs.com
+Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | [COMMANDER] intent_classified â†’ SUCCESS
+Mar 01 09:29:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:24 | INFO     | AI call OK  |  role=commander  provider=nvidia  model=qwen/qwen3-next-80b-a3b-instruct  chars=502  attempt=1
+Mar 01 09:29:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:24 | INFO     | DirectorBrain reply generated (502 chars)
+Mar 01 09:29:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:24 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.01/$10.00  |  month=$0.01/$150.00
+Mar 01 09:29:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:24 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:29:24 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:24 | INFO     | [COMMANDER] reply_generated â†’ SUCCESS
+Mar 01 09:29:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:25 | INFO     | [WHATSAPP] whatsapp_send â†’ SUCCESS
+Mar 01 09:29:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:25 | INFO     | WhatsApp sent  |  chunk 1/1  |  502 chars
+Mar 01 09:30:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:00 | INFO     | â™¥  Heartbeat #631  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review | site responding OK  |  spend=$0.01/$10.00  |  2026-03-01T09:30:00.593432+00:00
+Mar 01 09:30:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:00 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:30:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:00 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 09:30:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:00 | INFO     | Cycle #631 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s
+Mar 01 09:30:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:21 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_001_1772357  |  text='status'
+Mar 01 09:30:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:21 | INFO     | [WEBHOOK] whatsapp_received â†’ SUCCESS
+Mar 01 09:30:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:21 | INFO     | Commander processing  |  msg_id=test_001_1772357  |  text='status'
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | AI call OK  |  role=commander_fast  provider=nvidia  model=meta/llama-3.3-70b-instruct  chars=169  attempt=1
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.02/$10.00  |  month=$0.02/$150.00
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | Intent classified via DirectorBrain (DeepSeek R1)
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | Intent classified  |  intent=status_check  |  task=None  |  site=falconherbs.com
+Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | [COMMANDER] intent_classified â†’ SUCCESS
+Mar 01 09:30:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:26 | INFO     | AI call OK  |  role=commander  provider=nvidia  model=qwen/qwen3-next-80b-a3b-instruct  chars=578  attempt=1
+Mar 01 09:30:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:26 | INFO     | DirectorBrain reply generated (578 chars)
+Mar 01 09:30:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:26 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.02/$10.00  |  month=$0.02/$150.00
+Mar 01 09:30:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:26 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:30:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:26 | INFO     | [COMMANDER] reply_generated â†’ SUCCESS
+Mar 01 09:30:28 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:28 | INFO     | [WHATSAPP] whatsapp_send â†’ SUCCESS
+Mar 01 09:30:28 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:28 | INFO     | WhatsApp sent  |  chunk 1/1  |  578 chars

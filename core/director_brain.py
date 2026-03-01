@@ -147,8 +147,14 @@ class DirectorBrain:
             recent_messages=recent_messages,
         )
 
+        import concurrent.futures
+        def _do_generate():
+            return call_ai("commander", messages, system_prompt=system_prompt, max_tokens=8192, timeout=12)
+
         try:
-            reply = call_ai("commander", messages, system_prompt=system_prompt, max_tokens=8192)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_do_generate)
+                reply = future.result(timeout=15)
 
             if reply.startswith("AI_ERROR:"):
                 log.warning("DirectorBrain primary failed: %s", reply)
@@ -160,6 +166,9 @@ class DirectorBrain:
             log.info("DirectorBrain reply generated (%d chars)", len(reply))
             return reply
 
+        except concurrent.futures.TimeoutError:
+            log.warning("DirectorBrain.generate_reply timed out after 10s")
+            return "Bhai, thoda time lag raha hai. Phir se try karo."
         except Exception as exc:
             log.warning("DirectorBrain.generate_reply failed: %s", exc)
             return self._smart_fallback(owner_message, context)
@@ -230,13 +239,17 @@ class DirectorBrain:
         Returns a dict with 'intent', 'task', 'site', etc.
         Returns None on failure (caller falls back to keyword matching).
         """
+        import concurrent.futures
         intent_prompt = self._build_intent_prompt(context)
-
         messages = [{"role": "user", "content": text}]
 
+        def _do_call():
+            return call_ai("commander_fast", messages, system_prompt=intent_prompt, timeout=12)
+
         try:
-            # Fast model for JSON classification (not the slow reasoning model)
-            raw = call_ai("commander_fast", messages, system_prompt=intent_prompt)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_do_call)
+                raw = future.result(timeout=10)
 
             if raw.startswith("AI_ERROR:"):
                 return None
@@ -257,6 +270,9 @@ class DirectorBrain:
             parsed = json.loads(raw)
             return parsed
 
+        except concurrent.futures.TimeoutError:
+            log.warning("DirectorBrain.classify_intent timed out after 10s")
+            return None
         except (json.JSONDecodeError, Exception) as exc:
             log.warning("DirectorBrain.classify_intent failed: %s", exc)
             return None

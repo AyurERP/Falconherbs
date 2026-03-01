@@ -1,0 +1,37 @@
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | AI call OK  |  role=commander_fast  provider=nvidia  model=meta/llama-3.3-70b-instruct  chars=208  attempt=1
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.04/$10.00  |  month=$0.04/$150.00
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | Intent classified via DirectorBrain (DeepSeek R1)
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | Intent classified  |  intent=run_task  |  task=generate_content  |  site=falconherbs.com
+Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | [COMMANDER] intent_classified â†’ SUCCESS
+Mar 01 09:41:43 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:43 | INFO     | AI call OK  |  role=commander  provider=nvidia  model=qwen/qwen3-next-80b-a3b-instruct  chars=81  attempt=1
+Mar 01 09:41:43 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:43 | INFO     | DirectorBrain reply generated (81 chars)
+Mar 01 09:41:43 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:43 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.04/$10.00  |  month=$0.04/$150.00
+Mar 01 09:41:43 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:43 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:41:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:44 | INFO     | [WHATSAPP] whatsapp_send â†’ SUCCESS
+Mar 01 09:41:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:44 | INFO     | WhatsApp sent  |  chunk 1/1  |  81 chars
+Mar 01 09:41:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:44 | INFO     | Dispatching  |  agent=developer  |  task=generate_content  |  site=falconherbs.com
+Mar 01 09:41:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:44 | INFO     | DeveloperAgent initialised  |  project_root=/home/ubuntu/falcon-agency
+Mar 01 09:41:47 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:47 | INFO     | AI call OK  |  role=developer  provider=nvidia  model=meta/llama-3.3-70b-instruct  chars=947  attempt=1
+Mar 01 09:41:57 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:57 | INFO     | AI call OK  |  role=developer  provider=nvidia  model=meta/llama-3.3-70b-instruct  chars=3682  attempt=1
+Mar 01 09:41:57 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:57 | INFO     | [DEVELOPER] dispatch_developer â†’ SUCCESS
+Mar 01 09:41:57 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:57 | INFO     | Dispatch complete  |  agent=developer  |  task=generate_content  |  site=falconherbs.com  |  status=success  |  12.69s
+Mar 01 09:41:59 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:59 | INFO     | AI call OK  |  role=commander  provider=nvidia  model=qwen/qwen3-next-80b-a3b-instruct  chars=370  attempt=1
+Mar 01 09:41:59 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:59 | INFO     | DirectorBrain reply generated (370 chars)
+Mar 01 09:41:59 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:59 | INFO     | Spend recorded  |  $0.0030  |  reason=nvidia_chat  |  site=falconherbs.com  |  day=$0.04/$10.00  |  month=$0.04/$150.00
+Mar 01 09:41:59 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:59 | INFO     | [DIRECTOR] spend â†’ SUCCESS
+Mar 01 09:42:00 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:00 | INFO     | [COMMANDER] reply_generated â†’ SUCCESS
+Mar 01 09:42:01 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:01 | INFO     | [WHATSAPP] whatsapp_send â†’ SUCCESS
+Mar 01 09:42:01 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:01 | INFO     | WhatsApp sent  |  chunk 1/1  |  370 chars
+Mar 01 09:42:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:20 | INFO     | â™¥  Heartbeat #643  |  site=idle  |  task=none  |  spend=$0.04/$10.00  |  2026-03-01T09:42:20.617165+00:00
+Mar 01 09:42:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:20 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:42:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:20 | INFO     | Due tasks this cycle: 1
+Mar 01 09:42:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:20 | INFO     | Dispatching  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com
+Mar 01 09:42:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:25 | INFO     | Uptime OK  |  falconherbs.com  |  5284ms
+Mar 01 09:42:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:25 | INFO     | [SENTINEL] dispatch_sentinel â†’ UP
+Mar 01 09:42:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:25 | INFO     | Dispatch complete  |  agent=sentinel  |  task=uptime_check  |  site=falconherbs.com  |  status=up  |  5.29s
+Mar 01 09:42:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:25 | INFO     | Cycle #643 complete  |  scheduled=1  |  executed=1  |  ext=0  |  5.3s
+Mar 01 09:43:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:43:26 | INFO     | â™¥  Heartbeat #644  |  site=idle  |  task=none  |  spend=$0.04/$10.00  |  2026-03-01T09:43:26.029120+00:00
+Mar 01 09:43:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:43:26 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:43:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:43:26 | INFO     | Director idle: Monitoring: 6 draft(s) need review
+Mar 01 09:43:26 instance-20260221-2034 python3[122437]: 2026-03-01 09:43:26 | INFO     | Cycle #644 complete  |  scheduled=0  |  executed=0  |  ext=0  |  0.0s

@@ -1,0 +1,6 @@
+Mar 01 09:40:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:40:44 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_004_1772358  |  text='sab fix karo'
+Mar 01 09:40:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:40:44 | INFO     | [WEBHOOK] whatsapp_received â†’ SUCCESS
+Mar 01 09:40:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:40:44 | INFO     | Commander processing  |  msg_id=test_004_1772358  |  text='sab fix karo'
+Mar 01 09:41:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:20 | INFO     | â™¥  Heartbeat #642  |  site=falconherbs.com  |  task=Monitoring: 6 draft(s) need review  |  spend=$0.03/$10.00  |  2026-03-01T09:41:20.532703+00:00
+Mar 01 09:41:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:20 | INFO     | [DIRECTOR] heartbeat â†’ SUCCESS
+Mar 01 09:41:20 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:20 | INFO     | Director idle: Monitoring: 6 draft(s) need review

@@ -1,0 +1,33 @@
+--> Mar 01 09:21:17 instance-20260221-2034 python3[122437]: 2026-03-01 09:21:17 | INFO     | WhatsApp sent  |  chunk 1/1  |  143 chars 
+--> Mar 01 09:22:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:22:44 | INFO     | WhatsApp sent  |  chunk 1/1  |  384 chars 
+--> Mar 01 09:26:42 instance-20260221-2034 python3[122437]: 2026-03-01 09:26:42 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_001  |  text='status' 
+--> Mar 01 09:26:42 instance-20260221-2034 python3[122437]: 2026-03-01 09:26:42 | INFO     | Commander processing  |  msg_id=test_001  |  text='status' 
+--> Mar 01 09:26:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:26:44 | INFO     | Intent classified  |  intent=status_check  |  task=None  |  site=falconherbs.com 
+--> Mar 01 09:26:49 instance-20260221-2034 python3[122437]: 2026-03-01 09:26:49 | INFO     | WhatsApp sent  |  chunk 1/1  |  522 chars 
+--> Mar 01 09:27:56 instance-20260221-2034 python3[122437]: 2026-03-01 09:27:56 | INFO     | Webhook: duplicate message test_001 â€” skipping 
+--> Mar 01 09:29:12 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:12 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_001_1772357  |  text='status' 
+--> Mar 01 09:29:12 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:12 | INFO     | Commander processing  |  msg_id=test_001_1772357  |  text='status' 
+--> Mar 01 09:29:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:21 | INFO     | Intent classified  |  intent=status_check  |  task=None  |  site=falconherbs.com 
+--> Mar 01 09:29:25 instance-20260221-2034 python3[122437]: 2026-03-01 09:29:25 | INFO     | WhatsApp sent  |  chunk 1/1  |  502 chars 
+--> Mar 01 09:30:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:21 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_001_1772357  |  text='status' 
+--> Mar 01 09:30:21 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:21 | INFO     | Commander processing  |  msg_id=test_001_1772357  |  text='status' 
+--> Mar 01 09:30:23 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:23 | INFO     | Intent classified  |  intent=status_check  |  task=None  |  site=falconherbs.com 
+--> Mar 01 09:30:28 instance-20260221-2034 python3[122437]: 2026-03-01 09:30:28 | INFO     | WhatsApp sent  |  chunk 1/1  |  578 chars 
+--> Mar 01 09:35:54 instance-20260221-2034 python3[122437]: 2026-03-01 09:35:54 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_002_1772357  |  text='health scan' 
+--> Mar 01 09:35:54 instance-20260221-2034 python3[122437]: 2026-03-01 09:35:54 | INFO     | Commander processing  |  msg_id=test_002_1772357  |  text='health scan' 
+--> Mar 01 09:35:55 instance-20260221-2034 python3[122437]: 2026-03-01 09:35:55 | INFO     | WhatsApp sent  |  chunk 1/1  |  53 chars 
+--> Mar 01 09:36:31 instance-20260221-2034 python3[122437]: 2026-03-01 09:36:31 | INFO     | WhatsApp sent  |  chunk 1/1  |  1014 chars 
+--> Mar 01 09:39:28 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:28 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_003_1772357  |  text='run chanakya triggers' 
+--> Mar 01 09:39:28 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:28 | INFO     | Commander processing  |  msg_id=test_003_1772357  |  text='run chanakya triggers' 
+--> Mar 01 09:39:30 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:30 | INFO     | Intent classified  |  intent=run_task  |  task=chanakya_triggers  |  site=falconherbs.com 
+--> Mar 01 09:39:33 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:33 | INFO     | WhatsApp sent  |  chunk 1/1  |  62 chars 
+--> Mar 01 09:39:33 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:33 | INFO     | Dispatching  |  agent=developer  |  task=chanakya_triggers  |  site=falconherbs.com 
+--> Mar 01 09:39:52 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:52 | INFO     | Dispatch complete  |  agent=developer  |  task=chanakya_triggers  |  site=falconherbs.com  |  status=success  |
+--> Mar 01 09:39:56 instance-20260221-2034 python3[122437]: 2026-03-01 09:39:56 | INFO     | WhatsApp sent  |  chunk 1/1  |  161 chars 
+--> Mar 01 09:40:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:40:44 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_004_1772358  |  text='sab fix karo' 
+--> Mar 01 09:40:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:40:44 | INFO     | Commander processing  |  msg_id=test_004_1772358  |  text='sab fix karo' 
+--> Mar 01 09:41:39 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:39 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_005_1772358  |  text='draft blog on tulsi benefits' 
+--> Mar 01 09:41:39 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:39 | INFO     | Commander processing  |  msg_id=test_005_1772358  |  text='draft blog on tulsi benefits' 
+--> Mar 01 09:41:41 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:41 | INFO     | Intent classified  |  intent=run_task  |  task=generate_content  |  site=falconherbs.com 
+--> Mar 01 09:41:44 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:44 | INFO     | WhatsApp sent  |  chunk 1/1  |  81 chars 
+--> Mar 01 09:42:01 instance-20260221-2034 python3[122437]: 2026-03-01 09:42:01 | INFO     | WhatsApp sent  |  chunk 1/1  |  370 chars 

@@ -1,0 +1,2 @@
+Mar 01 09:41:39 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:39 | INFO     | Webhook: incoming message  |  from=919916â€¦  |  id=test_005_1772358  |  text='draft blog on tulsi benefits'
+Mar 01 09:41:39 instance-20260221-2034 python3[122437]: 2026-03-01 09:41:39 | INFO     | Commander processing  |  msg_id=test_005_1772358  |  text='draft blog on tulsi benefits'

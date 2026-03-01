@@ -198,42 +198,61 @@ class FalconCommander:
     #  MAIN HANDLER
     # ══════════════════════════════════════════════════════════════════
 
+    def _safe_send(self, text: str, content_type: str = "general", metadata=None) -> None:
+        """Sends a message, using smart chunking for long text."""
+        try:
+            from core.content_delivery import content_delivery
+            if len(text) > 500:
+                content_delivery.deliver(text, content_type=content_type, metadata=metadata)
+            else:
+                self._whatsapp.send_message(text)
+        except Exception as e:
+            log.error(f"Failed to safe_send: {e}")
+            self._whatsapp.send_message(text)
+
     def handle_message(self, text: str, message_id: str, user_id: str = "owner") -> None:
         """
-        Process an incoming WhatsApp message from the owner.
-
-        This is the main entry point called by the webhook. It:
-            1. Stores message in conversation memory
-            2. Classifies intent using Claude
-            3. Routes to the appropriate handler
-            4. Generates a natural-language reply
-            5. Sends the reply via WhatsApp
-
-        Never raises — all errors are caught, logged, and an error
-        message is sent to the owner.
-
-        Parameters
-        ----------
-        text : str
-            The owner's message text.
-        message_id : str
-            WhatsApp message ID (for logging/dedup).
-        user_id : str
-            User identifier for memory tracking.
+        Process an incoming WhatsApp message with a 10-second timeout.
+        If logic takes longer, sends a 'working on it' message and continues in background.
         """
-        # Store user message in memory
+        import concurrent.futures
+        
+        # Immediate memory storage to prevent lost context if things crash
         memory.add_message(user_id, "user", text)
         memory.track_topic(user_id, text)
 
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self._handle_message_logic, text, message_id, user_id)
+            try:
+                # Wait for 10 seconds (WhatsApp webhook limit)
+                future.result(timeout=10)
+            except concurrent.futures.TimeoutError:
+                # Log the delay
+                log.info("Message processing taking > 10s, sending placeholder and continuing: %s", message_id)
+                # Send "Working on it" message so owner knows we're not dead
+                try:
+                    self._whatsapp.send_message("Bhai, thoda time lag raha hai... main analyze kar raha hoon. ⏳")
+                except Exception:
+                    pass
+                # The task continues in the background thread.
+            except Exception as e:
+                log.critical("Commander.handle_message wrapper crashed: %s", e, exc_info=True)
+                self._whatsapp.send_message("Bhai, system mein kuch gadbad hui. Main check kar raha hoon. 🛠️")
+
+    def _handle_message_logic(self, text: str, message_id: str, user_id: str = "owner") -> None:
+        """
+        Internal logic for processing messages.
+        Formerly handle_message.
+        """
         # Budget check: typical message = classify + wrap + maybe generate (~0.01)
         if self._director and hasattr(self._director, "check_budget"):
             if not self._director.check_budget(0.01):
-                self._whatsapp.send_message(BUDGET_EXHAUSTED_MSG)
+                self._safe_send(BUDGET_EXHAUSTED_MSG)
                 memory.add_message(user_id, "assistant", BUDGET_EXHAUSTED_MSG)
                 return
 
         log.info(
-            "Commander processing  |  msg_id=%s  |  text='%s'",
+            "Commander logic started  |  msg_id=%s  |  text='%s'",
             message_id[:16], text[:80],
         )
 
@@ -261,7 +280,7 @@ class FalconCommander:
                         "Be direct — a real director, not a yes-man."
                     )
                     reply = self._generate_reply(text, ctx)
-                    self._whatsapp.send_message(reply)
+                    self._safe_send(reply)
                     memory.add_message(user_id, "assistant", reply)
                     return
             except Exception as exc:
@@ -306,7 +325,7 @@ class FalconCommander:
                                     recent_messages=recent_msgs,
                                 )
                                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                                self._whatsapp.send_message(reply_text)
+                                self._safe_send(reply_text)
                                 memory.add_message(user_id, "assistant", reply_text)
                                 return
                     if ext_result:
@@ -365,7 +384,7 @@ class FalconCommander:
                                 recent_messages=recent_msgs,
                             )
                             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                            self._whatsapp.send_message(reply_text)
+                            self._safe_send(reply_text)
                             memory.add_message(
                                 user_id, "assistant", reply_text
                             )
@@ -434,7 +453,7 @@ class FalconCommander:
                     recent_messages=self._get_recent_for_wrap(),
                 )
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
                 return
             elif intent == "plan_task" and task:
                 plan_text = plan_summary if plan_summary else f"I will need to run {task} on {site}."
@@ -443,7 +462,7 @@ class FalconCommander:
                     recent_messages=self._get_recent_for_wrap(),
                 )
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
                 
                 def _trigger_approval():
                     try:
@@ -460,7 +479,7 @@ class FalconCommander:
                                 recent_messages=self._get_recent_for_wrap(),
                             )
                             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                            self._whatsapp.send_message(r)
+                            self._safe_send(r)
                     except Exception as e:
                         raw = f"Task planning failed: {task}. Error: {str(e)[:200]}"
                         r = director_brain.wrap_raw_response(
@@ -468,7 +487,7 @@ class FalconCommander:
                             recent_messages=self._get_recent_for_wrap(),
                         )
                         self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                        self._whatsapp.send_message(r)
+                        self._safe_send(r)
                         
                 # request_approval is blocking (poll_for_reply loops with timeout),
                 # so we run it in a daemon thread (async wrapper behaviour) to prevent blocking webhook responses.
@@ -512,7 +531,7 @@ class FalconCommander:
                     recent_messages=self._get_recent_for_wrap(),
                 )
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
             except Exception:
                 pass
 
@@ -534,7 +553,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
             return
 
         parts = text.strip().split(" ", 1)
@@ -571,15 +590,15 @@ class FalconCommander:
                 # Notify owner it's thinking if it's a known long task
                 long_tasks = ["weekly_package", "product_reel", "blog_draft"]
                 if intent in long_tasks:
-                    self._whatsapp.send_message(f"⏳ Talking to Content Pipeline / Producer... Give me a minute.")
+                    self._safe_send(f"⏳ Talking to Content Pipeline / Producer... Give me a minute.")
                 else:
-                    self._whatsapp.send_message(f"💬 Asking {agent_tag.replace('@', '').upper()}...")
+                    self._safe_send(f"💬 Asking {agent_tag.replace('@', '').upper()}...")
 
                 response = self._extended_handler.handle(ext_result)
                 raw = response.get("response", f"{agent_tag}: No response")
                 reply = director_brain.wrap_raw_response(text, raw, "bridge_agent", recent_messages=self._get_recent_for_wrap())
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
             return
         
         agent_map = {
@@ -602,7 +621,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
             plan = director.think(query)
             plan_str = json.dumps(plan, indent=2)[:2000]
             reply2 = director_brain.wrap_raw_response(
@@ -610,7 +629,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply2)
+            self._safe_send(reply2)
             return
         
         if agent is None:
@@ -623,7 +642,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
             return
         
         # Send to specific agent
@@ -633,7 +652,7 @@ class FalconCommander:
             recent_messages=self._get_recent_for_wrap(),
         )
         self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-        self._whatsapp.send_message(reply)
+        self._safe_send(reply)
         
         try:
             thought = agent.think(query)
@@ -645,7 +664,7 @@ class FalconCommander:
                     recent_messages=self._get_recent_for_wrap(),
                 )
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
             else:
                 thought_str = json.dumps(thought, indent=2)[:1500]
                 raw_analysis = f"{agent.name} analysis: {thought_str}"
@@ -654,7 +673,7 @@ class FalconCommander:
                     recent_messages=self._get_recent_for_wrap(),
                 )
                 self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
         except Exception as e:
             raw_err = f"{agent.name} error: {str(e)[:500]}"
             reply = director_brain.wrap_raw_response(
@@ -662,7 +681,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
     # ══════════════════════════════════════════════════════════════════
     #  INTENT HANDLERS
@@ -686,7 +705,7 @@ class FalconCommander:
                 f"{status_text}\n\n"
                 "Generate a short WhatsApp reply with key numbers.",
             )
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
         except Exception as exc:
             log.warning("Status check failed: %s", exc)
@@ -696,7 +715,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
     def _handle_run_task(
         self,
@@ -715,7 +734,7 @@ class FalconCommander:
                 original_text, raw, "task_clarify",
                 recent_messages=self._get_recent_for_wrap(),
             )
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
             return
 
         # Identify long tasks and provide ETA
@@ -734,7 +753,7 @@ class FalconCommander:
             recent_messages=self._get_recent_for_wrap(),
         )
         self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-        self._whatsapp.send_message(start_msg)
+        self._safe_send(start_msg)
 
         try:
             # ── Special case: health_claim_audit → health rewriter, NOT agent ──
@@ -748,7 +767,7 @@ class FalconCommander:
                     "Write a short WhatsApp summary in Hinglish. State exact counts. "
                     "If pending_approval > 0, tell owner to say 'approve all' to apply them live.",
                 )
-                self._whatsapp.send_message(reply)
+                self._safe_send(reply)
                 return
 
             # Map task to agent
@@ -779,7 +798,7 @@ class FalconCommander:
                 "Summarise in short WhatsApp-style Hinglish. Only report what is in the result above.",
             )
 
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
         except Exception as exc:
             log.critical("Task dispatch failed: %s", exc, exc_info=True)
@@ -789,7 +808,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(err_msg)
+            self._safe_send(err_msg)
 
 
     def _handle_approve(self, original_text: str = "") -> None:
@@ -811,7 +830,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
             return
 
         # 2. Pending product rewrites — check the real files
@@ -840,7 +859,7 @@ class FalconCommander:
                     response = self._extended_handler.handle(ext_intent)
                     raw_reply = response.get("response", "")
                     if raw_reply:
-                        self._whatsapp.send_message(raw_reply)
+                        self._safe_send(raw_reply)
                     else:
                         self._whatsapp.send_message(
                             f"✅ Applying {len(pending_rewrites)} pending rewrites to live site..."
@@ -869,7 +888,7 @@ class FalconCommander:
             memory.set_context(user_id, "pending_action", None)
             raw_reply = response.get("response", "")
             if raw_reply:
-                self._whatsapp.send_message(raw_reply)
+                self._safe_send(raw_reply)
             return
 
         # 4. Nothing pending anywhere
@@ -879,7 +898,7 @@ class FalconCommander:
             recent_messages=self._get_recent_for_wrap(),
         )
         self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-        self._whatsapp.send_message(reply)
+        self._safe_send(reply)
 
     def _handle_deny(self, original_text: str = "") -> None:
         """Route a denial to the pending request."""
@@ -892,7 +911,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
         else:
             raw = "No pending approval."
             reply = director_brain.wrap_raw_response(
@@ -900,7 +919,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
     def _handle_idea_capture(
         self,
@@ -919,7 +938,7 @@ class FalconCommander:
             recent_messages=self._get_recent_for_wrap(),
         )
         self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-        self._whatsapp.send_message(reply)
+        self._safe_send(reply)
 
     def _search_serper(self, query: str) -> str:
         """Live Google search via centralized Serper client. Returns formatted text or empty."""
@@ -995,7 +1014,7 @@ class FalconCommander:
                 "suggest running a relevant task. Keep it short — WhatsApp reply.",
             )
 
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
         except Exception as exc:
             log.warning("Question handling failed: %s", exc)
@@ -1008,7 +1027,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
     def _reply_unknown(self, original_text: str) -> None:
         """Reply when the message intent cannot be determined."""
@@ -1022,7 +1041,7 @@ class FalconCommander:
                 "2. Gently suggests what they can ask (status, run tasks, questions)\n"
                 "3. Keep it short and friendly in Hinglish",
             )
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
         except Exception:
             raw = (
                 "Samajh nahi aaya. Try karo:\n"
@@ -1037,7 +1056,7 @@ class FalconCommander:
                 recent_messages=self._get_recent_for_wrap(),
             )
             self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
-            self._whatsapp.send_message(reply)
+            self._safe_send(reply)
 
     # ══════════════════════════════════════════════════════════════════
     #  AI ENGINE

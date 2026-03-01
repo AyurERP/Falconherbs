@@ -1,0 +1,15 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "BUSINESS_ID",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "metadata": {"display_phone_number": "PHONE", "phone_number_id": "ID"},
+        "contacts": [{"profile": {"name": "TestOwner"}, "wa_id": "919916322917"}],
+        "messages": [{"from": "919916322917", "id": "test_msg_sab_fix_02", "timestamp": "123", "type": "text", "text": {"body": "sab fix karo"}}]
+      },
+      "field": "messages"
+    }]
+  }]
+}
