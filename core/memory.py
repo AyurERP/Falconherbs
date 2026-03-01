@@ -20,7 +20,7 @@ class ConversationMemory:
     Thread-safe for use from webhook + director threads.
     """
     
-    def __init__(self, max_messages: int = 50, db_path: Path = DB_PATH):
+    def __init__(self, max_messages: int = 200, db_path: Path = DB_PATH):
         self._max_messages = max_messages
         self._db_path = db_path
         self._lock = threading.Lock()
@@ -113,9 +113,9 @@ class ConversationMemory:
         return self.get_history(user_id, last_n=limit)
 
     def get_history(self, user_id: str, last_n: int = 10) -> List[Dict]:
-        """Get recent conversation history (max 10 MSGs, 30m expiry)."""
+        """Get recent conversation history (max N MSGs, 24h expiry)."""
         from datetime import timedelta
-        cutoff = (datetime.now() - timedelta(minutes=30)).isoformat()
+        cutoff = (datetime.now() - timedelta(hours=24)).isoformat()
         
         with self._lock:
             conn = self._conn()

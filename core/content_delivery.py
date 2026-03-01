@@ -26,7 +26,7 @@ def _send_msg(text, metadata=None):
     recipient = os.getenv("WHATSAPP_RECIPIENT", "919916322917")
     reply_to = metadata.get("reply_to") if metadata else None
     notifier = WhatsAppNotifier()
-    notifier.send_message(text, reply_to=reply_to)
+    return notifier.send_message(text, reply_to=reply_to)
 
 
 class ContentDelivery:
@@ -57,21 +57,22 @@ class ContentDelivery:
     
     def _deliver_direct(self, content: str, metadata: dict = None):
         """Tier 1: Send as single message"""
-        _send_msg(content, metadata=metadata)
-        return {"method": "direct", "messages_sent": 1}
+        msg_id = _send_msg(content, metadata=metadata)
+        return {"method": "direct", "messages_sent": 1, "message_id": msg_id}
     
     def _deliver_chunked(self, content: str, metadata: dict = None):
         """Tier 2: Split into chunks on paragraph boundaries"""
         chunks = self._smart_split(content, self.CHUNK_SIZE)
         total = len(chunks)
         
+        last_id = None
         for i, chunk in enumerate(chunks):
             header = f"📄 Part {i+1}/{total}\n\n"
-            _send_msg(header + chunk, metadata=metadata)
+            last_id = _send_msg(header + chunk, metadata=metadata)
             if i < total - 1:
                 time.sleep(1)  # Rate limit buffer
-        
-        return {"method": "chunked", "messages_sent": total}
+
+        return {"method": "chunked", "messages_sent": total, "message_id": last_id}
     
     def _deliver_link(self, content: str, content_type: str, metadata: dict = None):
         """Tier 3: Send link or document based on content type"""

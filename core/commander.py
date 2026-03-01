@@ -202,9 +202,9 @@ class FalconCommander:
         """Send message safely, using content delivery if available. Returns message ID."""
         try:
             from core.content_delivery import content_delivery as cd
-            cd.deliver(text, metadata={"sender": sender, "reply_to": reply_to})
+            result = cd.deliver(text, metadata={"sender": sender, "reply_to": reply_to})
             # content_delivery handles the actual send — do NOT also call whatsapp directly
-            return None
+            return result.get("message_id") if isinstance(result, dict) else None
         except Exception as e:
             log.error(f"Failed to safe_send via content_delivery: {e}")
             return self._whatsapp.send_message(text, reply_to=reply_to)
@@ -248,8 +248,19 @@ class FalconCommander:
         if context_message_id:
             msg_obj = memory.get_message_by_id(sender, context_message_id)
             if msg_obj:
-                reply_context = f"[Replying to: {msg_obj['content'][:200]}]\n"
-                text = reply_context + text
+                # Found the original message in memory
+                original_preview = msg_obj["content"][:300]
+                ts = msg_obj.get("timestamp", "")[:16]
+                reply_context = f"[User is replying to a message from {ts}: \"{original_preview}\"]\n"
+            else:
+                # Old message not in memory — still tell Director so it can acknowledge
+                short_id = context_message_id[-12:] if len(context_message_id) > 12 else context_message_id
+                reply_context = (
+                    f"[User replied to an older Director message (ID suffix: ...{short_id}). "
+                    f"The original message content is not in memory (too old or pruned). "
+                    f"Acknowledge it warmly and address their new message below.]\n"
+                )
+            text = reply_context + text
         # Budget check: typical message = classify + wrap + maybe generate (~0.01)
         if self._director and hasattr(self._director, "check_budget"):
             if not self._director.check_budget(0.01):

@@ -104,6 +104,45 @@
       "enabled": true,
       "last_run": null,
       "description": "Weekly trending keywords (ayurveda/herbal) via Serper"
+    },
+    "weekly_seo_digest": {
+      "time": "10:00",
+      "day": "wednesday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly SEO digest \u2014 audit ranking pages and send WhatsApp summary"
+    },
+    "weekly_price_scan": {
+      "time": "11:00",
+      "day": "thursday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly competitor price scan \u2014 flag price gaps"
+    },
+    "daily_backup": {
+      "time": "02:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Daily data backup \u2014 products, orders, drafts"
+    },
+    "inventory_screening": {
+      "time": "08:30",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly inventory screen \u2014 flag out-of-stock and low-stock products"
+    },
+    "monthly_aeo_scan": {
+      "time": "09:00",
+      "day": "monday",
+      "frequency": "monthly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Monthly AEO scan \u2014 optimize for AI search engines and featured snippets"
     }
   },
   "created_at": "2026-02-23T05:10:47.392577"
