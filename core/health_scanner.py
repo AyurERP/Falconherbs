@@ -121,31 +121,6 @@ class HealthClaimsScanner:
         self.medium_risk_patterns = {
             "implied_treatment": {
                 "patterns": [
-                    r"\bboosts?\s+immun\w+\b",
-                    r"\bstrengthens?\s+immun\w+\b",
-                    r"\b(?:boost|boosts)\s+(?:immunity|energy)\b",
-                    r"\bfights?\s+(?:infection|virus|bacteria)\b",
-                    r"\banti[- ]?(?:viral|bacterial|fungal|microbial|"
-                    r"inflammatory|oxidant)\b",
-                    r"\bdetox(?:ify|ifies|ification)?\b",
-                    r"\bdetox\s+(?:body|blood|liver)\b",
-                    r"\bcleanses?\s+(?:blood|liver|kidney|body|toxins)\b",
-                    r"\bpurif(?:y|ies)\s+blood\b",
-                    r"\blowers?\s+(?:blood\s+(?:sugar|pressure)|"
-                    r"cholesterol)\b",
-                    r"\breduces?\s+(?:blood\s+sugar|cholesterol|"
-                    r"blood\s+pressure)\b",
-                    r"\bcontrols?\s+(?:blood\s+sugar|cholesterol|"
-                    r"blood\s+pressure)\b",
-                    r"\bmanages?\s+(?:diabetes|blood\s+sugar)\b",
-                    r"\bregulates?\s+(?:blood\s+sugar|cholesterol)\b",
-                    r"\bimproves?\s+(?:digestion|blood\s+sugar|cholesterol)\b",
-                    r"\bhelps?\s+(?:in\s+)?(?:getting\s+rid\s+of|rid\s+of)\b",
-                    r"\bweight\s+loss\b",
-                    r"\bshed\s+(?:weight|pounds)\b",
-                    r"\bburn\s+fat\b",
-                    r"\breduces?\s+(?:stress|anxiety|inflammation)\b",
-                    r"\b(?:relief|relieves?)\s+(?:from|for)\b",
                     r"\b(?:treat|treatment)\s+of\s+(?:skin|infection)\b",
                 ],
                 "risk": "MEDIUM",
@@ -180,12 +155,6 @@ class HealthClaimsScanner:
             "ayurvedic_marketing": {
                 "patterns": [
                     r"\b(?:cure|treat|heal)\s+for\b",
-                    r"\bgood\s+for\s+(?:diabetes|cancer)\b",
-                    r"\b(?:benefits?|beneficial)\s+for\s+(?:diabetes|cancer)\b",
-                    r"\b(?:effective|works?)\s+for\s+(?:constipation|indigestion)\b",
-                    r"\bimmunity\s+booster\b",
-                    r"\bblood\s+sugar\s+(?:control|management)\b",
-                    r"\bcholesterol\s+(?:control|lowering)\b",
                 ],
                 "risk": "MEDIUM",
                 "reason": "Implied treatment — use structure/function language",
