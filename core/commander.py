@@ -203,10 +203,10 @@ class FalconCommander:
         try:
             from core.content_delivery import content_delivery as cd
             cd.deliver(text, metadata={"sender": sender, "reply_to": reply_to})
-            # Also store in memory for context
-            return self._whatsapp.send_message(text, reply_to=reply_to)
+            # content_delivery handles the actual send — do NOT also call whatsapp directly
+            return None
         except Exception as e:
-            log.error(f"Failed to safe_send: {e}")
+            log.error(f"Failed to safe_send via content_delivery: {e}")
             return self._whatsapp.send_message(text, reply_to=reply_to)
 
     def handle_message(self, text: str, message_id: str, sender: str = "owner", context_message_id: str = None) -> None:
@@ -885,7 +885,11 @@ class FalconCommander:
             log.warning("Approve pending-rewrites check failed: %s", e)
 
         # 3. Memory-stored pending_action (confirmation flow from extended intents)
-        user_id = str(self._whatsapp._recipient or "owner")
+        user_id = str(
+            getattr(self._whatsapp, '_recipient', None) or
+            getattr(self._whatsapp, 'recipient_phone', None) or
+            "owner"
+        )
         pending_action = memory.get_context(user_id, "pending_action")
         if pending_action and self._extended_handler is not None:
             ext_intent = {

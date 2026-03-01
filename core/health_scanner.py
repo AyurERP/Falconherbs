@@ -91,7 +91,7 @@ class HealthClaimsScanner:
             
             "absolute_claims": {
                 "patterns": [
-                    r"\b100%\s+(?:natural|safe|effective|organic|pure)\b",
+                    r"\b100%\s+(?:safe|effective)\b",
                     r"\bno\s+side\s+effects?\b",
                     r"\bcompletely\s+safe\b",
                     r"\brisk[- ]?free\b",

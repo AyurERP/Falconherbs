@@ -3565,11 +3565,16 @@ Keep it punchy, under 150 words. No health claims."""
         if len(pending) <= 3:
             count = 0
             for pid in pending:
-                rewrite_staging.approve(int(pid))
                 entry = rewrite_staging.get_rewrite(int(pid))
-                if self.bridge:
+                if self.bridge and entry:
                     res = self.bridge.apply_product_rewrite(int(pid), entry.get("new_description", ""))
-                    if res.get("success"): count += 1
+                    if res.get("success"):
+                        rewrite_staging.approve(int(pid))
+                        count += 1
+                    # else: leave in pending so it can be retried
+                else:
+                    # No bridge or no entry — skip, don't approve
+                    pass
             return {"response": f"✅ Approved and applied {count}/{len(pending)} products.", "success": True}
         
         # Large batch -> return immediate response and background the rest

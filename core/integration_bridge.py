@@ -527,8 +527,18 @@ class IntegrationBridge:
             # ── 4. CATEGORY NAMES ─────────────────────────────────
             RISKY_CAT_WORDS = [
                 "diabetic","diabetes","cancer","anxiety","depression",
-                "weight loss","cardiovascular","respiratory",
-                "stress","inflammation","liver care","skin disorder"
+                "weight loss","respiratory care","liver care","skin disorder",
+                "stress, anxiety","inflammation, swelling"
+            ]
+            # Map exact category name substrings to compliant replacements
+            CAT_RENAME_MAP = [
+                ("Diabetic Teas", "Wellness Teas"),
+                ("Diabetes", "Glucose Wellness"),
+                ("Respiratory Care", "Respiratory Wellness"),
+                ("Liver Care", "Liver Wellness"),
+                ("Stress, Anxiety & Depression", "Calm & Balance"),
+                ("Weight Loss", "Metabolic Wellness"),
+                ("Inflammation, Swelling & Body Pain", "Comfort & Mobility"),
             ]
             try:
                 r = requests.get(f"{site}/wp-json/wc/v3/products/categories",
@@ -539,22 +549,16 @@ class IntegrationBridge:
                         import html as _html
                         cname = _html.unescape(cat.get("name",""))
                         if any(w in cname.lower() for w in RISKY_CAT_WORDS):
-                            report["categories_advisory"].append({
-                                "id": cat["id"], "name": cname,
-                                "count": cat.get("count",0),
-                                "fix": "Rename in WooCommerce admin > Categories",
-                                "suggestion": (
-                                    cname
-                                    .replace("Diabetic","Wellness Teas")
-                                    .replace("Diabetes","Glucose Wellness")
-                                    .replace("Cardiovascular","Heart Wellness")
-                                    .replace("Respiratory Care","Respiratory Wellness")
-                                    .replace("Stress, Anxiety & Depression","Calm & Balance")
-                                    .replace("Weight Loss","Metabolic Wellness")
-                                    .replace("Inflammation, Swelling & Body Pain","Comfort & Mobility")
-                                    .replace("Liver Care","Liver Wellness")
-                                ),
-                            })
+                            suggestion = cname
+                            for old, new in CAT_RENAME_MAP:
+                                suggestion = suggestion.replace(old, new)
+                            if suggestion != cname:  # only flag if rename would actually change it
+                                report["categories_advisory"].append({
+                                    "id": cat["id"], "name": cname,
+                                    "count": cat.get("count",0),
+                                    "fix": "Rename in WooCommerce admin > Categories",
+                                    "suggestion": suggestion,
+                                })
             except Exception:
                 pass
 
@@ -1971,12 +1975,11 @@ class IntegrationBridge:
         try:
             woo = self.tools.get("woocommerce")
             if not woo: return {"success": False, "error": "WooCommerce offline"}
-            
-            payload = {"description": new_description}
-            res = woo._make_request(f"products/{product_id}", data=payload, method="PUT")
+
+            res = woo.update_product(int(product_id), {"description": new_description})
             if res.get("success"):
                 return {"success": True, "message": "Product updated"}
-            return {"success": False, "error": "WP API failed"}
+            return {"success": False, "error": res.get("error", "WP API failed")}
         except Exception as e:
             return {"success": False, "error": str(e)}
 

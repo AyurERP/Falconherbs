@@ -399,7 +399,7 @@ class FalconWebhook:
                     except Exception:
                         pass
                     reply = director_brain.wrap_raw_response(
-                        full_text, raw, "webhook_crash",
+                        text_body, raw, "webhook_crash",
                         recent_messages=recent,
                     )
                     self._whatsapp.send_message(reply)

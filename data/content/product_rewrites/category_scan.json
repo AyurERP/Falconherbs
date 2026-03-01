@@ -1,18 +1,18 @@
 {
-  "scanned_at": "2026-02-28T18:10:10.450064",
+  "scanned_at": "2026-03-02T03:17:13.194961",
   "total": 35,
   "flagged": 2,
   "categories": [
     {
       "id": 156,
-      "name": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
-      "suggested": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
+      "name": "Cardiovascular Wellness",
+      "suggested": "Cardiovascular Wellness Wellness",
       "count": 1
     },
     {
       "id": 118,
-      "name": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
-      "suggested": "Cardiovascular Wellness Wellness Wellness Wellness Wellness Wellness Wellness Wellness",
+      "name": "Cardiovascular Wellness",
+      "suggested": "Cardiovascular Wellness Wellness",
       "count": 3
     }
   ]
