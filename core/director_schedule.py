@@ -75,6 +75,13 @@ class ExtendedSchedule:
                             "description": "Proactive growth & revenue analysis with strategy suggestions",
                         }
                         modified = True
+                    if "hourly_report" not in tasks:
+                        tasks["hourly_report"] = {
+                            "time": "00:00", "frequency": "interval",
+                            "interval_minutes": 60, "enabled": True, "last_run": None,
+                            "description": "Hourly WhatsApp status: revenue, pending rewrites, last action, errors",
+                        }
+                        modified = True
                     if modified:
                         self._save_schedule(data)
                     return data
@@ -277,6 +284,14 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "VPS CPU/memory/disk monitoring"
                 },
+                "hourly_report": {
+                    "time": "00:00",
+                    "frequency": "interval",
+                    "interval_minutes": 60,
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Hourly WhatsApp status: revenue, pending rewrites, last action, errors"
+                },
             },
             "created_at": datetime.now().isoformat()
         }
@@ -420,6 +435,7 @@ class ExtendedSchedule:
             "weekly_trending_scan": self._task_weekly_trending,
             "weekly_price_scan":  self._task_price_scan,
             "vps_health_check":    self._task_vps_health_check,
+            "hourly_report":       self._task_hourly_report,
         }
         
         handler = handlers.get(task_name)
@@ -1617,8 +1633,8 @@ class ExtendedSchedule:
                         "send_whatsapp": True,
                         "message": f"🛡️ *BACKUP STALE*: Latest backup is {ts_str}. Triggered fresh full cPanel backup."
                     }
-            except:
-                pass # Date parse fail
+            except (ValueError, AttributeError):
+                pass  # Date parse fail
                 
             return {
                 "success": True,
@@ -1627,6 +1643,88 @@ class ExtendedSchedule:
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def _task_hourly_report(self):
+        """
+        Hourly status snapshot via WhatsApp.
+        Short and actionable: revenue today, pending rewrites, last task, errors.
+        """
+        try:
+            now = datetime.now()
+            lines = [
+                f"\u23F0 *Hourly Update \u2014 {now.strftime('%H:%M')}*",
+                "\u2500" * 24,
+            ]
+
+            # 1. Revenue today
+            woo = self.bridge.tools.get("woocommerce")
+            if woo:
+                try:
+                    orders = woo.get_orders(days_back=1, save=False)
+                    if orders.get("success"):
+                        d = orders["data"]
+                        lines.append(
+                            "\U0001F4B0 Orders: {} | \u20B9{:,.0f}".format(
+                                d.get("total_orders", 0),
+                                d.get("revenue", {}).get("total", 0),
+                            )
+                        )
+                except Exception:
+                    pass
+
+            # 2. Pending rewrites
+            try:
+                import json as _json
+                from pathlib import Path as _P
+                idx = _P("data/staging/rewrites/index.json")
+                if idx.exists():
+                    data = _json.loads(idx.read_text(encoding="utf-8"))
+                    pending_count = len(data.get("pending", []))
+                    if pending_count:
+                        lines.append(f"\U0001F4DD Pending rewrites: {pending_count}")
+            except Exception:
+                pass
+
+            # 3. Last health scan status
+            try:
+                import json as _json
+                from pathlib import Path as _P
+                scan_file = _P("data/health_audit/health_audit_report.json")
+                if scan_file.exists():
+                    scan_data = _json.loads(scan_file.read_text(encoding="utf-8"))
+                    violations = scan_data.get("total_violations", 0)
+                    scan_date = scan_data.get("scan_date", "")[:10]
+                    lines.append(
+                        f"\U0001F50D Last scan ({scan_date}): {violations} violations"
+                    )
+            except Exception:
+                pass
+
+            # 4. Last scheduled task run
+            try:
+                tasks = self.schedule.get("tasks", {})
+                ran = [
+                    (k, v.get("last_run"))
+                    for k, v in tasks.items()
+                    if v.get("last_run") and k != "hourly_report"
+                ]
+                if ran:
+                    ran.sort(key=lambda x: x[1], reverse=True)
+                    tname, tts = ran[0]
+                    lines.append(f"\u2699\uFE0F Last task: {tname} @ {tts[11:16]}")
+            except Exception:
+                pass
+
+            lines.append("\u2500" * 24)
+
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": "\n".join(lines),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
 
 # ==================== TEST ====================
 

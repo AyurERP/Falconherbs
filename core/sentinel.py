@@ -1217,7 +1217,7 @@ class Sentinel:
                 if resp.status_code == 200:
                     # Could parse sitemap for more URLs here
                     log.info("Found sitemap, could scan more pages")
-            except:
+            except Exception:
                 pass
             
             report = {

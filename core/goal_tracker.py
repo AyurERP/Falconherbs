@@ -35,7 +35,7 @@ class GoalTracker:
                 new_path = self._goals_path(site)
                 if not os.path.exists(new_path):
                     self._save_json(new_path, data)
-            except:
+            except Exception:
                 pass
         
         if os.path.exists(old_progress):
@@ -44,7 +44,7 @@ class GoalTracker:
                 new_path = self._progress_path(DEFAULT_SITE)
                 if not os.path.exists(new_path):
                     self._save_json(new_path, data)
-            except:
+            except Exception:
                 pass
     
     def _goals_path(self, site: str) -> str:
@@ -59,7 +59,7 @@ class GoalTracker:
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except (OSError, json.JSONDecodeError, ValueError):
             return {}
     
     def _save_json(self, filepath: str, data: dict):

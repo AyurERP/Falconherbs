@@ -135,7 +135,7 @@ class AutoBackup:
         for old in auto_backups[MAX_BACKUPS:]:
             try:
                 shutil.rmtree(str(old))
-            except:
+            except OSError:
                 pass
     
     def list_backups(self) -> str:
@@ -159,7 +159,7 @@ class AutoBackup:
                         f"({len(m.get('files', []))} files)"
                     )
                     continue
-                except:
+                except (OSError, json.JSONDecodeError, ValueError):
                     pass
             # Fallback: count files
             files = list(b.iterdir())

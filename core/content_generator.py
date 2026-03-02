@@ -51,7 +51,7 @@ Output format (JSON):
         
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"raw_content": response, "error": "Could not parse JSON"}
     
     def generate_social_post(self, topic: str, platform: str = "instagram", include_hashtags: bool = True) -> Dict:
@@ -88,7 +88,7 @@ Output format (JSON):
         
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"raw_content": response, "platform": platform}
     
     def generate_product_description(self, product_name: str, features: List[str] = None, benefits: List[str] = None) -> Dict:
@@ -125,7 +125,7 @@ Output format (JSON):
         
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"raw_content": response, "product": product_name}
     
     def generate_content_calendar(self, days: int = 30, posts_per_day: int = 1) -> Dict:
@@ -163,7 +163,7 @@ Output format (JSON):
         
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"raw_content": response, "days": days}
     
     def generate_image_prompt(self, concept: str, style: str = "professional product photography") -> Dict:
@@ -190,7 +190,7 @@ Output format (JSON):
         
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             return {"raw_content": response, "concept": concept}
 
 # Global instance

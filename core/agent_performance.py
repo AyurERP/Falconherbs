@@ -21,60 +21,66 @@ def get_agent_performance(days: int = 7) -> Dict[str, Any]:
         return {"agents": {}, "idle": [], "failures": [], "period_days": days}
 
     since = (datetime.utcnow() - timedelta(days=days)).isoformat()
-    conn = sqlite3.connect(DB_PATH)
 
-    # Count by agent
-    rows = conn.execute(
-        """
-        SELECT agent, status, COUNT(*) as cnt
-        FROM action_log
-        WHERE timestamp >= ?
-        GROUP BY agent, status
-        """,
-        (since,),
-    ).fetchall()
-
-    # Aggregate
     by_agent: Dict[str, Dict] = {}
-    for agent, status, cnt in rows:
-        if agent not in by_agent:
-            by_agent[agent] = {"total": 0, "success": 0, "failed": 0, "last_action": None}
-        by_agent[agent]["total"] += cnt
-        if status.lower() in ("success", "ok", "complete", "done"):
-            by_agent[agent]["success"] += cnt
-        else:
-            by_agent[agent]["failed"] += cnt
+    failures = []
 
-    # Last action per agent
-    last_rows = conn.execute(
-        """
-        SELECT agent, MAX(timestamp) FROM action_log
-        WHERE timestamp >= ?
-        GROUP BY agent
-        """,
-        (since,),
-    ).fetchall()
-    for agent, ts in last_rows:
-        if agent in by_agent:
-            by_agent[agent]["last_action"] = ts
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            # Count by agent
+            rows = conn.execute(
+                """
+                SELECT agent, status, COUNT(*) as cnt
+                FROM action_log
+                WHERE timestamp >= ?
+                GROUP BY agent, status
+                """,
+                (since,),
+            ).fetchall()
 
-    # Recent failures (for Director report)
-    fail_rows = conn.execute(
-        """
-        SELECT agent, action, status, timestamp, details
-        FROM action_log
-        WHERE timestamp >= ? AND LOWER(status) NOT IN ('success','ok','complete','done')
-        ORDER BY id DESC LIMIT 20
-        """,
-        (since,),
-    ).fetchall()
+            # Aggregate
+            for agent, status, cnt in rows:
+                if agent not in by_agent:
+                    by_agent[agent] = {"total": 0, "success": 0, "failed": 0, "last_action": None}
+                by_agent[agent]["total"] += cnt
+                if status.lower() in ("success", "ok", "complete", "done"):
+                    by_agent[agent]["success"] += cnt
+                else:
+                    by_agent[agent]["failed"] += cnt
 
-    failures = [
-        {"agent": r[0], "action": r[1], "status": r[2], "timestamp": r[3], "details": r[4]}
-        for r in fail_rows
-    ]
+            # Last action per agent
+            last_rows = conn.execute(
+                """
+                SELECT agent, MAX(timestamp) FROM action_log
+                WHERE timestamp >= ?
+                GROUP BY agent
+                """,
+                (since,),
+            ).fetchall()
+            for agent, ts in last_rows:
+                if agent in by_agent:
+                    by_agent[agent]["last_action"] = ts
 
-    conn.close()
+            # Recent failures (for Director report)
+            fail_rows = conn.execute(
+                """
+                SELECT agent, action, status, timestamp, details
+                FROM action_log
+                WHERE timestamp >= ? AND LOWER(status) NOT IN ('success','ok','complete','done')
+                ORDER BY id DESC LIMIT 20
+                """,
+                (since,),
+            ).fetchall()
+
+            failures = [
+                {"agent": r[0], "action": r[1], "status": r[2], "timestamp": r[3], "details": r[4]}
+                for r in fail_rows
+            ]
+        finally:
+            conn.close()
+    except Exception:
+        pass
 
     # Known agents — who we expect to work
     known_agents = [

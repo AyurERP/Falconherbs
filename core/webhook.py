@@ -111,6 +111,7 @@ class FalconWebhook:
         self._thread: Optional[threading.Thread] = None
         self._processed_ids: set = set()  # dedup: track last 1000 message IDs
         self._id_lock: threading.Lock = threading.Lock()
+        self._text_dedup: dict = {}       # dedup: same text within 60s window
 
         # ── Build FastAPI app ──
         self._app: FastAPI = FastAPI(
@@ -276,17 +277,16 @@ class FalconWebhook:
             if text_body_peek and sender:
                 dedup_key = f"{sender}:{hashlib.md5(text_body_peek.encode()).hexdigest()}"
                 now_ts = _time.time()
-                if not hasattr(self, '_text_dedup'):
-                    self._text_dedup = {}
-                last_seen = self._text_dedup.get(dedup_key, 0)
-                if now_ts - last_seen < 60:
-                    log.info("Webhook: same text within 60s — skipping")
-                    return
-                self._text_dedup[dedup_key] = now_ts
-                # Prune old entries
-                if len(self._text_dedup) > 200:
-                    cutoff = now_ts - 120
-                    self._text_dedup = {k: v for k, v in self._text_dedup.items() if v > cutoff}
+                with self._id_lock:
+                    last_seen = self._text_dedup.get(dedup_key, 0)
+                    if now_ts - last_seen < 60:
+                        log.info("Webhook: same text within 60s — skipping")
+                        return
+                    self._text_dedup[dedup_key] = now_ts
+                    # Prune old entries
+                    if len(self._text_dedup) > 200:
+                        cutoff = now_ts - 120
+                        self._text_dedup = {k: v for k, v in self._text_dedup.items() if v > cutoff}
 
             # ── Security: validate sender ──
             if not self._is_allowed_sender(sender):

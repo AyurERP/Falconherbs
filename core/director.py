@@ -1357,14 +1357,15 @@ Respond in JSON:
                 learning.record_success(task, agent)
             elif result.get("status") in ("error", "failed", "timeout"):
                 learning.record_failure(task, result.get("error", "Unknown error"), agent)
-                # Accumulate for daily failure digest
-                self._failure_log.append({
-                    "ts": datetime.now().strftime("%H:%M"),
-                    "agent": agent,
-                    "task": task,
-                    "status": result.get("status"),
-                    "error": str(result.get("error", ""))[:120],
-                })
+                # Accumulate for daily failure digest (capped at 500 to prevent unbounded growth)
+                if len(self._failure_log) < 500:
+                    self._failure_log.append({
+                        "ts": datetime.now().strftime("%H:%M"),
+                        "agent": agent,
+                        "task": task,
+                        "status": result.get("status"),
+                        "error": str(result.get("error", ""))[:120],
+                    })
 
             # ── Log the dispatch ──
             log.log_action(

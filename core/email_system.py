@@ -216,14 +216,14 @@ class EmailSystem:
             EMAIL_LOG.write_text(
                 json.dumps(logs, indent=2), encoding="utf-8"
             )
-        except:
+        except OSError:
             pass
     
     def _load_log(self) -> list:
         """Load email log."""
         try:
             return json.loads(EMAIL_LOG.read_text(encoding="utf-8"))
-        except:
+        except (OSError, json.JSONDecodeError, ValueError):
             return []
 
 

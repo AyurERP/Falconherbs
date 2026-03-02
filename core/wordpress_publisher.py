@@ -99,7 +99,7 @@ class WordPressPublisher:
                 icon = {"needs_review": "📝", "approved": "✅", 
                         "published": "📤", "rejected": "❌"}.get(status, "❓")
                 drafts.append(f"{icon} *{topic}*\n   {status} | {word_count} words | {created}\n   📎 {f.name}")
-            except:
+            except (OSError, json.JSONDecodeError, ValueError, KeyError):
                 continue
         
         if not drafts:
