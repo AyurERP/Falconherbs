@@ -676,17 +676,17 @@ class Director:
                     "Director idle-monitoring: site ping failed"
                 )
 
-        # 4. Ads monitor status (BUILD 4) — lightweight check
-        if self._cycle_count % 20 == 0:
-            try:
-                from core.ads_monitor import get_google_ads_summary
-                g = get_google_ads_summary("today")
-                if g.get("status") == "active":
-                    status_parts.append("ads: connected")
-                elif g.get("status") == "not_configured":
-                    status_parts.append("ads: setup pending")
-            except Exception:
-                pass
+        # 5. AutoPilot — proactive intelligence tick (every idle cycle)
+        try:
+            from core.autopilot import autopilot
+            injected = autopilot.tick(director=self)
+            if injected:
+                for goal in injected:
+                    status_parts.append(
+                        f"🤖 AutoPilot: {goal['description'][:50]}..."
+                    )
+        except Exception as exc:
+            log.debug("AutoPilot tick error: %s", exc)
 
         summary = (
             "Monitoring: " + " | ".join(status_parts)
@@ -696,6 +696,7 @@ class Director:
         self._current_task = summary
         self._current_site = "falconherbs.com"
         log.info("Director idle: %s", summary)
+
 
     def _update_goal_status(
         self,
