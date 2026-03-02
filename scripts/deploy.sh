@@ -13,10 +13,10 @@ echo "Pulling latest code..."
 git pull
 
 echo "Installing dependencies..."
-pip install -r requirements.txt
+venv/bin/pip install -r requirements.txt --quiet
 
 echo "Running Health Check..."
-python3 scripts/health_check.py
+venv/bin/python main.py --check
 
 if [ $? -eq 0 ]; then
     echo "✅ Health Check Passed! Restarting service..."
