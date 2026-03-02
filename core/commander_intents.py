@@ -43,8 +43,6 @@ class ExtendedIntentClassifier:
                     r"\bstore\s+kaisa\b",
                     r"\bdukaan\b",
                     r"\bshop\s+status\b",
-                    r"\binventory\b",
-                    r"\bstock\s+check\b",
                 ],
                 "handler": "handle_store_audit",
                 "description": "Full WooCommerce store audit"
@@ -865,11 +863,10 @@ class ExtendedIntentClassifier:
             "changelog_report": {
                 "patterns": [
                     r"\bchangelog\b",
-                    r"\breport\b",
-                    r"\bsummary\b",
                     r"\blast\s+(?:changelog|report)\b",
                     r"\bbefore\s+after\b",
                     r"\bchanges?\s+report\b",
+                    r"\bchangelog\s+(?:dikhao|send|bhejo)\b",
                 ],
                 "handler": "handle_changelog_report",
                 "description": "Send last changelog/report file"
@@ -1151,7 +1148,266 @@ class ExtendedIntentClassifier:
             "handler": "handle_fix_violations_batch",
             "description": "Fix health violations in batch"
         }
-    
+
+        # ── STORE INTELLIGENCE ────────────────────────────────────────────────
+        self.intents["low_stock_alert"] = {
+            "patterns": [
+                r"\bstock\s+(?:check|karo|dekho|alert|kam)\b",
+                r"\bkam\s+stock\b",
+                r"\bout\s+of\s+stock\b",
+                r"\binventory\s+(?:check|low|alert)\b",
+                r"\bstock\s+(?:khatam|low|warning)\b",
+                r"\bkaunse\s+products?\s+(?:khatam|low)\b",
+            ],
+            "handler": "handle_low_stock_alert",
+            "description": "Check products with low/out-of-stock inventory"
+        }
+        self.intents["refund_check"] = {
+            "patterns": [
+                r"\brefund\b",
+                r"\bcancell?ed?\s+orders?\b",
+                r"\bwapas\s+(?:aaye|hua|orders?)\b",
+                r"\breturn\s+(?:check|orders?|dikhao)\b",
+                r"\bfailed\s+orders?\b",
+                r"\brefund\s+(?:kitne|check|status)\b",
+            ],
+            "handler": "handle_refund_check",
+            "description": "Check recent refunds, cancellations and failed orders"
+        }
+        self.intents["product_performance"] = {
+            "patterns": [
+                r"\bbest\s+seller\b",
+                r"\btop\s+products?\b",
+                r"\bkaunsa\s+product\s+(?:best|zyada|top)\b",
+                r"\bproduct\s+performance\b",
+                r"\bsabse\s+zyada\s+(?:bika|bikne|sell)\b",
+                r"\bselling\s+report\b",
+                r"\bsales\s+(?:top|best|report|breakdown)\b",
+            ],
+            "handler": "handle_product_performance",
+            "description": "Top selling products this month by revenue"
+        }
+        self.intents["customer_segments"] = {
+            "patterns": [
+                r"\bcustomer\s+(?:report|analysis|segments?|kaun)\b",
+                r"\bbuyers?\s+(?:report|kaun|analysis)\b",
+                r"\bkitne\s+customers?\b",
+                r"\bnaye\s+vs\s+purane\s+customers?\b",
+                r"\bcustomer\s+breakdown\b",
+                r"\bwho\s+(?:are\s+)?(?:my\s+)?customers?\b",
+            ],
+            "handler": "handle_customer_segments",
+            "description": "Customer breakdown: new vs returning, top cities, avg order value"
+        }
+        self.intents["growth_report"] = {
+            "patterns": [
+                r"\bgrowth\s+report\b",
+                r"\bis\s+mahine\s+ki\s+growth\b",
+                r"\bmonth\s+(?:over|vs|comparison)\b",
+                r"\bpichle\s+mahine\s+(?:se|vs|compare)\b",
+                r"\bmonthly\s+growth\b",
+                r"\bgrowth\s+(?:kya|kaisi|dikhao)\b",
+                r"\bmom\s+growth\b",
+            ],
+            "handler": "handle_growth_report",
+            "description": "Month-over-month growth: orders, revenue, customers"
+        }
+        self.intents["gst_report"] = {
+            "patterns": [
+                r"\bgst\s+(?:report|calculate|nikalo|kya|kitna)\b",
+                r"\btax\s+report\b",
+                r"\bcgst|sgst|igst\b",
+                r"\bkitna\s+(?:gst|tax)\b",
+                r"\bgstin\s+report\b",
+                r"\btax\s+(?:calculation|breakdown|monthly)\b",
+            ],
+            "handler": "handle_gst_report",
+            "description": "Monthly GST breakdown from WooCommerce orders (CGST/SGST/IGST)"
+        }
+
+        # ── CONTENT & MARKETING ───────────────────────────────────────────────
+        self.intents["festival_campaign"] = {
+            "patterns": [
+                r"\b(?:holi|diwali|navratri|eid|christmas|new year|independence|republic|raksha)\b.*(?:campaign|post|content)\b",
+                r"\bfestival\s+(?:campaign|content|post|plan)\b",
+                r"\b(?:campaign|content)\s+(?:for\s+)?(?:holi|diwali|navratri|eid)\b",
+                r"\bt[yY]ohar\s+(?:campaign|content|post)\b",
+                r"\bfestive\s+(?:campaign|content|season)\b",
+                r"\bfestival\s+(?:wala|ke\s+liye)\s+content\b",
+            ],
+            "handler": "handle_festival_campaign",
+            "description": "Create festival-specific marketing campaign (Holi, Diwali, Navratri, etc.)"
+        }
+        self.intents["season_strategy"] = {
+            "patterns": [
+                r"\bseason\s+(?:strategy|plan|content)\b",
+                r"\bis\s+mahine\s+ki\s+strategy\b",
+                r"\bmonthly\s+strategy\b",
+                r"\b(?:summer|winter|monsoon|spring)\s+(?:strategy|plan|content)\b",
+                r"\bseasonal\s+(?:plan|strategy|marketing)\b",
+                r"\bkya\s+sell\s+karna\s+chahiye\b",
+                r"\bkis\s+cheez\s+ka\s+focus\b",
+            ],
+            "handler": "handle_season_strategy",
+            "description": "Monthly ayurvedic season strategy and product focus plan"
+        }
+        self.intents["product_faq"] = {
+            "patterns": [
+                r"\bfaq\s+(?:banao|generate|likho|create)\b",
+                r"\bsawaal\s+jawab\s+(?:banao|likho)\b",
+                r"\bproduct\s+(?:ke\s+liye\s+)?(?:faq|questions?|sawaal)\b",
+                r"\bcommon\s+questions?\s+(?:banao|for)\b",
+                r"\bfaq\s+(?:for|ke\s+liye)\b",
+                r"\bq&a\s+(?:banao|generate)\b",
+            ],
+            "handler": "handle_product_faq",
+            "description": "Generate FAQ Q&A pairs for a product page (SEO + AEO boost)"
+        }
+        self.intents["trending_topics"] = {
+            "patterns": [
+                r"\btrend(?:ing)?\s+(?:topics?|kya|search|ayurveda)\b",
+                r"\baaj\s+kya\s+trending\b",
+                r"\bkya\s+trending\s+(?:hai|hain)\b",
+                r"\bpopular\s+(?:topics?|searches?|keywords?)\s+(?:aaj|this\s+week|abhi)\b",
+                r"\bviral\s+(?:topics?|content)\b",
+                r"\btrending\s+(?:in\s+)?(?:ayurveda|india|herbs?)\b",
+            ],
+            "handler": "handle_trending_topics",
+            "description": "Get trending ayurvedic and wellness topics this week via DuckDuckGo"
+        }
+        self.intents["content_repurpose"] = {
+            "patterns": [
+                r"\brepurpose\b",
+                r"\bblog\s+(?:se|ko)\s+(?:social|post|caption|tweet)\b",
+                r"\bcontent\s+(?:se\s+aur|repurpose|convert)\b",
+                r"\b(?:blog|article)\s+(?:ko\s+)?(?:instagram|facebook|tweet|caption)\s+(?:mein|banao|convert)\b",
+                r"\bek\s+content\s+se\s+(?:bahut|multiple|alag)\b",
+                r"\bconvert\s+(?:blog|content|article)\b",
+            ],
+            "handler": "handle_content_repurpose",
+            "description": "Repurpose a blog post into Instagram caption, FAQ, meta description"
+        }
+        self.intents["heropost_week"] = {
+            "patterns": [
+                r"\bheropost\s+(?:week|weekly|plan|schedule)\b",
+                r"\b(?:week|hafte)\s+(?:ka|ke|ki)\s+(?:heropost|7\s+posts?|saat\s+posts?)\b",
+                r"\b7\s+posts?\s+(?:banao|ready|plan|chahiye)\b",
+                r"\bsaat\s+posts?\s+(?:banao|plan|ready)\b",
+                r"\b7\s+din\s+(?:ka|ke)\s+(?:post|social)\s+(?:plan|content|schedule)\b",
+                r"\bpura\s+hafte\s+(?:ka|ke)\s+(?:post|content|social)\b",
+                r"\bweekly\s+social\s+(?:plan|schedule|content)\b",
+            ],
+            "handler": "handle_heropost_week",
+            "description": "Generate 7-day content plan with all posts ready for HeroPost"
+        }
+        self.intents["whatsapp_broadcast_draft"] = {
+            "patterns": [
+                r"\bbroadcast\s+(?:message|bhejo|banao|draft)\b",
+                r"\bbulk\s+(?:message|whatsapp|sms)\b",
+                r"\bsab\s+customers?\s+ko\s+(?:message|bhejo|inform)\b",
+                r"\bwhatsapp\s+(?:blast|broadcast|bulk)\b",
+                r"\bpromotion(?:al)?\s+message\s+(?:banao|draft)\b",
+                r"\bcustomers?\s+ko\s+(?:inform|message|notify)\s+karo\b",
+            ],
+            "handler": "handle_whatsapp_broadcast_draft",
+            "description": "Draft a WhatsApp broadcast/bulk promotional message"
+        }
+        self.intents["testimonial_campaign"] = {
+            "patterns": [
+                r"\btestimonial\b",
+                r"\breviews?\s+(?:maango|collect|campaign|lao)\b",
+                r"\bfeedback\s+(?:maango|collect|campaign)\b",
+                r"\bcustomers?\s+se\s+reviews?\s+(?:maango|lao)\b",
+                r"\brating\s+(?:maango|campaign)\b",
+                r"\breview\s+(?:collection|request|campaign)\b",
+            ],
+            "handler": "handle_testimonial_campaign",
+            "description": "Generate review collection campaign (email/WhatsApp templates)"
+        }
+
+        # ── INFRASTRUCTURE / NETWORKSOLUTIONS ────────────────────────────────
+        self.intents["ssl_check"] = {
+            "patterns": [
+                r"\bssl\s+(?:check|karo|status|expiry|certificate)\b",
+                r"\bcertificate\s+(?:check|expiry|valid)\b",
+                r"\bhttps?\s+(?:check|valid|secure)\b",
+                r"\bssl\s+(?:kab\s+expire|kitne\s+din)\b",
+            ],
+            "handler": "handle_ssl_check",
+            "description": "Check SSL certificate expiry for the website"
+        }
+        self.intents["domain_health"] = {
+            "patterns": [
+                r"\bdomain\s+(?:check|health|status|expiry|karo)\b",
+                r"\bwebsite\s+domain\b",
+                r"\bdns\s+(?:check|status)\b",
+                r"\bdomain\s+(?:kab\s+expire|kitne\s+din|valid)\b",
+                r"\bblacklist\s+check\b",
+            ],
+            "handler": "handle_domain_health",
+            "description": "Check domain expiry, DNS resolution, blacklist status"
+        }
+        self.intents["email_inbox_check"] = {
+            "patterns": [
+                r"\bemail(?:s)?\s+(?:check|dekho|inbox|dikhao|padho)\b",
+                r"\binbox\s+(?:check|dikhao|kya\s+hai)\b",
+                r"\bnaye\s+emails?\b",
+                r"\bcustomer\s+emails?\s+(?:check|dikhao|kya)\b",
+                r"\bemail\s+(?:kya\s+aaya|aaye|received)\b",
+                r"\bnetworksolutions?\s+email\b",
+            ],
+            "handler": "handle_email_inbox_check",
+            "description": "Check NetworkSolutions business email inbox for new messages"
+        }
+        self.intents["email_blast"] = {
+            "patterns": [
+                r"\bemail\s+(?:blast|campaign\s+bhejo|bulk|send|bhejo)\b",
+                r"\bcustomers?\s+ko\s+email\s+(?:bhejo|send|karo)\b",
+                r"\bemail\s+(?:newsletter|promotion|announcement)\s+(?:bhejo|send)\b",
+                r"\bnetworksolutions?\s+email\s+(?:send|campaign|blast)\b",
+                r"\bbulk\s+email\b",
+            ],
+            "handler": "handle_email_blast",
+            "description": "Compose and send bulk email to customers via NetworkSolutions"
+        }
+
+        # ── MULTI-SITE MANAGEMENT ─────────────────────────────────────────────
+        self.intents["list_sites"] = {
+            "patterns": [
+                r"\bsites?\s+(?:dikhao|list|kitne|show|batao)\b",
+                r"\bkaun\s+(?:se|si)\s+websites?\s+(?:hain|manage)\b",
+                r"\bmanaged?\s+(?:sites?|websites?)\b",
+                r"\bwebsites?\s+(?:list|dikhao|kitni)\b",
+                r"\bkitne\s+(?:sites?|websites?)\b",
+            ],
+            "handler": "handle_list_sites",
+            "description": "List all websites managed by the agency"
+        }
+        self.intents["switch_site"] = {
+            "patterns": [
+                r"\bswitch\s+(?:to\s+)?site\b",
+                r"\bsite\s+(?:switch|badlo|change)\b",
+                r"\b(?:go\s+to|use|select)\s+site\s+\d+\b",
+                r"\bsite\s+\d+\s+(?:pe|par|select|use)\b",
+                r"\bdusra\s+(?:site|website)\s+(?:use|select|switch)\b",
+                r"\bchange\s+(?:active\s+)?site\b",
+            ],
+            "handler": "handle_switch_site",
+            "description": "Switch the active website the agency operates on"
+        }
+        self.intents["add_site"] = {
+            "patterns": [
+                r"\bnaya\s+(?:site|website)\s+(?:add|jodo|register)\b",
+                r"\badd\s+(?:a\s+)?(?:new\s+)?(?:site|website)\b",
+                r"\bnew\s+(?:site|website)\s+(?:add|register|setup)\b",
+                r"\bdusri\s+website\s+(?:add|jodo)\b",
+                r"\bregister\s+(?:new\s+)?site\b",
+                r"\bsite\s+add\s+karo\b",
+            ],
+            "handler": "handle_add_site",
+            "description": "Add a new website to agency management"
+        }
+
     def classify(self, message):
         """
         Classify a message into new intent categories.
@@ -3846,6 +4102,785 @@ Keep it punchy, under 150 words. No health claims."""
                 "success": True
             }
         return {"response": f"❌ Batch scan failed: {res.get('error')}", "success": False}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STORE INTELLIGENCE HANDLERS
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def handle_low_stock_alert(self, intent) -> dict:
+        """Check products with qty <= 5 or out_of_stock status."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            products = woo.get_all_products(save=False)
+            if isinstance(products, dict):
+                products = products.get("products", [])
+            low, out = [], []
+            for p in products:
+                qty = p.get("stock_quantity") or 0
+                status = p.get("stock_status", "")
+                name = p.get("name", "Unknown")[:40]
+                pid = p.get("id", "")
+                if status == "outofstock":
+                    out.append(f"🔴 P{pid} {name}")
+                elif qty is not None and int(qty) <= 5:
+                    low.append(f"🟡 P{pid} {name} — Qty: {qty}")
+            lines = ["📦 *STOCK ALERT REPORT*", "─────────────────────"]
+            if out:
+                lines.append(f"\n*OUT OF STOCK ({len(out)}):*")
+                lines += out[:10]
+            if low:
+                lines.append(f"\n*LOW STOCK ≤5 ({len(low)}):*")
+                lines += low[:10]
+            if not out and not low:
+                lines.append("✅ Sabhi products ka stock theek hai!")
+            else:
+                lines.append(f"\n💡 WooCommerce pe jao aur stock update karo.")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Stock check failed: {e}", "success": False}
+
+    def handle_refund_check(self, intent) -> dict:
+        """Check recent refunds, cancellations and failed orders."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            orders_data = woo.get_orders(days_back=30, save=False)
+            if isinstance(orders_data, dict):
+                orders = orders_data.get("orders", [])
+            else:
+                orders = []
+            bad_statuses = {"refunded", "cancelled", "failed"}
+            bad_orders = [o for o in orders if o.get("status", "") in bad_statuses]
+            lines = ["💸 *REFUNDS & CANCELLATIONS (Last 30 days)*", "─────────────────────"]
+            counts = {}
+            total_lost = 0.0
+            for o in bad_orders:
+                s = o.get("status", "")
+                counts[s] = counts.get(s, 0) + 1
+                try:
+                    total_lost += float(o.get("total", 0))
+                except Exception:
+                    pass
+            if not bad_orders:
+                lines.append("✅ Last 30 days mein koi refund/cancellation nahi!")
+            else:
+                for s, c in counts.items():
+                    icon = "🔴" if s == "refunded" else "🟡" if s == "cancelled" else "⚫"
+                    lines.append(f"{icon} {s.capitalize()}: {c} orders")
+                lines.append(f"\n💰 Total Revenue Lost: ₹{total_lost:,.0f}")
+                lines.append(f"\n📋 *Recent ({min(5, len(bad_orders))}) bad orders:*")
+                for o in bad_orders[:5]:
+                    lines.append(f"• #{o.get('number','?')} — {o.get('status','')} — ₹{o.get('total','0')}")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Refund check failed: {e}", "success": False}
+
+    def handle_product_performance(self, intent) -> dict:
+        """Top selling products this month by revenue and quantity."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            orders_data = woo.get_orders(days_back=30, save=False)
+            if isinstance(orders_data, dict):
+                orders = orders_data.get("orders", [])
+            else:
+                orders = []
+            sales = {}
+            for o in orders:
+                if o.get("status") in {"completed", "processing"}:
+                    for item in o.get("line_items", []):
+                        name = item.get("name", "Unknown")[:35]
+                        qty = int(item.get("quantity", 0))
+                        rev = float(item.get("total", 0))
+                        if name not in sales:
+                            sales[name] = {"qty": 0, "rev": 0.0}
+                        sales[name]["qty"] += qty
+                        sales[name]["rev"] += rev
+            if not sales:
+                return {"response": "❌ Last 30 days mein koi completed orders nahi mila.", "success": False}
+            sorted_by_rev = sorted(sales.items(), key=lambda x: x[1]["rev"], reverse=True)[:8]
+            lines = ["🏆 *TOP PRODUCTS — Last 30 Days*", "─────────────────────"]
+            for i, (name, data) in enumerate(sorted_by_rev, 1):
+                lines.append(f"{i}. {name}\n   Sold: {data['qty']} units | Revenue: ₹{data['rev']:,.0f}")
+            total_rev = sum(d["rev"] for _, d in sorted_by_rev)
+            lines.append(f"\n💰 *Top 8 Revenue: ₹{total_rev:,.0f}*")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Product performance failed: {e}", "success": False}
+
+    def handle_customer_segments(self, intent) -> dict:
+        """Customer breakdown: new vs returning, top cities, avg order value."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            orders_data = woo.get_orders(days_back=90, save=False)
+            if isinstance(orders_data, dict):
+                orders = [o for o in orders_data.get("orders", []) if o.get("status") in {"completed", "processing"}]
+            else:
+                orders = []
+            if not orders:
+                return {"response": "❌ No completed orders in last 90 days.", "success": False}
+            cities, customer_orders = {}, {}
+            total_rev = 0.0
+            for o in orders:
+                email = o.get("billing", {}).get("email", "").lower()
+                city = o.get("billing", {}).get("city", "Unknown")
+                cities[city] = cities.get(city, 0) + 1
+                customer_orders[email] = customer_orders.get(email, 0) + 1
+                try:
+                    total_rev += float(o.get("total", 0))
+                except Exception:
+                    pass
+            new_customers = sum(1 for v in customer_orders.values() if v == 1)
+            returning = len(customer_orders) - new_customers
+            avg_order = total_rev / len(orders) if orders else 0
+            top_cities = sorted(cities.items(), key=lambda x: x[1], reverse=True)[:5]
+            lines = [
+                "👥 *CUSTOMER REPORT — Last 90 Days*",
+                "─────────────────────",
+                f"📊 Total Unique Buyers: {len(customer_orders)}",
+                f"🆕 New Customers: {new_customers}",
+                f"🔁 Returning Customers: {returning}",
+                f"💰 Avg Order Value: ₹{avg_order:,.0f}",
+                f"\n🏙️ *Top Cities:*",
+            ]
+            for city, count in top_cities:
+                lines.append(f"  • {city}: {count} orders")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Customer segments failed: {e}", "success": False}
+
+    def handle_growth_report(self, intent) -> dict:
+        """Month-over-month growth: orders, revenue, new customers."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            from datetime import datetime, timedelta
+            now = datetime.utcnow()
+            # Current month range
+            start_this = now.replace(day=1, hour=0, minute=0, second=0)
+            # Last month range
+            start_last = (start_this - timedelta(days=1)).replace(day=1)
+            end_last = start_this
+            orders_data = woo.get_orders(days_back=62, save=False)
+            if isinstance(orders_data, dict):
+                all_orders = [o for o in orders_data.get("orders", []) if o.get("status") in {"completed", "processing"}]
+            else:
+                all_orders = []
+            def _parse_dt(o):
+                try:
+                    return datetime.fromisoformat(o.get("date_created", "").replace("Z", ""))
+                except Exception:
+                    return None
+            this_month = [o for o in all_orders if _parse_dt(o) and _parse_dt(o) >= start_this]
+            last_month = [o for o in all_orders if _parse_dt(o) and start_last <= _parse_dt(o) < end_last]
+            def _stats(orders):
+                rev = sum(float(o.get("total", 0)) for o in orders)
+                customers = len(set(o.get("billing", {}).get("email", "") for o in orders))
+                return len(orders), rev, customers
+            t_ord, t_rev, t_cust = _stats(this_month)
+            l_ord, l_rev, l_cust = _stats(last_month)
+            def _pct(new, old):
+                if old == 0:
+                    return "N/A" if new == 0 else "🆕 New"
+                pct = ((new - old) / old) * 100
+                arrow = "📈" if pct >= 0 else "📉"
+                return f"{arrow} {pct:+.1f}%"
+            lines = [
+                "📊 *MONTH-OVER-MONTH GROWTH*",
+                f"This Month vs Last Month",
+                "─────────────────────",
+                f"🛒 Orders:    {t_ord} vs {l_ord}  {_pct(t_ord, l_ord)}",
+                f"💰 Revenue:   ₹{t_rev:,.0f} vs ₹{l_rev:,.0f}  {_pct(t_rev, l_rev)}",
+                f"👥 Customers: {t_cust} vs {l_cust}  {_pct(t_cust, l_cust)}",
+            ]
+            if t_rev > l_rev:
+                lines.append(f"\n✅ Alhamdullilah! Revenue up ₹{t_rev - l_rev:,.0f} this month.")
+            elif t_rev < l_rev:
+                lines.append(f"\n⚠️ Revenue down ₹{l_rev - t_rev:,.0f}. Marketing boost needed.")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Growth report failed: {e}", "success": False}
+
+    def handle_gst_report(self, intent) -> dict:
+        """Monthly GST breakdown from WooCommerce orders (18% GST assumed)."""
+        try:
+            woo = self.bridge.tools.get("woocommerce")
+            if not woo:
+                return {"response": "❌ WooCommerce not connected.", "success": False}
+            from datetime import datetime
+            now = datetime.utcnow()
+            orders_data = woo.get_orders(days_back=35, save=False)
+            if isinstance(orders_data, dict):
+                orders = [o for o in orders_data.get("orders", []) if o.get("status") in {"completed", "processing"}]
+            else:
+                orders = []
+            if not orders:
+                return {"response": "❌ No completed orders this month.", "success": False}
+            # Filter current month
+            month_orders = []
+            for o in orders:
+                try:
+                    dt = datetime.fromisoformat(o.get("date_created", "").replace("Z", ""))
+                    if dt.month == now.month and dt.year == now.year:
+                        month_orders.append(o)
+                except Exception:
+                    pass
+            taxable = sum(float(o.get("total", 0)) for o in month_orders)
+            # Reverse-calculate GST from total (GST-inclusive)
+            gst_rate = 0.18
+            base = taxable / (1 + gst_rate)
+            total_gst = taxable - base
+            cgst = total_gst / 2
+            sgst = total_gst / 2
+            month_name = now.strftime("%B %Y")
+            lines = [
+                f"🧾 *GST REPORT — {month_name}*",
+                "─────────────────────",
+                f"📦 Orders (Completed): {len(month_orders)}",
+                f"💰 Gross Revenue (GST-inclusive): ₹{taxable:,.2f}",
+                f"📊 Base Amount (without GST): ₹{base:,.2f}",
+                f"─────────────────────",
+                f"GST @ 18%: ₹{total_gst:,.2f}",
+                f"  CGST (9%): ₹{cgst:,.2f}",
+                f"  SGST (9%): ₹{sgst:,.2f}",
+                f"─────────────────────",
+                f"⚠️ Note: This assumes standard 18% GST rate.",
+                f"For inter-state orders, IGST applies instead of CGST+SGST.",
+                f"Verify with your CA before filing.",
+            ]
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ GST report failed: {e}", "success": False}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CONTENT & MARKETING HANDLERS
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def handle_festival_campaign(self, intent) -> dict:
+        """Create festival-specific marketing campaign."""
+        try:
+            msg = (intent.get("message_text") or "").lower()
+            festivals = {
+                "holi": ("Holi", "March", "colors, renewal, spring, joy"),
+                "diwali": ("Diwali", "October/November", "light, prosperity, gifting, new beginnings"),
+                "navratri": ("Navratri", "October", "energy, shakti, fasting, wellness"),
+                "eid": ("Eid", "seasonal", "celebration, sharing, gratitude, community"),
+                "raksha": ("Raksha Bandhan", "August", "love, protection, family bonds"),
+                "independence": ("Independence Day", "August 15", "pride, health, nation"),
+                "republic": ("Republic Day", "January 26", "unity, wellness for all"),
+            }
+            detected = next((v for k, v in festivals.items() if k in msg), ("Festival", "upcoming", "celebration, tradition, wellness"))
+            fest_name, fest_time, themes = detected
+            from core.ai_client import call_ai
+            prompt = f"""Create a complete festival marketing campaign for Falcon Herbs (authentic Ayurvedic herbs brand, India) for {fest_name}.
+
+Themes for this festival: {themes}
+
+Generate:
+1. **WHATSAPP MESSAGE** (for broadcast, 150 words max, Hinglish/English, warm & festive)
+2. **INSTAGRAM CAPTION** (200 words, emojis, festive vibe, product tie-in, 5 relevant hashtags)
+3. **FACEBOOK POST** (150 words, slightly formal, community feel)
+4. **OFFER IDEAS** (2-3 festival discount/bundle ideas that make sense for Ayurvedic herbs)
+5. **EMAIL SUBJECT LINE** (5 options)
+
+IMPORTANT: All content must be FSSAI compliant — no disease cure claims. Use words like 'support', 'wellness', 'traditionally used'."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"🎉 *{fest_name.upper()} CAMPAIGN — FALCON HERBS*\n\n{response}", "success": True}
+            return {"response": f"❌ Campaign generation failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Festival campaign error: {e}", "success": False}
+
+    def handle_season_strategy(self, intent) -> dict:
+        """Monthly ayurvedic season strategy and product focus plan."""
+        try:
+            from datetime import datetime
+            from core.ai_client import call_ai
+            month = datetime.now().strftime("%B")
+            prompt = f"""You are an expert Ayurvedic business strategist for Falcon Herbs (authentic herb brand, India, {month}).
+
+Create a concise monthly strategy covering:
+1. **AYURVEDIC SEASON** this month (Vata/Pitta/Kapha dominance + why)
+2. **TOP 5 PRODUCTS TO PUSH** (from a typical Ayurvedic herb catalog — Ashwagandha, Triphala, Tulsi, Shatavari, Brahmi, etc.) — explain why each fits this season
+3. **CONTENT FOCUS** (3 content themes that will resonate this month)
+4. **MARKETING ANGLE** (1 main message for this month)
+5. **QUICK ACTION LIST** (3 things to do this week)
+
+Be specific to Indian climate and {month}. Keep it actionable and WhatsApp-friendly (use bullets)."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"🌿 *{month.upper()} STRATEGY — FALCON HERBS*\n\n{response}", "success": True}
+            return {"response": "❌ Strategy generation failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Season strategy error: {e}", "success": False}
+
+    def handle_product_faq(self, intent) -> dict:
+        """Generate FAQ Q&A pairs for a product (SEO + AEO boost)."""
+        try:
+            from core.ai_client import call_ai
+            msg = intent.get("message_text", "")
+            # Extract product name from message
+            import re as _re
+            product_match = _re.search(r"(?:for|ke\s+liye|about|about\s+the\s+)?([A-Za-z\s]+?)(?:\s+(?:ka|ke|ki|faq|FAQ|sawaal|question)|$)", msg, _re.I)
+            product = product_match.group(1).strip() if product_match else "Ashwagandha"
+            product = product.strip().title()
+            prompt = f"""Generate 8 FAQ (Frequently Asked Questions) pairs for {product} for the Falcon Herbs website.
+
+Format each Q&A pair as:
+Q: [Question a customer would ask]
+A: [Concise, accurate, FSSAI-compliant answer — no disease cure claims]
+
+Requirements:
+- Mix of: usage questions, dosage, benefits, safety, sourcing, Ayurvedic context
+- Answers must be 2-4 sentences max (good for Google AI Overviews / AEO)
+- No claims like "cures", "treats disease", "FDA approved"
+- Use: "traditionally used to support", "may support", "as per Ayurveda"
+- Include 1-2 questions comparing to similar herbs
+
+These FAQs will be added to the product page for SEO and AEO (Google AI snippets)."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"❓ *FAQ — {product}*\n(Add these to your product page)\n\n{response}", "success": True}
+            return {"response": "❌ FAQ generation failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Product FAQ error: {e}", "success": False}
+
+    def handle_trending_topics(self, intent) -> dict:
+        """Get trending ayurvedic topics this week via DuckDuckGo/Serper."""
+        try:
+            from core.serper_client import search
+            from core.ai_client import call_ai
+            queries = [
+                "ayurveda trending 2026 India",
+                "best selling ayurvedic herbs India this week",
+                "ayurvedic wellness trending topics India",
+            ]
+            all_snippets = []
+            for q in queries:
+                result = search(q, source="trending")
+                for item in result.get("organic", [])[:4]:
+                    snippet = item.get("snippet", "")
+                    if snippet:
+                        all_snippets.append(snippet)
+            if not all_snippets:
+                return {"response": "❌ Search results empty. DuckDuckGo ya Serper unavailable.", "success": False}
+            combined = "\n".join(all_snippets[:12])
+            prompt = f"""Based on these search results about trending Ayurveda topics in India:
+
+{combined}
+
+Extract and list:
+1. **TOP 5 TRENDING TOPICS** this week (herb names, wellness trends, popular searches)
+2. **CONTENT OPPORTUNITY** for each (what Falcon Herbs should post about it)
+3. **BEST HASHTAGS** for each topic (3 per topic)
+
+Format as WhatsApp-friendly bullets. Be specific and actionable."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"🔥 *TRENDING THIS WEEK — AYURVEDA*\n\n{response}", "success": True}
+            return {"response": "❌ Trend analysis failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Trending topics error: {e}", "success": False}
+
+    def handle_content_repurpose(self, intent) -> dict:
+        """Repurpose latest blog post into multiple content formats."""
+        try:
+            import glob as _glob, os
+            from core.ai_client import call_ai
+            # Find latest blog draft
+            drafts_dir = "data/content/drafts"
+            blog_files = sorted(_glob.glob(os.path.join(drafts_dir, "blog_*.json")), reverse=True)
+            if not blog_files:
+                return {"response": "❌ Koi blog draft nahi mila. Pehle 'blog likho' karo.", "success": False}
+            with open(blog_files[0], encoding="utf-8") as f:
+                draft = json.load(f)
+            title = draft.get("title", "Ayurvedic Blog Post")
+            content = draft.get("content", draft.get("body", ""))
+            import re as _re
+            clean = _re.sub(r'<[^>]+>', '', content)[:2000]
+            prompt = f"""Repurpose this blog post for Falcon Herbs into multiple formats:
+
+BLOG TITLE: {title}
+CONTENT EXCERPT: {clean}
+
+Generate ALL of these:
+1. **INSTAGRAM CAPTION** (150 words, hook + value + CTA, 7 hashtags)
+2. **FACEBOOK POST** (100 words, conversational)
+3. **META DESCRIPTION** (155 chars, SEO-optimized)
+4. **5 FAQ QUESTIONS** (from the blog content, for product/blog page)
+5. **WHATSAPP ONE-LINER** (1 sentence teaser to send customers)
+6. **EMAIL SUBJECT LINE** (3 options)
+
+All FSSAI compliant — no disease cure claims."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"♻️ *REPURPOSED: {title[:40]}*\n\n{response}", "success": True}
+            return {"response": "❌ Repurpose failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Content repurpose error: {e}", "success": False}
+
+    def handle_heropost_week(self, intent) -> dict:
+        """Generate 7-day content plan with all posts ready for HeroPost."""
+        try:
+            from core.ai_client import call_ai
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            days = [(today + timedelta(days=i)).strftime("%A, %d %b") for i in range(7)]
+            prompt = f"""Create a 7-day Instagram + Facebook content plan for Falcon Herbs (authentic Ayurvedic herbs, India).
+
+Starting from: {days[0]}
+Days: {', '.join(days)}
+
+For each day provide:
+**Day N — [Day Name, Date]**
+Topic: [topic]
+Caption: [60-word Instagram caption with hook]
+Hashtags: #tag1 #tag2 #tag3 #tag4 #tag5
+Image Idea: [simple visual description for HeroPost]
+
+Content mix (use this variety):
+- Day 1: Product highlight (Ashwagandha or top seller)
+- Day 2: Ayurvedic tip / wellness fact
+- Day 3: Behind the scenes / sourcing story
+- Day 4: Customer benefit story (FSSAI compliant)
+- Day 5: Festival/seasonal content OR trending herb
+- Day 6: Product comparison / Ayurveda myth bust
+- Day 7: Weekend wellness routine
+
+FSSAI: No cure claims. Use 'supports', 'traditionally used', 'wellness'."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"📅 *7-DAY HEROPOST PLAN*\n{days[0]} → {days[-1]}\n\n{response}", "success": True}
+            return {"response": "❌ Week plan generation failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ HeroPost week plan error: {e}", "success": False}
+
+    def handle_whatsapp_broadcast_draft(self, intent) -> dict:
+        """Draft a WhatsApp broadcast/bulk promotional message."""
+        try:
+            from core.ai_client import call_ai
+            msg = intent.get("message_text", "")
+            prompt = f"""Write 3 different WhatsApp broadcast messages for Falcon Herbs customers.
+User context: "{msg}"
+
+Each message should be:
+- 80-120 words max (WhatsApp broadcast length)
+- Hinglish (mix of Hindi + English, informal, warm)
+- Include: product highlight, benefit, offer/CTA
+- End with: "Reply 'ORDER' to buy" or similar CTA
+- FSSAI compliant (no cure claims)
+
+Format:
+**Option 1 — [tone: e.g. "Warm/Festive"]**
+[message]
+
+**Option 2 — [tone: e.g. "Urgent/Sale"]**
+[message]
+
+**Option 3 — [tone: e.g. "Educational/Trust"]**
+[message]"""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"📢 *WHATSAPP BROADCAST DRAFTS*\n\n{response}\n\n💡 Copy the best option → paste in WhatsApp Broadcast List", "success": True}
+            return {"response": "❌ Broadcast draft failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Broadcast draft error: {e}", "success": False}
+
+    def handle_testimonial_campaign(self, intent) -> dict:
+        """Generate review collection campaign templates."""
+        try:
+            from core.ai_client import call_ai
+            prompt = """Create a complete review/testimonial collection campaign for Falcon Herbs:
+
+1. **WHATSAPP MESSAGE TO PAST CUSTOMERS** (80 words, Hinglish, friendly, asking for honest review)
+2. **EMAIL SUBJECT LINES** (5 options for review request email)
+3. **EMAIL BODY** (150 words, grateful tone, link placeholder [REVIEW_LINK])
+4. **FOLLOW-UP MESSAGE** (if no response after 3 days, 50 words)
+5. **THANK YOU MESSAGE** (after they leave review, 40 words)
+6. **INCENTIVE IDEAS** (3 ethical ways to encourage reviews — discount, points, etc.)
+
+Keep all messages warm, genuine, FSSAI compliant. No fake review tactics."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {"response": f"⭐ *REVIEW COLLECTION CAMPAIGN*\n\n{response}", "success": True}
+            return {"response": "❌ Testimonial campaign failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Testimonial campaign error: {e}", "success": False}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # INFRASTRUCTURE / NETWORKSOLUTIONS HANDLERS
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def handle_ssl_check(self, intent) -> dict:
+        """Check SSL certificate expiry for the website."""
+        try:
+            import ssl, socket
+            from datetime import datetime
+            import os
+            site_url = os.getenv("WP_SITE_URL", "falconherbs.com").replace("https://", "").replace("http://", "").rstrip("/")
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(socket.socket(), server_hostname=site_url) as s:
+                s.settimeout(10)
+                s.connect((site_url, 443))
+                cert = s.getpeercert()
+            expire_str = cert.get("notAfter", "")
+            expire_dt = datetime.strptime(expire_str, "%b %d %H:%M:%S %Y %Z")
+            days_left = (expire_dt - datetime.utcnow()).days
+            icon = "✅" if days_left > 30 else ("⚠️" if days_left > 7 else "🔴")
+            issued_to = dict(x[0] for x in cert.get("subject", []))
+            lines = [
+                f"🔒 *SSL CERTIFICATE — {site_url}*",
+                "─────────────────────",
+                f"Issued To: {issued_to.get('commonName', site_url)}",
+                f"Expires: {expire_dt.strftime('%d %b %Y')}",
+                f"{icon} Days Remaining: {days_left} days",
+            ]
+            if days_left <= 30:
+                lines.append(f"\n⚠️ Certificate expires soon! Renew via your hosting panel.")
+            else:
+                lines.append(f"\n✅ SSL is valid. No action needed.")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ SSL check failed: {e}", "success": False}
+
+    def handle_domain_health(self, intent) -> dict:
+        """Check domain DNS resolution and basic reachability."""
+        try:
+            import socket, os, requests as _req
+            site_url = os.getenv("WP_SITE_URL", "https://falconherbs.com").replace("https://", "").replace("http://", "").rstrip("/")
+            lines = [f"🌐 *DOMAIN HEALTH — {site_url}*", "─────────────────────"]
+            # DNS check
+            try:
+                ip = socket.gethostbyname(site_url)
+                lines.append(f"✅ DNS: Resolving → {ip}")
+            except Exception:
+                lines.append(f"🔴 DNS: FAILED to resolve {site_url}")
+            # HTTP check
+            try:
+                r = _req.get(f"https://{site_url}", timeout=10, allow_redirects=True)
+                lines.append(f"✅ HTTP: {r.status_code} ({r.elapsed.total_seconds():.2f}s)")
+            except Exception as e:
+                lines.append(f"🔴 HTTP: Failed — {str(e)[:60]}")
+            # Blacklist hint
+            lines.append(f"\n💡 For domain expiry: check your registrar panel (GoDaddy/Namecheap etc.)")
+            lines.append(f"💡 For spam blacklist: check MXToolbox.com → Blacklist check")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Domain health check failed: {e}", "success": False}
+
+    def handle_email_inbox_check(self, intent) -> dict:
+        """Check NetworkSolutions business email inbox via IMAP."""
+        try:
+            import os, imaplib, email as _email
+            from email.header import decode_header
+            imap_host = os.getenv("NS_IMAP_HOST", "")
+            imap_user = os.getenv("NS_EMAIL_USER", "")
+            imap_pass = os.getenv("NS_EMAIL_PASS", "")
+            if not all([imap_host, imap_user, imap_pass]):
+                return {
+                    "response": (
+                        "⚙️ *NetworkSolutions Email Setup Required*\n\n"
+                        "Add to your `.env` file:\n"
+                        "```\nNS_IMAP_HOST=mail.yourdomain.com\n"
+                        "NS_EMAIL_USER=info@falconherbs.com\n"
+                        "NS_EMAIL_PASS=yourpassword\n```\n\n"
+                        "IMAP host mila NetworkSolutions email settings mein."
+                    ),
+                    "success": False
+                }
+            mail = imaplib.IMAP4_SSL(imap_host, 993)
+            mail.login(imap_user, imap_pass)
+            mail.select("INBOX")
+            _, data = mail.search(None, "UNSEEN")
+            ids = data[0].split()
+            if not ids:
+                mail.logout()
+                return {"response": "📬 Inbox empty — koi naya email nahi.", "success": True}
+            lines = [f"📧 *INBOX — {len(ids)} unread email(s)*", "─────────────────────"]
+            for eid in ids[-8:]:
+                _, msg_data = mail.fetch(eid, "(RFC822)")
+                msg = _email.message_from_bytes(msg_data[0][1])
+                subject_raw, enc = decode_header(msg.get("Subject", "No Subject"))[0]
+                subject = subject_raw.decode(enc or "utf-8") if isinstance(subject_raw, bytes) else subject_raw
+                sender = msg.get("From", "Unknown")[:50]
+                date = msg.get("Date", "")[:20]
+                lines.append(f"• {date}\n  From: {sender}\n  Sub: {subject[:60]}")
+            mail.logout()
+            lines.append(f"\n💡 Reply chahiye? 'Is email ka jawab likho: [subject]' bolo.")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Email inbox check failed: {e}", "success": False}
+
+    def handle_email_blast(self, intent) -> dict:
+        """Draft a bulk email campaign (requires approval before send)."""
+        try:
+            from core.ai_client import call_ai
+            msg = intent.get("message_text", "")
+            prompt = f"""Write a professional marketing email for Falcon Herbs customers.
+Context from user: "{msg}"
+
+Generate:
+**SUBJECT LINE:** [compelling subject]
+
+**EMAIL BODY:**
+[Professional HTML-friendly email, 200 words, includes:
+- Warm greeting
+- Main offer/announcement
+- 2-3 product benefits (FSSAI compliant)
+- Clear CTA button text: [SHOP NOW / LEARN MORE]
+- Signature: Falcon Herbs Team]
+
+FSSAI compliant — no cure claims. Warm, trustworthy tone."""
+            response = call_ai("content", [{"role": "user", "content": prompt}])
+            if response:
+                return {
+                    "response": (
+                        f"📧 *EMAIL CAMPAIGN DRAFT*\n\n{response}\n\n"
+                        "─────────────────────\n"
+                        "✅ To send via NetworkSolutions:\n"
+                        "1. Login → Email Marketing → New Campaign\n"
+                        "2. Copy this content into the editor\n"
+                        "3. Select your subscriber list\n"
+                        "4. Preview → Send\n\n"
+                        "💡 For direct send via SMTP, add NS_IMAP_HOST + credentials to .env"
+                    ),
+                    "success": True
+                }
+            return {"response": "❌ Email draft failed.", "success": False}
+        except Exception as e:
+            return {"response": f"❌ Email blast error: {e}", "success": False}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MULTI-SITE MANAGEMENT HANDLERS
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def _load_sites(self) -> dict:
+        """Load sites registry from config/sites.json."""
+        import os
+        sites_path = os.path.join("config", "sites.json")
+        if not os.path.exists(sites_path):
+            return {"active_site": "falconherbs", "sites": {}}
+        try:
+            with open(sites_path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {"active_site": "falconherbs", "sites": {}}
+
+    def _save_sites(self, data: dict):
+        """Save sites registry."""
+        import os
+        os.makedirs("config", exist_ok=True)
+        with open(os.path.join("config", "sites.json"), "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    def handle_list_sites(self, intent) -> dict:
+        """List all websites managed by the agency."""
+        try:
+            data = self._load_sites()
+            sites = data.get("sites", {})
+            active = data.get("active_site", "")
+            if not sites:
+                return {
+                    "response": (
+                        "🌐 *MANAGED WEBSITES*\n\n"
+                        "Currently managing: 1 site\n\n"
+                        "✅ *falconherbs* (active)\n"
+                        "   URL: falconherbs.com\n"
+                        "   Status: Live & monitored\n\n"
+                        "💡 Naya site add karne ke liye: 'naya site add karo'"
+                    ),
+                    "success": True
+                }
+            lines = ["🌐 *MANAGED WEBSITES*", "─────────────────────"]
+            for key, site in sites.items():
+                icon = "✅" if key == active else "⚪"
+                lines.append(f"{icon} *{key}* {'(ACTIVE)' if key == active else ''}")
+                lines.append(f"   URL: {site.get('url', 'N/A')}")
+                lines.append(f"   Niche: {site.get('niche', 'N/A')}")
+                lines.append("")
+            lines.append(f"Total: {len(sites)} site(s)")
+            lines.append("💡 Switch karne ke liye: 'site [name] pe switch karo'")
+            lines.append("💡 Add karne ke liye: 'naya site add karo'")
+            return {"response": "\n".join(lines), "success": True}
+        except Exception as e:
+            return {"response": f"❌ Sites list error: {e}", "success": False}
+
+    def handle_switch_site(self, intent) -> dict:
+        """Switch active website."""
+        try:
+            import re as _re
+            msg = intent.get("message_text", "")
+            data = self._load_sites()
+            sites = data.get("sites", {})
+            if not sites:
+                return {"response": "❌ Sirf 1 site hai abhi. Naya site add karo pehle.", "success": False}
+            # Try to extract site name from message
+            site_name = None
+            for key in sites:
+                if key.lower() in msg.lower():
+                    site_name = key
+                    break
+            if not site_name:
+                # Try number
+                num_match = _re.search(r'\b(\d+)\b', msg)
+                if num_match:
+                    idx = int(num_match.group(1)) - 1
+                    keys = list(sites.keys())
+                    if 0 <= idx < len(keys):
+                        site_name = keys[idx]
+            if not site_name:
+                site_list = "\n".join(f"{i+1}. {k} — {v.get('url','')}" for i, (k, v) in enumerate(sites.items()))
+                return {
+                    "response": f"❓ Kaun sa site?\n\n{site_list}\n\nBolo: 'site 1 pe switch karo'",
+                    "success": False
+                }
+            data["active_site"] = site_name
+            self._save_sites(data)
+            site = sites[site_name]
+            return {
+                "response": (
+                    f"✅ *Switched to: {site_name}*\n"
+                    f"URL: {site.get('url', 'N/A')}\n"
+                    f"Niche: {site.get('niche', 'N/A')}\n\n"
+                    f"Ab sabhi commands is site pe apply honge."
+                ),
+                "success": True
+            }
+        except Exception as e:
+            return {"response": f"❌ Site switch failed: {e}", "success": False}
+
+    def handle_add_site(self, intent) -> dict:
+        """Guide user through adding a new website to agency management."""
+        try:
+            return {
+                "response": (
+                    "🌐 *ADD NEW WEBSITE TO AGENCY*\n\n"
+                    "Mujhe yeh details bhejo (ek message mein):\n\n"
+                    "```\nSITE_NAME: (short name, e.g. 'myshop')\n"
+                    "URL: https://yoursite.com\n"
+                    "WC_KEY: ck_xxxxxxxx\n"
+                    "WC_SECRET: cs_xxxxxxxx\n"
+                    "WP_USER: your_wp_username\n"
+                    "WP_PASS: your_wp_app_password\n"
+                    "NICHE: (e.g. 'organic food', 'ayurvedic herbs')\n"
+                    "CURRENCY: INR\n```\n\n"
+                    "📋 *WooCommerce keys kahan milenge?*\n"
+                    "WooCommerce → Settings → Advanced → REST API → Add Key\n\n"
+                    "📋 *WordPress App Password?*\n"
+                    "WP Admin → Users → Profile → Application Passwords\n\n"
+                    "Jab yeh details bhejoge, main site add karke saari files setup kar dunga."
+                ),
+                "success": True
+            }
+        except Exception as e:
+            return {"response": f"❌ Add site error: {e}", "success": False}
 
 if __name__ == "__main__":
     import sys

@@ -1,0 +1,46 @@
+{
+  "_comment": "Falcon Agency — Multi-site Registry. Add new websites here. Never commit real credentials — reference env vars.",
+  "active_site": "falconherbs",
+  "sites": {
+    "falconherbs": {
+      "name": "Falcon Herbs",
+      "url": "https://falconherbs.com",
+      "niche": "authentic ayurvedic herbs",
+      "country": "India",
+      "currency": "INR",
+      "language": "en",
+      "gst_rate": 0.18,
+      "wc_key_env": "FALCONHERBS_WC_API_KEY",
+      "wc_secret_env": "FALCONHERBS_WC_API_SECRET",
+      "wp_url": "https://falconherbs.com",
+      "wp_user_env": "FALCONHERBS_WP_USER",
+      "wp_pass_env": "FALCONHERBS_WP_APP_PASSWORD",
+      "cpanel_url_env": "FALCONHERBS_CPANEL_URL",
+      "cpanel_user_env": "FALCONHERBS_CPANEL_USER",
+      "email_env": "NS_EMAIL_USER",
+      "imap_host_env": "NS_IMAP_HOST",
+      "status": "live",
+      "added_on": "2026-03-02",
+      "notes": "Primary site — Ayurvedic herbs e-commerce",
+      "schedule_key": "falconherbs.com"
+    }
+  },
+  "_template": {
+    "_info": "Copy this block to add a new site. Replace values with actual env var names.",
+    "name": "My New Store",
+    "url": "https://mynewstore.com",
+    "niche": "organic food",
+    "country": "India",
+    "currency": "INR",
+    "language": "en",
+    "gst_rate": 0.18,
+    "wc_key_env": "NEWSTORE_WC_API_KEY",
+    "wc_secret_env": "NEWSTORE_WC_API_SECRET",
+    "wp_url": "https://mynewstore.com",
+    "wp_user_env": "NEWSTORE_WP_USER",
+    "wp_pass_env": "NEWSTORE_WP_APP_PASSWORD",
+    "status": "pending",
+    "added_on": "YYYY-MM-DD",
+    "notes": ""
+  }
+}
