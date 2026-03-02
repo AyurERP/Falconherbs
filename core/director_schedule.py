@@ -626,41 +626,73 @@ class ExtendedSchedule:
             return {"success": False, "error": str(e)}
     
     def _task_daily_content(self):
-        """Generate daily content via ContentWorkflow.
-        Picks next topic, generates AI content, queues
-        for approval."""
+        """Generate daily social posts (IG + FB) via content pipeline.
+        Sends them to WhatsApp in HeroPost-ready copy-paste format."""
         try:
-            from core.content_workflow import ContentWorkflow
-            workflow = self.bridge.tools.get("workflow")
-            if not workflow:
-                workflow = ContentWorkflow(self.bridge)
+            pipeline = self.bridge.tools.get("content")
+            if not pipeline:
+                return {"success": False, "error": "Content Pipeline not loaded"}
 
-            # Pick next unused topic
+            from core.content_workflow import ContentWorkflow
+            workflow = self.bridge.tools.get("workflow") or ContentWorkflow(self.bridge)
             topic, keyword, product = workflow.pick_next_topic()
 
-            # Generate and queue via full pipeline
-            result = workflow.generate_and_queue(
-                topic=topic,
-                keyword=keyword,
-                product=product
+            # Generate social posts (IG + FB) for today's topic
+            social_result = pipeline.create_social_batch(
+                [{"topic": topic, "content_type": "educational", "product": product}],
+                platforms=["instagram", "facebook"]
             )
 
-            if result.get("success"):
+            if not social_result.get("success"):
                 return {
-                    "success": True,
-                    "send_whatsapp": True,
-                    "message": result.get("message",
-                        "Content generated: {}".format(topic))
+                    "success": False,
+                    "error": "Social generation failed: {}".format(
+                        social_result.get("error", "unknown"))
                 }
-            else:
-                return {
-                    "success": True,
-                    "send_whatsapp": False,
-                    "message": "Content generation skipped: "
-                               "{}".format(
-                                   result.get("error", "unknown")
-                               )
-                }
+
+            posts = social_result.get("batch", {}).get("posts", [])
+            if not posts:
+                return {"success": False, "error": "No posts generated"}
+
+            # Format each post for HeroPost copy-paste
+            def _parse_sections(raw):
+                import re
+                cap = re.search(r'\*\*CAPTION\*\*\s*(.*?)(?=\*\*HASHTAGS?\*\*|\*\*IMAGE|\Z)', raw, re.S | re.I)
+                hsh = re.search(r'\*\*HASHTAGS?\*\*\s*(.*?)(?=\*\*IMAGE|\Z)', raw, re.S | re.I)
+                img = re.search(r'\*\*IMAGE\s*SUGGESTION\*\*\s*(.*?)(?=\*\*|\Z)', raw, re.S | re.I)
+                caption = cap.group(1).strip() if cap else raw[:600].strip()
+                hashtags = ' '.join(l.strip() for l in (hsh.group(1) if hsh else '').split('\n') if '#' in l)
+                image_prompt = (img.group(1).strip()[:300] if img else '')
+                return caption, hashtags, image_prompt
+
+            parts = [
+                "📋 *AAJA KA CONTENT — HEROPOST READY*\n"
+                "Topic: {}\n"
+                "Copy each post below ↓".format(topic)
+            ]
+
+            for post in posts:
+                platform = post.get("platform", "instagram").upper()
+                icon = "📸" if "INSTAGRAM" in platform else "📘"
+                cap, tags, img = _parse_sections(post.get("content", ""))
+                block = (
+                    "{} *{}*\n"
+                    "─────────────────────\n"
+                    "*Caption:*\n{}\n\n"
+                    "*Hashtags:*\n{}"
+                ).format(icon, platform, cap, tags)
+                if img:
+                    block += "\n\n🖼️ *Image Prompt:*\n{}".format(img)
+                parts.append(block)
+
+            full_msg = "\n\n━━━━━━━━━━\n\n".join(parts)
+
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": full_msg,
+            }
+
         except Exception as e:
             return {"success": False, "error": str(e)}
     

@@ -171,7 +171,10 @@ class ContentPipeline:
             key=lambda x: len(x[0]),
             reverse=True,
         ):
-            pattern = re.compile(re.escape(unsafe), re.IGNORECASE)
+            # Use word boundaries so "heal" never matches inside "health"/"healthy"
+            # Also skip replacements inside hashtag tokens (#word)
+            _esc = re.escape(unsafe)
+            pattern = re.compile(r'(?<![#\w])' + _esc + r'\b', re.IGNORECASE)
             if pattern.search(cleaned):
                 cleaned = pattern.sub(safe, cleaned)
                 changes.append({

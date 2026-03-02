@@ -197,6 +197,25 @@ class ExtendedIntentClassifier:
                 "description": "Content pipeline status"
             },
             
+            "send_social_content": {
+                "patterns": [
+                    r"\baaj\s+ka\s+(?:post|content)\b",
+                    r"\baaj\s+ki\s+post\b",
+                    r"\bpost\s+bhej\b",
+                    r"\bcontent\s+bhej\b",
+                    r"\blatest\s+post\b",
+                    r"\bsend\s+(?:post|content|social)\b",
+                    r"\bpost\s+ready\b",
+                    r"\bpost\s+de\b",
+                    r"\bpost\s+dedo\b",
+                    r"\bsocial\s+content\s+bhej\b",
+                    r"\bheropost\s+ke\s+liye\b",
+                    r"\bIG\s+post\b",
+                    r"\binstagram\s+content\b",
+                ],
+                "handler": "handle_send_social_content",
+                "description": "Send latest social post to WhatsApp in HeroPost-ready format"
+            },
             "content_package": {
                 "patterns": [
                     r"\bcontent\s+package\b",
@@ -2268,6 +2287,138 @@ class IntentResponseHandler:
             }
         except Exception as e:
             return {"response": f"❌ Error: {e}", "success": False}
+
+    # ──────────────────────────────────────────────────────────────────────
+    #  SOCIAL CONTENT: Send latest draft to WhatsApp in HeroPost-ready format
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _parse_social_post_content(self, raw_content: str) -> dict:
+        """
+        Parse AI-generated social post content into structured sections.
+        Handles both **SECTION** and plain paragraph formats.
+        """
+        result = {"caption": "", "hashtags": "", "image_prompt": ""}
+
+        # Try to split by bold headers like **CAPTION**, **HASHTAGS**, etc.
+        cap_match = re.search(
+            r'\*\*CAPTION\*\*\s*(.*?)(?=\*\*HASHTAGS?\*\*|\*\*IMAGE|\Z)',
+            raw_content, re.S | re.I
+        )
+        hash_match = re.search(
+            r'\*\*HASHTAGS?\*\*\s*(.*?)(?=\*\*IMAGE|\Z)',
+            raw_content, re.S | re.I
+        )
+        img_match = re.search(
+            r'\*\*IMAGE\s*SUGGESTION\*\*\s*(.*?)(?=\*\*|\Z)',
+            raw_content, re.S | re.I
+        )
+
+        if cap_match:
+            result["caption"] = cap_match.group(1).strip()
+        if hash_match:
+            ht = hash_match.group(1).strip()
+            # Keep only lines that have hashtags
+            ht_lines = [l.strip() for l in ht.split('\n') if '#' in l]
+            result["hashtags"] = ' '.join(ht_lines)
+        if img_match:
+            result["image_prompt"] = img_match.group(1).strip()
+
+        # Fallback: if no structured headers found, use full content as caption
+        if not result["caption"]:
+            # Extract hashtags from last section
+            lines = raw_content.strip().split('\n')
+            hash_lines = [l for l in lines if l.strip().startswith('#')]
+            cap_lines = [l for l in lines if not l.strip().startswith('#')]
+            result["caption"] = '\n'.join(cap_lines).strip()
+            result["hashtags"] = ' '.join(hash_lines)
+
+        return result
+
+    def _format_post_for_whatsapp(self, post: dict, index: int = 1, total: int = 1) -> str:
+        """Format a single social post in clean HeroPost-ready WhatsApp format."""
+        platform = post.get("platform", "instagram").upper()
+        topic = post.get("topic", "")
+        raw = post.get("content", "")
+        parsed = self._parse_social_post_content(raw)
+
+        icon = "📸" if "INSTAGRAM" in platform else "📘"
+        lines = [
+            f"{icon} *{platform} POST*{' — ' + topic if topic else ''}",
+            "─" * 32,
+            "",
+            "*CAPTION* (copy this exactly):",
+            parsed["caption"],
+        ]
+        if parsed["hashtags"]:
+            lines += ["", "*HASHTAGS*:", parsed["hashtags"]]
+        if parsed["image_prompt"]:
+            # Trim image prompt to avoid very long messages
+            img = parsed["image_prompt"][:400]
+            lines += ["", "🖼️ *IMAGE PROMPT*:", img]
+        lines += ["", "─" * 32]
+
+        if index < total:
+            lines.append(f"_(Post {index}/{total} — next message: Facebook)_")
+
+        return '\n'.join(lines)
+
+    def handle_send_social_content(self, intent) -> dict:
+        """
+        Find the latest social batch draft and send each post to WhatsApp
+        in a clean, HeroPost-ready copy-paste format.
+        """
+        import glob
+        import os
+
+        drafts_dir = "data/content/drafts"
+        pattern = os.path.join(drafts_dir, "social_batch_*.json")
+        files = sorted(glob.glob(pattern), reverse=True)  # newest first
+
+        if not files:
+            return {
+                "response": (
+                    "❌ Koi social post draft nahi mila.\n"
+                    "Try: *'social post about Ashwagandha'* to generate one first."
+                ),
+                "success": False,
+            }
+
+        latest_file = files[0]
+        try:
+            with open(latest_file, encoding="utf-8") as f:
+                batch = json.load(f)
+        except Exception as e:
+            return {"response": f"❌ Draft read error: {e}", "success": False}
+
+        posts = batch.get("posts", [])
+        if not posts:
+            return {"response": "❌ Draft file is empty.", "success": False}
+
+        created = batch.get("created_at", "")[:16]
+        total = len(posts)
+
+        # First message: summary header
+        header = (
+            f"📋 *CONTENT READY FOR HEROPOST*\n"
+            f"Date: {created} | {total} post(s)\n"
+            f"Topic: {posts[0].get('topic', '')}\n"
+            f"─" * 32 + "\n"
+            f"Copy each post below ↓ and paste into HeroPost"
+        )
+
+        # Then one message per platform post (keeps them easy to copy)
+        post_messages = [header]
+        for i, post in enumerate(posts, 1):
+            post_messages.append(
+                self._format_post_for_whatsapp(post, index=i, total=total)
+            )
+
+        # Return multi-message response
+        return {
+            "response": '\n\n━━━━━━━━━━\n\n'.join(post_messages),
+            "success": True,
+            "filename": os.path.basename(latest_file),
+        }
 
     def handle_email_campaign(self, intent):
         """Generate email campaign for NetworkSolutions manual send."""
