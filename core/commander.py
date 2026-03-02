@@ -265,12 +265,9 @@ class FalconCommander:
                     f"Acknowledge it warmly and address their new message below.]\n"
                 )
             text = reply_context + text
-        # Budget check: typical message = classify + wrap + maybe generate (~0.01)
-        if self._director and hasattr(self._director, "check_budget"):
-            if not self._director.check_budget(0.01):
-                self._safe_send(BUDGET_EXHAUSTED_MSG, sender=sender)
-                memory.add_message(sender, "assistant", BUDGET_EXHAUSTED_MSG)
-                return
+        # Budget check removed — NVIDIA has no payment on file so it can't charge.
+        # Real protection is the API returning 402 when free credits run out.
+        # The old check was blocking chat replies on estimated (inaccurate) costs.
 
         log.info(
             "Commander logic started  |  msg_id=%s  |  text='%s'",

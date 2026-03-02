@@ -91,11 +91,14 @@ SPEND_FILE:   Path = DATA_DIR / "spend.json"
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  HARD LIMITS — NON-NEGOTIABLE
+#  SPEND LIMITS — set high intentionally
+#  Real protection = NVIDIA billing system (no payment on file = 402, no charge).
+#  These are kept only so the spend tracker has a ceiling to log against.
+#  Old values ($10/$150) were false-triggering and blocking chat replies.
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-DAILY_LIMIT:   float = 10.00    # USD — absolute ceiling per calendar day
-MONTHLY_LIMIT: float = 150.00   # USD — absolute ceiling per calendar month
+DAILY_LIMIT:   float = 500.00   # USD — effectively open (NVIDIA is the real guard)
+MONTHLY_LIMIT: float = 5000.00  # USD — effectively open
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
