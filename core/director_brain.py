@@ -37,6 +37,7 @@ from typing import Any, Dict, List, Optional
 
 from core.logger import log
 from core.ai_client import call_ai
+from core.ist_time import now_ist
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -297,6 +298,20 @@ class DirectorBrain:
         except Exception:
             pass
 
+        # LONG-TERM MEMORY — inject full persistent context
+        try:
+            from core.memory import memory as _mem
+            # Use a generic user_id for the owner (single-user agency)
+            mem_ctx = _mem.build_director_context(
+                user_id="owner",
+                recent_messages=12,
+                include_long_term_days=14,
+            )
+            if mem_ctx:
+                parts.append(f"\n=== PERSISTENT MEMORY ===\n{mem_ctx}\n========================")
+        except Exception as exc:
+            log.debug("Could not load memory context for DirectorBrain: %s", exc)
+
         # GAP 4: CURRENT CLIENT STATE (real data — never make up numbers)
         try:
             from core.state_aggregator import get_client_state_summary, format_for_director_context
@@ -471,13 +486,11 @@ Status: "status", "update", "kya ho raha", "sab theek" → status_check"""
             return ""
 
     def _load_schedule_summary(self) -> str:
-        """Load upcoming scheduled tasks."""
+        """Load upcoming scheduled tasks using IST."""
         try:
-            from datetime import datetime, timezone
-            now = datetime.now(timezone.utc)
+            now = now_ist()
             hour = now.hour
 
-            # Map of scheduled tasks by approximate hour
             schedule = {
                 6: "Morning report + WooCommerce sync",
                 9: "SEO monitoring",
@@ -485,17 +498,16 @@ Status: "status", "update", "kya ho raha", "sab theek" → status_check"""
                 15: "Pricing scan",
                 18: "Evening sales report",
                 21: "Security scan",
-                0: "Backup + cleanup",
+                0:  "Backup + cleanup",
+                2:  "WHM write queue flush",
             }
 
             upcoming = []
-            hours_checked = 0
             check_hour = hour
-            while hours_checked < 4:
+            for _ in range(4):
                 if check_hour in schedule:
-                    upcoming.append(f"  {check_hour:02d}:00 — {schedule[check_hour]}")
+                    upcoming.append(f"  {check_hour:02d}:00 IST — {schedule[check_hour]}")
                 check_hour = (check_hour + 1) % 24
-                hours_checked += 1
 
             return "\n".join(upcoming) if upcoming else "No upcoming tasks in next 4 hours"
         except Exception:
