@@ -165,6 +165,7 @@ class FalconCommander:
         self._whatsapp: WhatsAppNotifier = whatsapp
         self._processing_lock: threading.Lock = threading.Lock()
         self.pending_plans: dict[str, dict] = {}
+        self._current_sender: str = "owner"  # updated per-message for correct history lookup
         
         from core.approval import ApprovalSystem
         self._approval = ApprovalSystem()
@@ -243,6 +244,9 @@ class FalconCommander:
         Internal logic for processing messages.
         Formerly handle_message.
         """
+        # Track sender so _get_recent_for_wrap() fetches the right history (Fix: memory bug)
+        self._current_sender = sender
+
         # If user replied to a specific message, find that message's context
         reply_context = ""
         if context_message_id:
@@ -1250,9 +1254,9 @@ class FalconCommander:
         except Exception:
             full_context = context
 
-        # Get recent conversation history
+        # Get recent conversation history — use actual sender, not hardcoded "owner"
         try:
-            recent_msgs = memory.get_recent_messages("owner", limit=8)
+            recent_msgs = memory.get_recent_messages(self._current_sender or "owner", limit=8)
         except Exception:
             recent_msgs = []
 
@@ -1290,10 +1294,11 @@ class FalconCommander:
     #  STATUS HELPERS
     # ══════════════════════════════════════════════════════════════════
 
-    def _get_recent_for_wrap(self, user_id: str = "owner") -> Optional[List]:
+    def _get_recent_for_wrap(self, user_id: str = None) -> Optional[List]:
         """Get recent messages for DirectorBrain wrap. Returns None on error."""
         try:
-            return memory.get_recent_messages(user_id, limit=6)
+            uid = user_id or self._current_sender or "owner"
+            return memory.get_recent_messages(uid, limit=6)
         except Exception:
             return None
 

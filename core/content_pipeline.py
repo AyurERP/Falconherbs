@@ -407,56 +407,47 @@ FORMAT:
     ):
         """Generate prompt for product description rewrite"""
         
-        prompt = f"""Rewrite this product description for an 
-authentic Ayurvedic herbal products brand "Falcon Herbs" 
-(falconherbs.com).
+        prompt = f"""You are a senior Ayurvedic copywriter for Falcon Herbs (falconherbs.com) — an authentic, premium Ayurvedic herbal brand.
 
-PRODUCT: {product_name}
-CATEGORY: {category}
-CURRENT DESCRIPTION: {current_description if current_description else 'None provided — write from scratch'}
-INGREDIENTS: {ingredients if ingredients else 'Not specified'}
-USAGE: {usage if usage else 'Not specified'}
+Write a rich product description for: {product_name}
+Category: {category if category else 'Herbal / Ayurvedic'}
+Current description (reference only, rewrite completely): {current_description if current_description else 'None — write from scratch'}
+Ingredients: {ingredients if ingredients else 'Not specified'}
+Usage notes: {usage if usage else 'Not specified'}
 
+---
 WRITE TWO VERSIONS:
 
-VERSION 1 — SHORT DESCRIPTION (50-80 words):
-- Compelling, benefit-focused
-- Highlight 2-3 key benefits
-- Include primary use case
-- Premium brand tone
-- End with subtle CTA
+VERSION 1 — SHORT DESCRIPTION (60-90 words):
+- Open with a sensory detail — aroma, colour, texture, taste of this specific herb
+- Name 2-3 specific traditional uses (not "overall wellness" — be precise)
+- Premium brand voice — warm, confident, knowledgeable
+- End with one subtle CTA (e.g. "Make it your daily ritual.")
 
-VERSION 2 — FULL DESCRIPTION (200-400 words):
-Structure:
-1. Opening hook (1-2 sentences) — What makes this special
-2. Ayurvedic Heritage (2-3 sentences) — Traditional context
-3. Key Benefits (bullet points, 4-6 benefits)
-   - Each benefit = structure/function claim ONLY
-   - Format: "✦ Benefit statement"
-4. How to Use (clear instructions)
-5. Quality Promise (sourcing, purity, authenticity)
-6. Ingredients list (if provided)
+VERSION 2 — FULL DESCRIPTION (250-400 words):
+Structure exactly as follows:
+1. OPENING HOOK (2 sentences) — vivid sensory detail or Ayurvedic origin story
+2. THE HERB (2-3 sentences) — Sanskrit/Hindi name + meaning, region of origin, how it grows
+3. AYURVEDIC CONTEXT (2-3 sentences) — dosha it balances (Vata/Pitta/Kapha), Rasa (taste), Virya (potency), Charaka/Sushruta reference if relevant
+4. TRADITIONAL USES (4-6 bullet points, each 1 sentence)
+   - Be SPECIFIC: "traditionally valued for supporting digestive Agni" NOT "good for digestion"
+   - Format each as: ✦ [Specific traditional use]
+5. HOW TO USE — preparation method (decoction/infusion/powder blend), exact quantity, timing (morning/evening/with meals), duration
+6. OUR QUALITY PROMISE — sourcing region, processing method, no additives
+7. DISCLAIMER: "Not intended to diagnose, treat, cure, or prevent any disease. Consult a qualified Ayurvedic practitioner."
 
-TONE:
-- Premium and trustworthy
-- Knowledgeable about Ayurveda
-- Warm but professional
-- International audience friendly
+TONE: Knowledgeable Vaidya meets modern wellness brand. Not clinical, not fluffy. Specific, warm, trustworthy.
+AUDIENCE: Health-conscious urban Indians + NRIs + international Ayurveda enthusiasts.
+SEO: Naturally include product name 2-3x, category keyword, "Ayurvedic", "traditional", "authentic".
 
-SEO:
-- Include product name 2-3 times naturally
-- Include category keywords
-- Include "Ayurvedic", "traditional", "authentic"
-- Write alt text suggestion for product image
-
-HEALTH CLAIMS RULES — STRICTLY FOLLOW:
-❌ NEVER: "cures", "treats", "prevents disease", 
-   "clinically proven", "no side effects"
-✅ USE: "supports", "promotes", "traditionally used for",
-   "may help with", "Ayurvedic tradition values this for"
+COMPLIANCE — NON-NEGOTIABLE:
+❌ NEVER: "cures", "treats", "treatment for", "prevents disease", "heals disease", "clinically proven", "medically proven", "guaranteed to cure", "miracle cure"
+✅ USE: "traditionally used for", "Ayurvedic tradition values this for", "may support", "supports healthy [function]", "traditionally valued for"
 
 INCLUDE AT END:
 {self.brand['disclaimer']}
+
+OUTPUT: Return ONLY the two versions. No intro, no 'Certainly!', no meta-commentary.
 """
         return prompt
     

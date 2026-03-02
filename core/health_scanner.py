@@ -31,122 +31,79 @@ class HealthClaimsScanner:
         # ====== VIOLATION PATTERNS ======
         # These are common FDA/FTC red flags for supplements
         
+        # ====== BANNED PHRASES (FSSAI/FDA — only these are true violations) ======
+        # Words like "supports", "wellness", "immunity", "growth", "helps" are ALLOWED.
+        # Only flag explicit disease-cure claims that are actually prohibited.
         self.high_risk_patterns = {
-            "disease_cure_claims": {
+            "cure_claims": {
                 "patterns": [
-                    r"\bcures?\b",
-                    r"\bcure\s+(?:for|of)\b",
-                    r"\btreat(?:s|ment)?\b(?!.*(?:plants?|water))",
-                    r"\bprevents?\b.*(?:disease|cancer|diabetes|arthritis|heart|hypertension|kidney|depression)",
-                    r"\bheals?\b.*(?:disease|condition|disorder)",
-                    r"\bdiagnoses?\b",
-                    r"\bdiagnostic\b",
-                    r"\btherapeutic\b",
-                    r"\bnidan\s+karta\b",
-                    r"\brog\s+door\s+karta\b",
-                    r"\bbimari\s+theek\s+karta\b",
+                    r"\bcures?\b",                                      # cure, cures
+                    r"\bcure\s+(?:for|of)\b",                          # cure for, cure of
                 ],
                 "risk": "HIGH",
-                "reason": "Direct disease claims — FDA/FSSAI considers this marketing an unapproved drug",
-                "fix": "Remove disease names. Use 'traditionally used for' or 'supports healthy function'."
+                "reason": "Direct cure claim — FSSAI/FDA prohibited for food/herbal products",
+                "fix": "Replace with: 'traditionally used for' or 'may support'"
             },
-            
-            "drug_claims": {
+            "treatment_claims": {
                 "patterns": [
-                    r"\bclinically\s+proven\b",
-                    r"\bscientifically\s+proven\b",
-                    r"\bmedically\s+(?:proven|tested)\b",
-                    r"\bFDA\s+approved\b",
-                    r"\bdoctor\s+recommended\b",
-                    r"\bguaranteed\s+(?:to|results?)\b",
+                    r"\btreatment\s+for\b",                            # treatment for (specific)
+                    r"\btreats\s+\w",                                  # treats <disease>
                 ],
                 "risk": "HIGH",
-                "reason": "Makes product sound like a drug — requires FDA drug approval",
-                "fix": "Use 'traditionally used for' or 'may support' language"
+                "reason": "'Treatment for' disease — FSSAI prohibited claim",
+                "fix": "Replace with: 'traditionally used for' or 'supports healthy function'"
             },
-            
-            "specific_disease_mentions": {
+            "disease_claims": {
                 "patterns": [
-                    r"\bdiabetes\b", r"\bcancer\b", r"\barhritis\b", r"\bdepression\b", 
-                    r"\bkidney\s+disease\b", r"\bheart\s+disease\b", r"\bcovid\b", 
-                    r"\btumor\b", r"\bmalignant\b", r"\bhypertension\b"
+                    r"\bprevents?\s+disease\b",                        # prevents disease
+                    r"\bheals?\s+disease\b",                           # heals disease
+                    r"\bdiagnoses?\b",                                 # diagnoses
                 ],
                 "risk": "HIGH",
-                "reason": "Mentioning diseases in product context = implied drug claim",
-                "fix": "Remove disease names. Describe body functions instead."
-            }
-        }
-        
-        self.medium_risk_patterns = {
-            "implied_treatment": {
-                "patterns": [
-                    r"\b(?:treat|treatment)\s+of\s+(?:skin|infection)\b",
-                ],
-                "risk": "MEDIUM",
-                "reason": "Implied treatment claims — borderline "
-                          "FDA violation",
-                "fix": "Rephrase: 'supports healthy immune function' "
-                       "instead of 'boosts immunity'"
+                "reason": "Explicit disease prevention/healing/diagnosis claim",
+                "fix": "Remove entirely or use 'traditionally valued for wellness'"
             },
-            
-            "absolute_claims": {
+            "drug_authority_claims": {
                 "patterns": [
-                    r"\b100%\s+(?:safe|effective)\b",
-                    r"\bno\s+side\s+effects?\b",
-                    r"\bcompletely\s+safe\b",
-                    r"\brisk[- ]?free\b",
-                    r"\bmiracle\b",
-                    r"\bmagic(?:al)?\b",
-                    r"\bwonder\s+(?:herb|drug|cure|remedy)\b",
-                    r"\binstant\s+(?:relief|results?|cure)\b",
-                    r"\bpermanent\s+(?:cure|solution|relief)\b",
-                    r"\bguaranteed\s+(?:results?|relief)\b",
-                    r"\bproven\s+(?:effective|to\s+work)\b",
-                    r"\bpowerful\s+(?:cure|remedy|treatment)\b",
-                    r"\btransform(?:s|ing)?\s+(?:your\s+)?(?:health|body)\b",
+                    r"\bclinically\s+proven\s+to\s+(?:cure|treat|prevent)\b",  # clinically proven to cure/treat/prevent
+                    r"\bmedically\s+proven\b",                         # medically proven
+                    r"\bguaranteed\s+to\s+cure\b",                     # guaranteed to cure
+                    r"\bmiracle\s+cure\b",                             # miracle cure
+                    r"\bFDA\s+approved\b",                             # FDA approved
                 ],
-                "risk": "MEDIUM",
-                "reason": "Absolute/exaggerated claims — FTC violation",
-                "fix": "Add qualifiers: 'may help', "
-                       "'traditionally used for'"
+                "risk": "HIGH",
+                "reason": "Drug authority claim — requires regulatory approval",
+                "fix": "Replace with: 'supported by Ayurvedic tradition'"
             },
-            
-            "ayurvedic_marketing": {
+            "hindi_disease_claims": {
                 "patterns": [
-                    r"\b(?:cure|treat|heal)\s+for\b",
+                    r"\brog\s+door\s+karta\b",                         # rog door karta
+                    r"\bbimari\s+theek\s+karta\b",                     # bimari theek karta
+                    r"\bnidan\s+karta\b",                              # nidan karta
                 ],
-                "risk": "MEDIUM",
-                "reason": "Implied treatment — use structure/function language",
-                "fix": "Use smart swap: 'supports X' or 'traditionally used for'"
+                "risk": "HIGH",
+                "reason": "Hindi disease-cure claim — FSSAI prohibited",
+                "fix": "Replace with: 'swasthya ka samarthan karta hai'"
             },
         }
-        
+
+        # Medium and low risk kept minimal — no false positives on allowed words
+        self.medium_risk_patterns = {}
+
         self.low_risk_patterns = {
             "missing_disclaimers": {
                 "check_absence": [
-                    r"These statements have not been evaluated",
                     r"not intended to diagnose",
                     r"consult.*(?:doctor|physician|healthcare)",
-                    r"individual results may vary",
                 ],
                 "risk": "LOW",
-                "reason": "FDA requires disclaimer on supplement pages",
-                "fix": "Add standard FDA disclaimer to all product pages"
+                "reason": "FSSAI recommends disclaimer on herbal product pages",
+                "fix": "Add: 'Not intended to diagnose, treat, cure or prevent any disease.'"
             },
         }
-        
-        # Additional LOW risk patterns (regex-based, like high/medium)
-        self.low_risk_regex_patterns = {
-            "borderline_claims": {
-                "patterns": [
-                    r"\b(?:natural|herbal)\s+(?:remedy|treatment)\b",
-                    r"\b(?:traditional|ayurvedic)\s+(?:cure|remedy)\b",
-                ],
-                "risk": "LOW",
-                "reason": "Borderline — may need disclaimer",
-                "fix": "Add FSSAI disclaimer; ensure structure/function language"
-            },
-        }
+
+        # No borderline/regex LOW patterns — removes false positives on remedy/wellness words
+        self.low_risk_regex_patterns = {}
         
         # ====== SAFE ALTERNATIVES (SEO + compliant) ======
         # Load from config/smart_word_swap.json; fallback to built-in
