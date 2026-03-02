@@ -665,7 +665,9 @@ class ExtendedSchedule:
                 image_prompt = (img.group(1).strip()[:300] if img else '')
                 return caption, hashtags, image_prompt
 
-            parts = [
+            # Build separate messages — one header + one per platform
+            # This prevents WhatsApp truncation from combining IG+FB into one huge chunk
+            messages = [
                 "📋 *AAJA KA CONTENT — HEROPOST READY*\n"
                 "Topic: {}\n"
                 "Copy each post below ↓".format(topic)
@@ -683,14 +685,12 @@ class ExtendedSchedule:
                 ).format(icon, platform, cap, tags)
                 if img:
                     block += "\n\n🖼️ *Image Prompt:*\n{}".format(img)
-                parts.append(block)
-
-            full_msg = "\n\n━━━━━━━━━━\n\n".join(parts)
+                messages.append(block)
 
             return {
                 "success": True,
                 "send_whatsapp": True,
-                "message": full_msg,
+                "messages": messages,
             }
 
         except Exception as e:
@@ -1009,15 +1009,23 @@ class ExtendedSchedule:
             })
             
             # Send WhatsApp if task requested it
-            if (result.get("send_whatsapp") and
-                    whatsapp_sender and
-                    result.get("message")):
-                try:
-                    whatsapp_sender(result["message"])
-                    print(f"  📱 WhatsApp sent for: "
-                          f"{task['name']}")
-                except Exception as e:
-                    print(f"  ❌ WhatsApp failed: {e}")
+            # Supports both single "message" and list of "messages"
+            if result.get("send_whatsapp") and whatsapp_sender:
+                msgs_to_send = []
+                if result.get("messages") and isinstance(result["messages"], list):
+                    msgs_to_send = result["messages"]
+                elif result.get("message"):
+                    msgs_to_send = [result["message"]]
+                for _msg in msgs_to_send:
+                    try:
+                        import time as _time
+                        whatsapp_sender(_msg)
+                        if len(msgs_to_send) > 1:
+                            _time.sleep(1)
+                    except Exception as e:
+                        print(f"  ❌ WhatsApp failed: {e}")
+                if msgs_to_send:
+                    print(f"  📱 WhatsApp sent {len(msgs_to_send)} msg(s) for: {task['name']}")
 
             # Critical tasks: always alert on failure regardless of send_whatsapp flag
             _CRITICAL_TASKS = {"daily_backup", "site_health_check", "order_check", "vps_health_check", "content_package_weekly", "generate_weekly_content_package"}

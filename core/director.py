@@ -983,7 +983,15 @@ Respond in JSON:
 
                     is_due = False
                     if last_run_str is None:
-                        is_due = True
+                        # On first startup, skip heavy long-interval tasks (daily/weekly/monthly).
+                        # Only fire short-interval tasks immediately (uptime, heartbeat, etc.)
+                        # Long-interval tasks start counting from now — will run at their next due time.
+                        if interval >= 1440:  # >= 1 day → skip first run, start clock from now
+                            # Write "now" as last_run so it schedules from this point forward
+                            self._update_schedule_last_run(site, task_name)
+                            is_due = False
+                        else:
+                            is_due = True
                     else:
                         try:
                             last_run = datetime.fromisoformat(last_run_str)

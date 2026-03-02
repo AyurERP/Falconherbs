@@ -44,146 +44,56 @@ class AEOAgent:
         "kama ayurveda", "forest essentials", "biotique",
     ]
 
-    # 25 questions covering all product categories
+    # 8 high-value questions covering key categories (reduced from 25 to save API credits)
+    # Uses 8 searches/month instead of 25 — still covers all major gaps
     QUESTIONS: List[Dict] = [
-        # ── Immunity ──────────────────────────────────────
+        # ── Brand Discovery (most important) ──────────────
         {
-            "q": "best ayurvedic brand for immunity in India",
+            "q": "best ayurvedic herbal supplement brand India online",
+            "topic": "brand discovery",
+            "keyword": "best ayurvedic brand India online",
+        },
+        # ── Immunity (top search category) ────────────────
+        {
+            "q": "best ayurvedic brand for immunity India giloy ashwagandha",
             "topic": "immunity booster ayurveda",
-            "keyword": "best ayurvedic brand immunity India",
+            "keyword": "best ayurvedic immunity brand India",
         },
+        # ── Stress & Energy ───────────────────────────────
         {
-            "q": "which ayurvedic supplement helps boost immunity naturally",
-            "topic": "immunity booster ayurveda",
-            "keyword": "ayurvedic immunity supplement natural",
-        },
-        {
-            "q": "giloy supplement for immunity India best brand",
-            "topic": "giloy benefits",
-            "keyword": "giloy supplement India",
-        },
-        {
-            "q": "chyawanprash best brand India for immunity",
-            "topic": "chyawanprash",
-            "keyword": "chyawanprash brand India",
-        },
-        # ── Stress & Sleep ───────────────────────────────
-        {
-            "q": "best ashwagandha supplement brand India",
+            "q": "best ashwagandha shilajit supplement brand India",
             "topic": "ashwagandha stress relief",
             "keyword": "best ashwagandha brand India",
         },
-        {
-            "q": "ayurvedic herbs for stress relief India trusted brand",
-            "topic": "ashwagandha stress relief",
-            "keyword": "ayurvedic stress relief herbs India",
-        },
-        {
-            "q": "shilajit supplement trusted brand India",
-            "topic": "shilajit energy",
-            "keyword": "shilajit brand India trusted",
-        },
         # ── Digestion ─────────────────────────────────────
         {
-            "q": "best triphala brand in India for digestion",
+            "q": "best triphala ayurvedic gut health supplement India",
             "topic": "triphala gut health",
             "keyword": "best triphala brand India",
         },
+        # ── Hair & Skin ────────────────────────────────────
         {
-            "q": "ayurvedic supplement for gut health India",
-            "topic": "triphala gut health",
-            "keyword": "ayurvedic gut health supplement",
-        },
-        # ── Hair Care ──────────────────────────────────────
-        {
-            "q": "best ayurvedic hair oil brand India bhringraj",
+            "q": "best ayurvedic hair care skin care brand India online",
             "topic": "natural hair care herbs",
-            "keyword": "ayurvedic hair oil brand India",
+            "keyword": "ayurvedic hair skin brand India",
         },
+        # ── Women's Wellness ──────────────────────────────
         {
-            "q": "amla supplement for hair and immunity India brand",
-            "topic": "natural hair care herbs",
-            "keyword": "amla supplement India brand",
-        },
-        # ── Skin Care ──────────────────────────────────────
-        {
-            "q": "neem products for skin India best ayurvedic brand",
-            "topic": "ayurvedic skincare",
-            "keyword": "neem skin products India",
-        },
-        {
-            "q": "ayurvedic skincare brand India trusted online",
-            "topic": "ayurvedic skincare",
-            "keyword": "ayurvedic skincare brand India online",
-        },
-        # ── Women's Health ─────────────────────────────────
-        {
-            "q": "shatavari supplement for women India best brand",
+            "q": "shatavari brahmi ayurvedic supplement women India brand",
             "topic": "shatavari womens health",
-            "keyword": "shatavari supplement India women",
+            "keyword": "shatavari brahmi supplement India",
         },
-        # ── Memory & Brain ──────────────────────────────────
+        # ── Superfoods (moringa, tulsi, amla) ─────────────
         {
-            "q": "brahmi supplement for memory focus India",
-            "topic": "brahmi memory",
-            "keyword": "brahmi memory supplement India",
-        },
-        # ── Joint & Pain ──────────────────────────────────
-        {
-            "q": "ayurvedic joint pain relief herbs supplement India",
-            "topic": "joint pain herbal remedy",
-            "keyword": "ayurvedic joint pain supplement",
-        },
-        # ── Weight Management ──────────────────────────────
-        {
-            "q": "ayurvedic weight management herbs supplement India",
-            "topic": "ayurvedic weight loss",
-            "keyword": "ayurvedic weight management India",
-        },
-        # ── Superfoods / Nutrition ─────────────────────────
-        {
-            "q": "moringa supplement India best quality brand",
+            "q": "moringa tulsi amla supplement brand India trusted",
             "topic": "moringa superfood",
-            "keyword": "moringa supplement India",
+            "keyword": "moringa tulsi amla brand India",
         },
+        # ── Purchase intent ───────────────────────────────
         {
-            "q": "tulsi supplement benefits brand India",
-            "topic": "tulsi benefits",
-            "keyword": "tulsi supplement India",
-        },
-        # ── General Brand Discovery ─────────────────────────
-        {
-            "q": "trusted ayurvedic herbal supplement brand India online shop",
+            "q": "buy authentic ayurvedic herbs online India best quality",
             "topic": "brand discovery",
-            "keyword": "trusted ayurvedic brand India online",
-        },
-        {
-            "q": "quality ayurvedic products online India where to buy",
-            "topic": "brand discovery",
-            "keyword": "quality ayurvedic products online",
-        },
-        {
-            "q": "best herbal supplement store India online",
-            "topic": "brand discovery",
-            "keyword": "herbal supplement store India",
-        },
-        # ── Diabetes / Blood Sugar ────────────────────────
-        {
-            "q": "ayurvedic herbs for healthy blood sugar management India",
-            "topic": "ayurvedic diabetes management",
-            "keyword": "ayurvedic blood sugar herbs India",
-        },
-        # ── Liver & Detox ─────────────────────────────────
-        {
-            "q": "neem detox ayurvedic supplement India brand",
-            "topic": "neem detox",
-            "keyword": "neem detox supplement India",
-        },
-        # ── Overall wellness ─────────────────────────────
-        {
-            "q": "best overall ayurvedic wellness brand India 2024",
-            "topic": "brand discovery",
-            "keyword": "best ayurvedic wellness brand India",
+            "keyword": "buy ayurvedic herbs online India",
         },
     ]
 
@@ -350,7 +260,7 @@ class AEOAgent:
     #  CORE SCAN
     # ─────────────────────────────────────────────────────
 
-    def run_monthly_scan(self, max_questions: int = 25) -> dict:
+    def run_monthly_scan(self, max_questions: int = 8) -> dict:
         """
         Run full AEO scan.
         Queries all questions, saves results + content gaps,

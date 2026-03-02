@@ -385,6 +385,18 @@ class FalconCommander:
                         # Previously fell through on success=False which caused
                         # old keyword classifier to misroute (e.g. "price scan"
                         # → "security_scan").
+
+                        # Multi-message support: bypass AI wrapping for pre-formatted content
+                        # (e.g. HeroPost social content — caption/hashtags must not be rewritten)
+                        if response.get("messages") and isinstance(response["messages"], list):
+                            import time as _t
+                            for _m in response["messages"]:
+                                if _m:
+                                    out_id = self._safe_send(_m, sender=sender, reply_to=message_id)
+                                    memory.add_message(sender, "assistant", _m, message_id=out_id)
+                                    if len(response["messages"]) > 1:
+                                        _t.sleep(1)
+
                         raw_reply = response.get("response", "")
                         if raw_reply:
                             # FIX 2: Every extended intent response passes through

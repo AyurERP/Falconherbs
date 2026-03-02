@@ -644,6 +644,20 @@ class ExtendedIntentClassifier:
                 "handler": "handle_preview_draft",
                 "description": "Preview a blog draft for approval"
             },
+
+            "share_draft_text": {
+                "patterns": [
+                    r"\bdraft.*(?:txt|text|yahan|here|share|bhej|send|copy)\b",
+                    r"\b(?:share|send|bhej).*draft\b",
+                    r"\bdraft.*(?:content|poora|full|read)\b",
+                    r"\b(?:full|poora)\s+draft\b",
+                    r"\bdraft\s+(?:padh|read|yahan\s+bhej|here)\b",
+                    r"\bshow.*full.*draft\b",
+                    r"\bdraft.*(?:mein|main)\s+(?:dikhao|bhej)\b",
+                ],
+                "handler": "handle_share_draft_text",
+                "description": "Share full blog draft content as WhatsApp text"
+            },
             
             "publish_blog": {
                 "patterns": [
@@ -2402,20 +2416,19 @@ class IntentResponseHandler:
             f"📋 *CONTENT READY FOR HEROPOST*\n"
             f"Date: {created} | {total} post(s)\n"
             f"Topic: {posts[0].get('topic', '')}\n"
-            f"─" * 32 + "\n"
             f"Copy each post below ↓ and paste into HeroPost"
         )
 
-        # Then one message per platform post (keeps them easy to copy)
-        post_messages = [header]
+        # One message per platform — avoids WhatsApp truncation of joined content
+        # commander.py handles "messages" list by sending each one separately
+        messages = [header]
         for i, post in enumerate(posts, 1):
-            post_messages.append(
+            messages.append(
                 self._format_post_for_whatsapp(post, index=i, total=total)
             )
 
-        # Return multi-message response
         return {
-            "response": '\n\n━━━━━━━━━━\n\n'.join(post_messages),
+            "messages": messages,
             "success": True,
             "filename": os.path.basename(latest_file),
         }
@@ -3173,6 +3186,61 @@ Keep it punchy, under 150 words. No health claims."""
                 "success": False
             }
     
+    def handle_share_draft_text(self, intent):
+        """
+        Read the latest blog draft JSON and send its content directly as WhatsApp text.
+        User asked: 'Can you share those drafts in txt here?' — just read and send.
+        """
+        import glob as _glob
+        try:
+            from core.wordpress_publisher import wp_publisher
+            drafts = wp_publisher.list_drafts() if hasattr(wp_publisher, 'list_drafts') else ""
+
+            # Also check data/content/drafts/ for JSON blog drafts
+            import os
+            drafts_dir = "data/content/drafts"
+            blog_pattern = os.path.join(drafts_dir, "blog_*.json")
+            blog_files = sorted(_glob.glob(blog_pattern), reverse=True)
+
+            if not blog_files:
+                return {
+                    "response": "❌ Koi blog draft nahi mila. Pehle generate karo: 'blog likho'",
+                    "success": False,
+                }
+
+            # Send up to 2 most recent drafts as separate messages
+            messages = []
+            for filepath in blog_files[:2]:
+                try:
+                    with open(filepath, encoding="utf-8") as f:
+                        d = json.load(f)
+                    title = d.get("title", os.path.basename(filepath))
+                    content = d.get("content", d.get("body", d.get("html", "")))
+                    # Strip HTML tags for WhatsApp
+                    import re as _re
+                    content_clean = _re.sub(r'<[^>]+>', '', content).strip()
+                    # Truncate at 3500 chars (WhatsApp safe)
+                    if len(content_clean) > 3500:
+                        content_clean = content_clean[:3500] + "\n\n...[continued - full draft saved locally]"
+                    word_count = len(content_clean.split())
+                    msg = f"📝 *{title}*\n({word_count} words)\n─────────────────────\n{content_clean}"
+                    messages.append(msg)
+                except Exception:
+                    continue
+
+            if not messages:
+                return {
+                    "response": "❌ Draft files empty ya read nahi ho saka.",
+                    "success": False,
+                }
+
+            return {
+                "messages": messages,
+                "success": True,
+            }
+        except Exception as e:
+            return {"response": f"❌ Draft share error: {e}", "success": False}
+
     def handle_live_publish(self, intent):
         """Confirmation flow: user said 'haan karo' after live publish prompt. Execute live publish."""
         intent = dict(intent) if intent else {}
