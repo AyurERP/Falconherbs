@@ -11,6 +11,7 @@ import json
 import os
 from datetime import datetime, time
 from pathlib import Path
+from core.ist_time import now_ist, now_ist_str
 
 
 class ExtendedSchedule:
@@ -292,8 +293,15 @@ class ExtendedSchedule:
                     "last_run": None,
                     "description": "Hourly WhatsApp status: revenue, pending rewrites, last action, errors"
                 },
+                "whm_write_queue": {
+                    "time": "02:00",
+                    "frequency": "daily",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Execute queued WHM product writes (2 AM IST low-traffic window)"
+                },
             },
-            "created_at": datetime.now().isoformat()
+            "created_at": now_ist_str()
         }
         
         self._save_schedule(default)
@@ -328,7 +336,7 @@ class ExtendedSchedule:
         if not task or not task.get("enabled"):
             return False
         
-        now = datetime.now()
+        now = now_ist()   # always IST — task times are Indian clock times
         current_time = now.strftime("%H:%M")
         current_day = now.strftime("%A").lower()
         today_date = now.strftime("%Y-%m-%d")
@@ -385,8 +393,7 @@ class ExtendedSchedule:
     def mark_completed(self, task_name):
         """Mark a task as completed"""
         if task_name in self.schedule["tasks"]:
-            self.schedule["tasks"][task_name]["last_run"] = \
-                datetime.now().isoformat()
+            self.schedule["tasks"][task_name]["last_run"] = now_ist_str()
             self._save_schedule()
     
     def get_pending_tasks(self):
@@ -436,6 +443,7 @@ class ExtendedSchedule:
             "weekly_price_scan":  self._task_price_scan,
             "vps_health_check":    self._task_vps_health_check,
             "hourly_report":       self._task_hourly_report,
+            "whm_write_queue":     self._task_whm_write_queue,
         }
         
         handler = handlers.get(task_name)
@@ -1721,6 +1729,40 @@ class ExtendedSchedule:
                 "success": True,
                 "send_whatsapp": True,
                 "message": "\n".join(lines),
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _task_whm_write_queue(self):
+        """
+        Execute all queued WHM product write operations.
+        Runs at 2:00 AM IST (low-traffic window).
+        """
+        try:
+            from core.write_scheduler import write_scheduler
+            status = write_scheduler.get_status()
+            pending = status.get("pending", 0)
+
+            if pending == 0:
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "✅ Write queue empty — nothing to apply",
+                }
+
+            woo = self.bridge.tools.get("woocommerce") if self.bridge else None
+            if not woo:
+                return {
+                    "success": False,
+                    "send_whatsapp": True,
+                    "message": f"❌ Write queue: {pending} pending but WooCommerce not loaded",
+                }
+
+            result = write_scheduler.run_pending(woo, dry_run=False)
+            return {
+                "success": result.get("success", False),
+                "send_whatsapp": True,
+                "message": result.get("summary", "Write queue executed"),
             }
         except Exception as e:
             return {"success": False, "error": str(e)}

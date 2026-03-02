@@ -58,6 +58,7 @@ import urllib.error
 import urllib.request
 import uuid
 from datetime import datetime, timedelta, timezone
+from core.ist_time import now_ist, now_ist_str, today_ist, month_ist, IST
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -188,23 +189,23 @@ _DEFAULT_SITE_SCHEDULE: Dict[str, Dict[str, Any]] = {
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def _utcnow() -> datetime:
-    """Timezone-aware UTC now."""
-    return datetime.now(timezone.utc)
+    """IST now (India Standard Time, UTC+5:30)."""
+    return now_ist()
 
 
 def _utcnow_iso() -> str:
-    """ISO-8601 UTC timestamp for JSON serialisation."""
-    return _utcnow().isoformat()
+    """ISO-8601 IST timestamp — e.g. '2026-03-02T22:41:43+05:30'."""
+    return now_ist_str()
 
 
 def _today_str() -> str:
-    """Current UTC date as YYYY-MM-DD."""
-    return _utcnow().strftime("%Y-%m-%d")
+    """Current IST date as YYYY-MM-DD."""
+    return today_ist()
 
 
 def _month_str() -> str:
-    """Current UTC year-month as YYYY-MM."""
-    return _utcnow().strftime("%Y-%m")
+    """Current IST year-month as YYYY-MM."""
+    return month_ist()
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

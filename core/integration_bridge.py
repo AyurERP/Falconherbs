@@ -375,24 +375,43 @@ class IntegrationBridge:
             }
             total_high = total_medium = total_low = 0
 
-            # ── 1. PRODUCTS: descriptions + short desc (paginate to get ALL) ──
-            products = []
-            page = 1
-            while True:
-                api_result = woo._make_request("products", {"per_page": 100, "page": page})
-                batch = api_result.get("data", []) if api_result.get("success") else []
-                if not batch:
-                    break
-                products.extend(batch)
-                if len(batch) < 100:
-                    break
-                page += 1
+            # ── 1. PRODUCTS: use cached bulk fetch (avoids repeated WHM API calls) ──
+            # get_all_products() returns from disk cache if fresh (2h TTL)
+            prod_result = woo.get_all_products(save=False)
+            if not prod_result.get("success"):
+                return {"success": False, "error": "Failed to fetch products: " + str(prod_result.get("error"))}
+
+            products = prod_result["data"].get("products", [])
+            from_cache = prod_result.get("from_cache", False)
+
+            # Change detection — skip products unchanged since last scan
+            try:
+                from core.cache_manager import cache as _cache
+                last_modified_map = _cache.get_product_modified_map("falconherbs")
+            except Exception:
+                _cache = None
+                last_modified_map = {}
+
+            new_modified_map = {}
 
             clean_count = 0
+            skip_count = 0
             for p in products:
                 pid  = p["id"]
                 name = p["name"]
                 url  = p.get("permalink", "")
+                date_mod = p.get("date_modified", "")
+
+                # Change detection: skip if unchanged since last scan
+                new_modified_map[str(pid)] = date_mod
+                if (last_modified_map
+                        and str(pid) in last_modified_map
+                        and last_modified_map[str(pid)] == date_mod
+                        and date_mod):
+                    skip_count += 1
+                    clean_count += 1   # assume still clean
+                    continue
+
 
                 # --- 1a. Description scan
                 raw = (p.get("description","") or "") + " " + (p.get("short_description","") or "")
@@ -563,7 +582,15 @@ class IntegrationBridge:
                 pass
 
             # ── 5. BUILD SUMMARY REPORT ───────────────────────────
+            # Save change-detection fingerprint for next scan
+            try:
+                if _cache and new_modified_map:
+                    _cache.save_product_modified_map("falconherbs", new_modified_map)
+            except Exception:
+                pass
+
             total_products = len(products)
+            scanned_count  = total_products - skip_count
             fixable_count  = len(report["products_fixable"])
             title_count    = len(report["titles_fixable"])
             alt_count      = len(report["image_alt_fixable"])
@@ -575,7 +602,11 @@ class IntegrationBridge:
 
             lines = [
                 "🏥 *FULL SITE HEALTH CLAIMS AUDIT*",
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "━" * 32,
+                "",
+                "⚡ *EFFICIENCY:* {} products — {} scanned, {} unchanged (skipped)".format(
+                    total_products, scanned_count, skip_count),
+                "   {'Cache HIT — 0 extra API calls' if from_cache else '1 bulk API call'}",
                 "",
                 "📊 *TOTAL VIOLATIONS:* {} (HIGH: {} | MED: {} | LOW: {})".format(
                     total_violations, total_high, total_medium, total_low),

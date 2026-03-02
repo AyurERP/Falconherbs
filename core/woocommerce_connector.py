@@ -10,8 +10,31 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
+from core.ist_time import now_ist_str
 
 load_dotenv()
+
+# Lazy imports to avoid circular dependency at module load
+def _get_throttle():
+    try:
+        from core.api_throttle import throttle
+        return throttle
+    except Exception:
+        return None
+
+def _get_cache():
+    try:
+        from core.cache_manager import cache
+        return cache
+    except Exception:
+        return None
+
+def _get_write_scheduler():
+    try:
+        from core.write_scheduler import write_scheduler
+        return write_scheduler
+    except Exception:
+        return None
 
 class WooCommerceConnector:
     """
@@ -19,19 +42,34 @@ class WooCommerceConnector:
     Docs: https://woocommerce.github.io/woocommerce-rest-api-docs/
     """
     
-    def __init__(self, site_url=None, consumer_key=None, consumer_secret=None):
-        self.site_url = site_url or os.getenv("WOO_SITE_URL", "https://falconherbs.com")
-        self.consumer_key = consumer_key or os.getenv("FALCONHERBS_WC_API_KEY")
-        self.consumer_secret = consumer_secret or os.getenv("FALCONHERBS_WC_API_SECRET")
+    def __init__(self, site_url=None, consumer_key=None, consumer_secret=None,
+                 site_config=None):
+        # Accept a site_config dict from SiteLoader for multi-site support
+        if site_config:
+            self.site_url = site_config.get("url") or site_url or os.getenv("WOO_SITE_URL", "https://falconherbs.com")
+            self.consumer_key = site_config.get("wc_key") or consumer_key
+            self.consumer_secret = site_config.get("wc_secret") or consumer_secret
+            self._site_key = site_config.get("key", "falconherbs")
+            self._max_calls = site_config.get("max_calls_per_minute", 5)
+            self.wp_user = site_config.get("wp_user") or os.getenv("FALCONHERBS_WP_USER")
+            self.wp_password = site_config.get("wp_pass") or (
+                os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+                or os.getenv("FALCONHERBS_WP_PASSWORD")
+            )
+        else:
+            self.site_url = site_url or os.getenv("WOO_SITE_URL", "https://falconherbs.com")
+            self.consumer_key = consumer_key or os.getenv("FALCONHERBS_WC_API_KEY")
+            self.consumer_secret = consumer_secret or os.getenv("FALCONHERBS_WC_API_SECRET")
+            self._site_key = "falconherbs"
+            self._max_calls = 5
+            self.wp_user = os.getenv("FALCONHERBS_WP_USER")
+            self.wp_password = (
+                os.getenv("FALCONHERBS_WP_APP_PASSWORD")
+                or os.getenv("FALCONHERBS_WP_PASSWORD")
+            )
         self.api_base = f"{self.site_url}/wp-json/wc/v3"
         # WordPress REST API auth (blog posts, pages, categories)
         self.wp_api_base = f"{self.site_url}/wp-json/wp/v2"
-        self.wp_user = os.getenv("FALCONHERBS_WP_USER")
-        # App Password preferred; falls back to regular password
-        self.wp_password = (
-            os.getenv("FALCONHERBS_WP_APP_PASSWORD")
-            or os.getenv("FALCONHERBS_WP_PASSWORD")
-        )
         self.data_dir = Path("data/woocommerce")
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -40,24 +78,37 @@ class WooCommerceConnector:
             print("   Set FALCONHERBS_WC_API_KEY and FALCONHERBS_WC_API_SECRET in .env")
     
     def _make_request(self, endpoint, params=None):
-        """Base API request with Basic Auth"""
+        """Base API request with throttle + retry."""
         url = f"{self.api_base}/{endpoint}"
-        
-        try:
-            response = requests.get(
-                url, 
-                params=params or {}, 
-                auth=(self.consumer_key, self.consumer_secret),
-                timeout=30
+        throttle = _get_throttle()
+
+        def _do_request():
+            try:
+                response = requests.get(
+                    url,
+                    params=params or {},
+                    auth=(self.consumer_key, self.consumer_secret),
+                    timeout=30
+                )
+                response.raise_for_status()
+                return {"success": True, "data": response.json()}
+            except requests.exceptions.ConnectionError:
+                return {"success": False, "error": "Cannot connect to site. Is it online?"}
+            except requests.exceptions.Timeout:
+                return {"success": False, "error": "timeout"}
+            except requests.exceptions.HTTPError as e:
+                return {"success": False, "error": f"HTTP {e.response.status_code}: {str(e)}"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+
+        if throttle:
+            return throttle.call_with_retry(
+                _do_request,
+                site_key=self._site_key,
+                max_calls=self._max_calls,
+                max_attempts=4,
             )
-            response.raise_for_status()
-            return {"success": True, "data": response.json()}
-        except requests.exceptions.ConnectionError:
-            return {"success": False, "error": "Cannot connect to site. Is it online?"}
-        except requests.exceptions.HTTPError as e:
-            return {"success": False, "error": f"HTTP {e.response.status_code}: {str(e)}"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+        return _do_request()
     
     def _make_update_request(self, endpoint, data):
         """Base API PUT request with Basic Auth"""
@@ -370,29 +421,44 @@ class WooCommerceConnector:
 
     # ==================== PRODUCTS ====================
 
-    def get_all_products(self, save=True):
-        """Fetch all products with pagination"""
+    def get_all_products(self, save=True, force_refresh=False):
+        """Fetch all products with pagination. Uses 2-hour disk cache."""
+        cache = _get_cache()
+        cache_key = f"products_{self._site_key}"
+
+        # Return cached data if fresh and not forced
+        if cache and not force_refresh:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                print(f"  ⚡ [Cache HIT] products for {self._site_key} — skipping API call")
+                return {"success": True, "data": cached, "from_cache": True}
+
+        print(f"  🌐 [Cache MISS] Fetching products from WHM API ({self._site_key})...")
         all_products = []
         page = 1
-        
+        api_calls = 0
+
         while True:
             result = self._make_request("products", {"page": page, "per_page": 100, "status": "any"})
+            api_calls += 1
             if not result["success"]:
                 return result
-            
+
             products = result["data"]
             if not products:
                 break
-            
+
             all_products.extend(products)
             page += 1
-            
+
             if len(products) < 100:
                 break
-        
+
+        print(f"  📦 Fetched {len(all_products)} products in {api_calls} API call(s)")
+
         summary = {
             "total_products": len(all_products),
-            "fetched_at": datetime.now().isoformat(),
+            "fetched_at": now_ist_str(),
             "products": []
         }
         
@@ -414,16 +480,24 @@ class WooCommerceConnector:
                 "description_length": len(p.get("description", "")),
                 "short_description_length": len(p.get("short_description", "")),
                 "images_count": len(p.get("images", [])),
+                "images": p.get("images", []),  # kept for run_health_scan alt text scan
                 "permalink": p.get("permalink"),
                 "total_sales": p.get("total_sales", 0),
                 "average_rating": p.get("average_rating"),
                 "rating_count": p.get("rating_count", 0),
+                "date_modified": p.get("date_modified", ""),  # for change detection
             }
             summary["products"].append(product_info)
-        
+
+        # Save to disk cache (2-hour TTL) — avoids repeated WHM API calls
+        if cache:
+            from core.cache_manager import TTL_PRODUCTS
+            cache.set(cache_key, summary, ttl=TTL_PRODUCTS)
+            print(f"  💾 [Cache] Saved products to cache (2h TTL)")
+
         if save:
             self._save_data("products.json", summary)
-        
+
         return {"success": True, "data": summary}
     
     def get_product_issues(self):
