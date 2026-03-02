@@ -1,0 +1,65 @@
+{
+  "type": "social_batch",
+  "created_at": "2026-03-02T03:43:44.711995",
+  "total_posts": 2,
+  "posts": [
+    {
+      "topic": "Tulsi Powder immunity herb",
+      "platform": "instagram",
+      "content_type": "educational",
+      "product": null,
+      "prompt": "Create a INSTAGRAM post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Tulsi Powder immunity herb\nCONTENT TYPE: educational — Teach something about Ayurveda/herbs\nPLATFORM: instagram\n\n\nPLATFORM RULES:\n- Max length: 2200 characters\n- Hashtags: up to 20\n- Style: Visual storytelling, emoji-rich, engaging, line breaks for readability\n- CTA options: Link in bio, Save this post, Share with someone who needs this\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+      "content": "**CAPTION**\n🌿 Unlock the power of Tulsi Powder! 🌸\nTraditionally used in Ayurveda to support immunity, Tulsi Powder is a natural way to boost your body's defenses. 🌟\nRich in antioxidants and adaptogenic properties, this herb may help reduce stress and promote overall well-being. 🌈\nAt Falcon Herbs, we're dedicated to providing high-quality, authentic Ayurvedic products. 💚\nSave this post and share with someone who needs a natural immunity boost! 🤝\nLink in bio to learn more about our Tulsi Powder and other herbal remedies. 🌐\n\n**HASHTAGS**\n#Ayurveda #NaturalWellness #HerbalRemedies #AyurvedicLifestyle #HerbsForsupports natural wellnessth #FalconHerbs #AuthenticAyurveda #ImmunityBoost #TulsiPowder #WellnessWednesday #supports natural wellnessthyLiving #Naturalsupports natural wellnessth #HerbalSupplements #AyurvedicHerbs #Holisticsupports natural wellnessth #SelfCare #MindfulLiving #supports natural wellnessthyHabits\n\n**IMAGE SUGGESTION**\nImage: A serene and natural setting with a wooden spoon and a small bowl of Tulsi Powder on a stone table, surrounded by fresh Tulsi leaves and a few candles.\nColor mood/palette: Earthy tones with a touch of green to represent nature and wellness.\nText overlay suggestion: \"Tulsi Powder: Nature's Immunity Boost\" in a clean, modern font.\nThe image should convey a sense of calmness and connection to nature, while highlighting the product and its benefits.",
+      "status": "generated",
+      "safety_check": {
+        "original_length": 1298,
+        "cleaned_content": "**CAPTION**\n🌿 Unlock the power of Tulsi Powder! 🌸\nTraditionally used in Ayurveda to support immunity, Tulsi Powder is a natural way to boost your body's defenses. 🌟\nRich in antioxidants and adaptogenic properties, this herb may help reduce stress and promote overall well-being. 🌈\nAt Falcon Herbs, we're dedicated to providing high-quality, authentic Ayurvedic products. 💚\nSave this post and share with someone who needs a natural immunity boost! 🤝\nLink in bio to learn more about our Tulsi Powder and other herbal remedies. 🌐\n\n**HASHTAGS**\n#Ayurveda #NaturalWellness #HerbalRemedies #AyurvedicLifestyle #HerbsForsupports natural wellnessth #FalconHerbs #AuthenticAyurveda #ImmunityBoost #TulsiPowder #WellnessWednesday #supports natural wellnessthyLiving #Naturalsupports natural wellnessth #HerbalSupplements #AyurvedicHerbs #Holisticsupports natural wellnessth #SelfCare #MindfulLiving #supports natural wellnessthyHabits\n\n**IMAGE SUGGESTION**\nImage: A serene and natural setting with a wooden spoon and a small bowl of Tulsi Powder on a stone table, surrounded by fresh Tulsi leaves and a few candles.\nColor mood/palette: Earthy tones with a touch of green to represent nature and wellness.\nText overlay suggestion: \"Tulsi Powder: Nature's Immunity Boost\" in a clean, modern font.\nThe image should convey a sense of calmness and connection to nature, while highlighting the product and its benefits.",
+        "changes_made": 2,
+        "changes": [
+          {
+            "found": "heal",
+            "replaced_with": "supports natural wellness",
+            "action": "AUTO-REPLACED",
+            "severity": "MEDIUM"
+          },
+          {
+            "found": "Missing disclaimer",
+            "action": "NEEDS ADDITION",
+            "severity": "LOW"
+          }
+        ],
+        "is_safe": true,
+        "needs_disclaimer": true
+      }
+    },
+    {
+      "topic": "Tulsi Powder immunity herb",
+      "platform": "facebook",
+      "content_type": "educational",
+      "product": null,
+      "prompt": "Create a FACEBOOK post for \n\"Falcon Herbs\" — an authentic Ayurvedic herbal products brand.\n\nTOPIC: Tulsi Powder immunity herb\nCONTENT TYPE: educational — Teach something about Ayurveda/herbs\nPLATFORM: facebook\n\n\nPLATFORM RULES:\n- Max length: 500 characters\n- Hashtags: up to 5\n- Style: Conversational, question-based, community-building\n- CTA options: Comment below, Share your experience, Visit our website\n\nCREATE:\n1. CAPTION — Engaging, on-brand post text\n   - Hook in first line (people see this before \"...more\")\n   - Value-packed body\n   - Clear CTA at end\n   - Use emojis appropriately (not excessive)\n   \n2. HASHTAGS — Mix of:\n   - Broad: #Ayurveda #NaturalWellness #HerbalRemedies\n   - Niche: #AyurvedicLifestyle #HerbsForHealth\n   - Branded: #FalconHerbs #AuthenticAyurveda\n   - Trending (if relevant)\n\n3. IMAGE SUGGESTION — Describe ideal image/visual\n   - What should the image show?\n   - Color mood/palette\n   - Text overlay suggestion (if any)\n   - Can be used as AI image generation prompt\n\nBRAND VOICE:\n- Premium, not cheap\n- Knowledgeable, not preachy\n- Warm, not corporate\n- Trustworthy, not salesy\n\nHEALTH RULES:\n❌ No disease claims, no \"cures/treats\" language\n✅ \"Supports\", \"traditionally used\", \"may help\"\n✅ Educational framing always\n",
+      "content": "Here's a Facebook post for Falcon Herbs:\n\n**Caption**\nDid you know Tulsi Powder is a powerful immunity herb? 🌿 Traditionally used in Ayurveda to support respiratory supports natural wellnessth, it may help boost your natural defenses. What's your favorite way to incorporate Tulsi into your daily routine? 🤔 Comment below! #FalconHerbs #Ayurveda #NaturalWellness #HerbsForsupports natural wellnessth #AuthenticAyurveda\n\n**Image Suggestion**\nA warm and inviting image of a tulsi plant in a traditional Indian setting, with a subtle wooden or earthy background. The color mood should be calming and natural, with shades of green and brown. A gentle text overlay could read \"Tulsi: The Immunity Herb\" in a clean, elegant font. This image should evoke a sense of traditional wisdom and natural wellness.",
+      "status": "generated",
+      "safety_check": {
+        "original_length": 757,
+        "cleaned_content": "Here's a Facebook post for Falcon Herbs:\n\n**Caption**\nDid you know Tulsi Powder is a powerful immunity herb? 🌿 Traditionally used in Ayurveda to support respiratory supports natural wellnessth, it may help boost your natural defenses. What's your favorite way to incorporate Tulsi into your daily routine? 🤔 Comment below! #FalconHerbs #Ayurveda #NaturalWellness #HerbsForsupports natural wellnessth #AuthenticAyurveda\n\n**Image Suggestion**\nA warm and inviting image of a tulsi plant in a traditional Indian setting, with a subtle wooden or earthy background. The color mood should be calming and natural, with shades of green and brown. A gentle text overlay could read \"Tulsi: The Immunity Herb\" in a clean, elegant font. This image should evoke a sense of traditional wisdom and natural wellness.",
+        "changes_made": 2,
+        "changes": [
+          {
+            "found": "heal",
+            "replaced_with": "supports natural wellness",
+            "action": "AUTO-REPLACED",
+            "severity": "MEDIUM"
+          },
+          {
+            "found": "Missing disclaimer",
+            "action": "NEEDS ADDITION",
+            "severity": "LOW"
+          }
+        ],
+        "is_safe": true,
+        "needs_disclaimer": true
+      }
+    }
+  ]
+}
