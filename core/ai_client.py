@@ -21,6 +21,8 @@ Usage:
 
 import os
 import requests
+import json
+from pathlib import Path
 from config.keys import (
     NVIDIA_API_KEY,  NVIDIA_BASE_URL,
     OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
@@ -28,6 +30,26 @@ from config.keys import (
     AI_MODELS,
 )
 from core.logger import log
+
+# ── SPEND TRACKING ──────────────────────────────────────────────────────
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+SPEND_FILE = DATA_DIR / "spend.json"
+
+def is_budget_safe() -> bool:
+    """Check if we are within the monthly limit set in spend.json"""
+    if not SPEND_FILE.exists():
+        return True
+    try:
+        with open(SPEND_FILE, "r") as f:
+            data = json.load(f)
+            # Default limit $50 if not set, for safety
+            limit = data.get("monthly_limit", 50.0)
+            total = data.get("monthly_total", 0.0)
+            if total >= limit:
+                return False
+            return True
+    except Exception:
+        return True # Fallback to allowed if file corrupted
 
 
 # ─── Provider dispatch ────────────────────────────────────────────────────────
@@ -159,6 +181,11 @@ def call_ai(
     str
         The model's reply text, or "AI_ERROR: <details>" on failure.
     """
+    if not is_budget_safe():
+        msg = "❌ AI_ERROR: Monthly budget limit hit! Check data/spend.json"
+        log.error(msg)
+        return msg
+
     model_str = AI_MODELS.get(role, AI_MODELS["fallback"])
 
     # ── Parse provider prefix ──────────────────────────────────────────────
