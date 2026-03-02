@@ -150,10 +150,18 @@ class WooCommerceConnector:
                             failed_fields.append(key)
                             break
                 else:
-                    c_actual = str(val_actual).replace('\r\n', '\n').strip()
-                    c_expect = str(val_expect).replace('\r\n', '\n').strip()
-                    c_before = str(val_before).replace('\r\n', '\n').strip() if val_before is not None else ""
-                    
+                    def _norm(s):
+                        import html as _html, re as _re
+                        s = str(s)
+                        s = _html.unescape(s)             # &amp; → &, &nbsp; → space, etc.
+                        s = s.replace('\r\n', '\n').replace('\r', '\n')
+                        s = _re.sub(r'[ \t]+', ' ', s)   # collapse inline whitespace
+                        return s.strip()
+
+                    c_actual = _norm(val_actual)
+                    c_expect = _norm(val_expect)
+                    c_before = _norm(val_before) if val_before is not None else ""
+
                     if c_actual != c_expect:
                         if c_actual == c_before and c_expect != c_before:
                             failed_fields.append(key)

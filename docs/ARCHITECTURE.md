@@ -9,8 +9,8 @@ Falcon Agency is a modular AI business automation system for managing Ayurvedic 
 ### Entry Points
 | File | Role |
 |------|------|
-| `main.py` | Application entry — starts Director loop + Flask webhook |
-| `core/webhook.py` | Flask endpoint receiving WhatsApp webhook from Meta |
+| `main.py` | Application entry — starts Director loop + FastAPI webhook |
+| `core/webhook.py` | FastAPI endpoint receiving WhatsApp webhook from Meta |
 
 ### Brain Layer
 | File | Role |
