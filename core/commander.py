@@ -304,30 +304,6 @@ class FalconCommander:
             except Exception as exc:
                 log.warning("Scope check failed (continuing): %s", exc)
 
-            # ── Step -1: Preliminary wait message for known slow tasks ──
-            import re as _re
-            _SLOW_TASK_MSGS = {
-                "health_scan": (
-                    r"health.?scan|scan karo|compliance scan|fssai scan|violation scan",
-                    "⏳ Health scan shuru kar raha hoon — ~40 seconds lagenge. Ruko thoda... 🔍"
-                ),
-                "store_audit": (
-                    r"store.?audit|dukaan.?audit|full audit|store check|dukaan check",
-                    "⏳ Store audit chal raha hai — ~50 seconds. Baitho thoda... 📊"
-                ),
-                "rewrite_products": (
-                    r"rewrite products|sab rewrite|product rewrite karo|fix descriptions",
-                    "⏳ Product rewrites generate ho rahe hain — ~60 seconds. Wait karo... ✍️"
-                ),
-            }
-            for _task, (_pat, _msg) in _SLOW_TASK_MSGS.items():
-                if _re.search(_pat, lower_text, _re.IGNORECASE):
-                    try:
-                        self._whatsapp.send_message(_msg, reply_to=message_id)
-                    except Exception:
-                        pass
-                    break
-
             # ── Step 0: Try new extended intents first ──
             if self._extended_classifier:
                 try:
@@ -424,20 +400,31 @@ class FalconCommander:
 
                         raw_reply = response.get("response", "")
                         if raw_reply:
-                            # FIX 2: Every extended intent response passes through
-                            # DirectorBrain for personality wrapping before WhatsApp.
-                            # Flow: Handler → RAW DATA → DirectorBrain → Send
-                            try:
-                                recent_msgs = memory.get_recent_messages(sender, limit=8)
-                            except Exception:
-                                recent_msgs = []
-                            reply_text = director_brain.wrap_raw_response(
-                                owner_message=text,
-                                raw_response=raw_reply,
-                                intent=ext_result.get("intent", ""),
-                                recent_messages=recent_msgs,
-                            )
-                            self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
+                            # Pre-formatted report intents: send as-is (no AI wrapping).
+                            # These handlers already produce ready-for-WhatsApp text with
+                            # real data. AI wrapping risks hallucinating/altering facts.
+                            _NO_WRAP_INTENTS = {
+                                "health_scan", "store_audit", "scan_products",
+                                "scan_blog_posts", "scan_pages", "rewrite_status",
+                                "generate_all_fixes", "price_scan",
+                            }
+                            if ext_result.get("intent") in _NO_WRAP_INTENTS or response.get("no_ai_wrap"):
+                                reply_text = raw_reply
+                            else:
+                                # FIX 2: Extended intent response passes through
+                                # DirectorBrain for personality wrapping before WhatsApp.
+                                # Flow: Handler → RAW DATA → DirectorBrain → Send
+                                try:
+                                    recent_msgs = memory.get_recent_messages(sender, limit=8)
+                                except Exception:
+                                    recent_msgs = []
+                                reply_text = director_brain.wrap_raw_response(
+                                    owner_message=text,
+                                    raw_response=raw_reply,
+                                    intent=ext_result.get("intent", ""),
+                                    recent_messages=recent_msgs,
+                                )
+                                self._maybe_log_ai_spend("nvidia_chat", NVIDIA_CHAT_COST)
                             out_id = self._safe_send(reply_text, sender=sender, reply_to=message_id)
                             memory.add_message(
                                 sender, "assistant", reply_text, message_id=out_id
