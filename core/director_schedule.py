@@ -1377,21 +1377,19 @@ class ExtendedSchedule:
         """
         try:
             import os
-            has_key = bool(
-                os.getenv("PERPLEXITY_API_KEY")
-                or os.getenv("OPENAI_API_KEY")
-                or os.getenv("NVIDIA_API_KEY")
-            )
+            # AEO needs Serper (Google search) + NVIDIA (AI analysis)
+            has_serper = bool(os.getenv("SERPER_API_KEY"))
+            has_nvidia  = bool(os.getenv("NVIDIA_API_KEY"))
 
-            if not has_key:
+            if not has_serper:
                 return {
                     "success": True,
                     "send_whatsapp": True,
                     "message": (
                         "\U0001F916 *AEO SCAN SKIPPED*\n"
-                        "No API key found.\n"
-                        "Add PERPLEXITY_API_KEY to .env\n"
-                        "to enable AI visibility monitoring."
+                        "SERPER_API_KEY not set.\n"
+                        "Get free key: serper.dev (2500 searches/month)\n"
+                        "Add SERPER_API_KEY to .env to enable."
                     ),
                 }
 

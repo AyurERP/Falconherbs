@@ -19,10 +19,15 @@ NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 OPENROUTER_API_KEY  = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# ── Anthropic (Claude) API ───────────────────────────────────────────────
+ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
+
 # ── Model assignments ───────────────────────────────────────────────────
 # Prefix convention:
 #   "nv::<model>"  →  NVIDIA NIM endpoint  (PRIMARY — fast, no rate limits)
 #   "or::<model>"  →  OpenRouter endpoint  (BACKUP — free tier rate-limited)
+#   "cl::<model>"  →  Anthropic Claude     (BEST for long-context analysis)
 #   No prefix      →  NVIDIA NIM (legacy compat)
 #
 # Benchmark results (Feb 2025):
@@ -43,16 +48,25 @@ AI_MODELS = {
     # Director analysis/planning — Qwen3 80B MoE
     "director":         "nv::qwen/qwen3-next-80b-a3b-instruct",
 
-    # Strategist — Llama 3.3 70B, fast + reliable analysis
-    "strategist":       "nv::meta/llama-3.3-70b-instruct",
+    # Strategist — Claude 3.5 Sonnet: BEST for long-form analysis,
+    # competitor research, weekly reports. Deep reasoning.
+    "strategist":       "cl::claude-3-5-sonnet-20241022",
 
     # Developer — Llama 3.3 70B, technical precision
     "developer":        "nv::meta/llama-3.3-70b-instruct",
 
-    # Media/Content — Llama 3.3 70B, creative writing
-    "media":            "nv::meta/llama-3.3-70b-instruct",
-    "content":          "nv::meta/llama-3.3-70b-instruct",
+    # Media/Content — Claude 3.5 Haiku: fast, excellent English writing
+    # Better blog quality + FSSAI compliance language than Llama
+    "media":            "cl::claude-3-5-haiku-20241022",
+    "content":          "cl::claude-3-5-haiku-20241022",
     "content_fallback": "nv::meta/llama-3.3-70b-instruct",
+
+    # Health rewriter — Claude 3.5 Haiku: strict compliance language
+    # Understands Indian FSSAI/AYUSH rules better than open models
+    "health_rewriter":  "cl::claude-3-5-haiku-20241022",
+
+    # AEO agent — Claude 3.5 Sonnet for AI-engine optimized content
+    "aeo":              "cl::claude-3-5-sonnet-20241022",
 
     # Fallback — 70B (massive upgrade from old 8B garbage model)
     "fallback":         "nv::meta/llama-3.3-70b-instruct",
