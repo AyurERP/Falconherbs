@@ -37,16 +37,19 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 #   DeepSeek R1 free       → 35s response, sometimes empty (too slow for WhatsApp)
 #
 AI_MODELS = {
-    # Commander Brain (reply generation) — Qwen3 80B MoE via NVIDIA
-    # Strategic thinking, natural Hinglish, creative. ~2s responses.
-    "commander":        "nv::qwen/qwen3-next-80b-a3b-instruct",
+    # Commander Brain (reply generation) — Kimi K2 via NVIDIA
+    # Best natural Hinglish, follows persona well, ~1s responses.
+    # Tested vs qwen3-next-80b-a3b (only 3B active — too weak),
+    # nemotron-253b (4.9s — too slow), mistral-675b, deepseek-v3.2.
+    # Kimi K2 wins: fastest + most natural Hinglish + best instruction following.
+    "commander":        "nv::moonshotai/kimi-k2-instruct",
 
     # Commander Fast (intent classification) — Llama 3.3 70B via NVIDIA
     # Reliable JSON output, sub-2s. Used only for intent routing.
     "commander_fast":   "nv::meta/llama-3.3-70b-instruct",
 
-    # Director analysis/planning — Qwen3 80B MoE
-    "director":         "nv::qwen/qwen3-next-80b-a3b-instruct",
+    # Director analysis/planning — Kimi K2 (same as commander)
+    "director":         "nv::moonshotai/kimi-k2-instruct",
 
     # Strategist — Claude 3.5 Sonnet: BEST for long-form analysis,
     # competitor research, weekly reports. Deep reasoning.
