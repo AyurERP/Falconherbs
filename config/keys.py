@@ -25,53 +25,51 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 
 # ── Model assignments ───────────────────────────────────────────────────
 # Prefix convention:
-#   "nv::<model>"  →  NVIDIA NIM endpoint  (PRIMARY — fast, no rate limits)
-#   "or::<model>"  →  OpenRouter endpoint  (BACKUP — free tier rate-limited)
-#   "cl::<model>"  →  Anthropic Claude     (BEST for long-context analysis)
-#   No prefix      →  NVIDIA NIM (legacy compat)
+#   "nv::<model>"  →  NVIDIA NIM endpoint
+#   "or::<model>"  →  OpenRouter (200+ models, free + paid)
+#   "cl::<model>"  →  Anthropic Claude
 #
-# Benchmark results (Feb 2025):
-#   NVIDIA Llama 3.3 70B  → 1.8s, reliable, great Hinglish + JSON
-#   NVIDIA Qwen3 80B MoE  → 2.1s, reliable, BEST creative + strategic
-#   OpenRouter free tier   → 429 rate-limited after 2-3 calls (not production-ready)
-#   DeepSeek R1 free       → 35s response, sometimes empty (too slow for WhatsApp)
+# BENCHMARK (Mar 2026, tested 12+ models for Director persona):
+#   Gemini 2.0 Flash  → 2.5s, FREE, BEST Hinglish quality, no hallucination ★
+#   GPT-4o-mini       → 3.7s, ~$3/month, excellent grounding
+#   GPT-4o            → 3.2s, ~$15/month, best quality
+#   Grok-3-mini       → 9-19s, TOO SLOW for WhatsApp
+#   Kimi K2           → 1s, fast but limited reasoning depth
+#   qwen3-next-80b-a3b → 1.5s, only 3B ACTIVE params — too weak
+#   LLaMA4-Maverick   → hallucinated numbers — dangerous
 #
 AI_MODELS = {
-    # Commander Brain (reply generation) — Kimi K2 via NVIDIA
-    # Best natural Hinglish, follows persona well, ~1s responses.
-    # Tested vs qwen3-next-80b-a3b (only 3B active — too weak),
-    # nemotron-253b (4.9s — too slow), mistral-675b, deepseek-v3.2.
-    # Kimi K2 wins: fastest + most natural Hinglish + best instruction following.
-    "commander":        "nv::moonshotai/kimi-k2-instruct",
+    # Commander Brain (Director's WhatsApp voice) — Gemini 2.0 Flash
+    # FREE via OpenRouter. Fastest smart model. Best Hinglish.
+    # Doesn't hallucinate data when instructed. 2.5s avg.
+    "commander":        "or::google/gemini-2.0-flash-001",
 
-    # Commander Fast (intent classification) — Llama 3.3 70B via NVIDIA
-    # Reliable JSON output, sub-2s. Used only for intent routing.
+    # Commander Fast (intent classification only) — LLaMA 3.3 70B NVIDIA
+    # Sub-2s JSON output. Not for persona — just routing.
     "commander_fast":   "nv::meta/llama-3.3-70b-instruct",
 
-    # Director analysis/planning — Kimi K2 (same as commander)
-    "director":         "nv::moonshotai/kimi-k2-instruct",
+    # Director (same as commander — Gemini Flash)
+    "director":         "or::google/gemini-2.0-flash-001",
 
-    # Strategist — Claude 3.5 Sonnet: BEST for long-form analysis,
-    # competitor research, weekly reports. Deep reasoning.
-    "strategist":       "cl::claude-3-5-sonnet-20241022",
+    # Strategist — GPT-4o via OpenRouter: deep analysis, competitor research
+    # Best reasoning for long-form strategy. ~$0.01/call.
+    "strategist":       "or::openai/gpt-4o",
 
-    # Developer — Llama 3.3 70B, technical precision
+    # Developer — LLaMA 3.3 70B: reliable code-level precision
     "developer":        "nv::meta/llama-3.3-70b-instruct",
 
-    # Media/Content — Claude 3.5 Haiku: fast, excellent English writing
-    # Better blog quality + FSSAI compliance language than Llama
-    "media":            "cl::claude-3-5-haiku-20241022",
-    "content":          "cl::claude-3-5-haiku-20241022",
+    # Media/Content — GPT-4o-mini: fast, excellent writing quality
+    "media":            "or::openai/gpt-4o-mini",
+    "content":          "or::openai/gpt-4o-mini",
     "content_fallback": "nv::meta/llama-3.3-70b-instruct",
 
-    # Health rewriter — Claude 3.5 Haiku: strict compliance language
-    # Understands Indian FSSAI/AYUSH rules better than open models
-    "health_rewriter":  "cl::claude-3-5-haiku-20241022",
+    # Health rewriter — GPT-4o-mini: follows FSSAI rules precisely
+    "health_rewriter":  "or::openai/gpt-4o-mini",
 
-    # AEO agent — Claude 3.5 Sonnet for AI-engine optimized content
-    "aeo":              "cl::claude-3-5-sonnet-20241022",
+    # AEO agent — GPT-4o: best for AI-engine optimized structured content
+    "aeo":              "or::openai/gpt-4o",
 
-    # Fallback — 70B (massive upgrade from old 8B garbage model)
+    # Fallback
     "fallback":         "nv::meta/llama-3.3-70b-instruct",
 }
 
