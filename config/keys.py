@@ -114,6 +114,15 @@ class KeyVault:
     def elevenlabs(self) -> str:
         return os.getenv("ELEVENLABS_API_KEY", "")
 
+    # === SEARCH & TOOLS ===
+    @property
+    def serper(self) -> str:
+        return os.getenv("SERPER_API_KEY", "")
+
+    @property
+    def serper_2(self) -> str:
+        return os.getenv("SERPER_API_KEY_2", "")
+
     # === COMMUNICATION (WhatsApp) ===
     @property
     def whatsapp_phone_id(self) -> str:
