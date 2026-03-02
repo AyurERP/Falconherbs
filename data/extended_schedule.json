@@ -58,6 +58,21 @@
       "last_run": null,
       "description": "Full health claims re-scan"
     },
+    "growth_proactive_scan": {
+      "time": "09:30",
+      "day": "tuesday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Proactive growth & revenue analysis"
+    },
+    "backup_health_check": {
+      "time": "03:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Check cPanel backup status and auto-trigger if stale"
+    },
     "weekly_content_batch": {
       "time": "08:00",
       "day": "monday",
@@ -65,6 +80,14 @@
       "enabled": true,
       "last_run": null,
       "description": "Generate full week's content batch"
+    },
+    "content_package_weekly": {
+      "time": "06:00",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Generate weekly content package (images, captions, video, UPLOAD_GUIDE) for HeroPost"
     },
     "customer_analysis": {
       "time": "09:00",
@@ -74,12 +97,73 @@
       "last_run": null,
       "description": "Analyze customer data and suggest recovery actions"
     },
+    "daily_backup": {
+      "time": "03:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Automatic daily data backup"
+    },
+    "weekly_seo_digest": {
+      "time": "09:30",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly SEO + content + revenue digest"
+    },
+    "inventory_screening": {
+      "time": "10:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Scan inventory for low stock alerts"
+    },
     "sentry_daily_scan": {
       "time": "11:00",
       "frequency": "daily",
       "enabled": true,
       "last_run": null,
       "description": "Scan recent FB/IG comments for compliance risks"
+    },
+    "weekly_influencer_scan": {
+      "time": "09:00",
+      "day": "monday",
+      "frequency": "weekly",
+      "enabled": false,
+      "last_run": null,
+      "description": "Weekly YouTube influencer discovery and outreach"
+    },
+    "monthly_aeo_scan": {
+      "time": "10:00",
+      "day": "monday",
+      "frequency": "monthly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Monthly AEO scan \u2014 Falcon Herbs visibility in AI search"
+    },
+    "weekly_trending_scan": {
+      "time": "12:00",
+      "day": "friday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly trending keywords (ayurveda/herbal) via Serper \u2014 uses quota"
+    },
+    "weekly_price_scan": {
+      "time": "08:30",
+      "day": "wednesday",
+      "frequency": "weekly",
+      "enabled": true,
+      "last_run": null,
+      "description": "Weekly competitor price scan \u2014 Amazon India"
+    },
+    "daily_digest": {
+      "time": "07:00",
+      "frequency": "daily",
+      "enabled": true,
+      "last_run": null,
+      "description": "Unified daily digest \u2014 orders, content, pricing, goals"
     },
     "vps_health_check": {
       "time": "00:00",
@@ -89,61 +173,21 @@
       "last_run": null,
       "description": "VPS CPU/memory/disk monitoring"
     },
-    "content_package_weekly": {
-      "time": "06:00",
-      "day": "monday",
-      "frequency": "weekly",
+    "hourly_report": {
+      "time": "00:00",
+      "frequency": "interval",
+      "interval_minutes": 60,
       "enabled": true,
       "last_run": null,
-      "description": "Generate weekly content package for HeroPost"
+      "description": "Hourly WhatsApp status: revenue, pending rewrites, last action, errors"
     },
-    "weekly_trending_scan": {
-      "time": "12:00",
-      "day": "friday",
-      "frequency": "weekly",
-      "enabled": true,
-      "last_run": null,
-      "description": "Weekly trending keywords (ayurveda/herbal) via Serper"
-    },
-    "weekly_seo_digest": {
-      "time": "10:00",
-      "day": "wednesday",
-      "frequency": "weekly",
-      "enabled": true,
-      "last_run": null,
-      "description": "Weekly SEO digest \u2014 audit ranking pages and send WhatsApp summary"
-    },
-    "weekly_price_scan": {
-      "time": "11:00",
-      "day": "thursday",
-      "frequency": "weekly",
-      "enabled": true,
-      "last_run": null,
-      "description": "Weekly competitor price scan \u2014 flag price gaps"
-    },
-    "daily_backup": {
+    "whm_write_queue": {
       "time": "02:00",
       "frequency": "daily",
       "enabled": true,
       "last_run": null,
-      "description": "Daily data backup \u2014 products, orders, drafts"
-    },
-    "inventory_screening": {
-      "time": "08:30",
-      "day": "monday",
-      "frequency": "weekly",
-      "enabled": true,
-      "last_run": null,
-      "description": "Weekly inventory screen \u2014 flag out-of-stock and low-stock products"
-    },
-    "monthly_aeo_scan": {
-      "time": "09:00",
-      "day": "monday",
-      "frequency": "monthly",
-      "enabled": true,
-      "last_run": null,
-      "description": "Monthly AEO scan \u2014 optimize for AI search engines and featured snippets"
+      "description": "Execute queued WHM product writes (2 AM IST low-traffic window)"
     }
   },
-  "created_at": "2026-02-23T05:10:47.392577"
+  "created_at": "2026-03-02T22:50:26.100515+05:30"
 }
