@@ -104,6 +104,7 @@ class ExtendedIntentClassifier:
                     r"\bsab\s+wrong\s+(?:words?|claims?)\s+dhundh\b",
                     r"\bpehle\s+scan\b",
                     r"\bscan\s+pehle\b",
+                    r"\bfssai\b",
                 ],
                 "handler": "handle_health_scan",
                 "description": "Full site scan via WooCommerce + WP API — products, blogs, pages, categories, descriptions, titles"

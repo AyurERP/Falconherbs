@@ -292,6 +292,30 @@ class FalconCommander:
             except Exception as exc:
                 log.warning("Scope check failed (continuing): %s", exc)
 
+            # ── Step -1: Preliminary wait message for known slow tasks ──
+            import re as _re
+            _SLOW_TASK_MSGS = {
+                "health_scan": (
+                    r"health.?scan|scan karo|compliance scan|fssai scan|violation scan",
+                    "⏳ Health scan shuru kar raha hoon — ~40 seconds lagenge. Ruko thoda... 🔍"
+                ),
+                "store_audit": (
+                    r"store.?audit|dukaan.?audit|full audit|store check|dukaan check",
+                    "⏳ Store audit chal raha hai — ~50 seconds. Baitho thoda... 📊"
+                ),
+                "rewrite_products": (
+                    r"rewrite products|sab rewrite|product rewrite karo|fix descriptions",
+                    "⏳ Product rewrites generate ho rahe hain — ~60 seconds. Wait karo... ✍️"
+                ),
+            }
+            for _task, (_pat, _msg) in _SLOW_TASK_MSGS.items():
+                if _re.search(_pat, lower_text, _re.IGNORECASE):
+                    try:
+                        self._whatsapp.send_message(_msg, reply_to=message_id)
+                    except Exception:
+                        pass
+                    break
+
             # ── Step 0: Try new extended intents first ──
             if self._extended_classifier:
                 try:
