@@ -5,6 +5,7 @@ core/ai_client.py — Multi-Provider AI Client for Falcon Agency
 Single entry-point for all AI calls across every agent.
 Routes to the correct provider based on model prefix in AI_MODELS:
 
+    "gm::<model>"  →  Google Gemini Direct (FREE 1M TPD, 15 RPM, no 429s)
     "or::<model>"  →  OpenRouter  (100+ models, many free)
     "nv::<model>"  →  NVIDIA NIM  (fast hosted inference)
     "cl::<model>"  →  Anthropic Claude (long-context, high quality)
@@ -14,7 +15,7 @@ Routes to the correct provider based on model prefix in AI_MODELS:
     No prefix      →  NVIDIA NIM (legacy compat)
 
 Fallback chain (when primary fails):
-    gh:: free → or:: → ds:: cheap → nv:: reliable → cl:: premium
+    gm:: native FREE → gh:: free → or:: → nv:: reliable → ds:: cheap
 
 Usage:
     from core.ai_client import call_ai
@@ -32,6 +33,7 @@ from config.keys import (
     ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL,
     DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL,
     PERPLEXITY_API_KEY, PERPLEXITY_BASE_URL,
+    GEMINI_API_KEY, GEMINI_BASE_URL,
     GITHUB_BASE_URL,
     AI_MODELS,
 )
@@ -67,6 +69,19 @@ def _openai_compat_call(base_url: str, api_key: str, model: str,
 
 
 # ─── Individual providers ──────────────────────────────────────────────────────
+
+def _call_gemini(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """
+    Google Gemini — DIRECT native API. FREE 1M tokens/day, 15 RPM.
+    OpenAI-compatible endpoint. NO shared rate limits (unlike OpenRouter).
+    Models: gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-pro
+    """
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY not set")
+    return _openai_compat_call(
+        GEMINI_BASE_URL, GEMINI_API_KEY, model, messages, timeout, max_tokens
+    )
+
 
 def _call_nvidia(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
     """NVIDIA NIM — reliable hosted inference."""
@@ -226,7 +241,9 @@ def call_ai(
     model_str = AI_MODELS.get(role, AI_MODELS["fallback"])
 
     # ── Parse provider prefix ──────────────────────────────────────────────
-    if model_str.startswith("or::"):
+    if model_str.startswith("gm::"):
+        provider, model = "gemini", model_str[4:]
+    elif model_str.startswith("or::"):
         provider, model = "openrouter", model_str[4:]
     elif model_str.startswith("nv::"):
         provider, model = "nvidia", model_str[4:]
@@ -248,6 +265,7 @@ def call_ai(
 
     # ── Dispatch map ────────────────────────────────────────────────────────
     _dispatch = {
+        "gemini":     _call_gemini,
         "openrouter": _call_openrouter,
         "nvidia":     _call_nvidia,
         "anthropic":  _call_anthropic,
@@ -300,20 +318,22 @@ def call_ai(
 def _build_fallback_chain(failed_provider: str) -> list:
     """
     Returns ordered list of (provider, model) fallbacks to try.
-    Strategy: gh:: FREE → or:: → ds:: cheap → nv:: → cl::
+    Strategy: gm:: native FREE → gh:: free → or:: → nv:: → ds:: cheap
     Skip the provider that already failed.
     """
-    # Preferred fallback order
+    # Preferred fallback order — optimized for VPS (GEMINI + NVIDIA always available)
     chain = [
-        ("github",     "gpt-4o"),                      # FREE
-        ("openrouter", "google/gemini-2.0-flash-001"), # FREE via OpenRouter
-        ("deepseek",   "deepseek-chat"),               # Cheap
-        ("nvidia",     "meta/llama-3.3-70b-instruct"), # Reliable
-        ("anthropic",  "claude-3-5-haiku-20241022"),   # Premium last
+        ("gemini",     "gemini-2.0-flash"),             # Native FREE, 1M TPD
+        ("github",     "gpt-4o"),                       # FREE Azure-hosted
+        ("openrouter", "google/gemini-2.0-flash-001"),  # OR free tier
+        ("nvidia",     "meta/llama-3.3-70b-instruct"),  # Reliable paid
+        ("deepseek",   "deepseek-chat"),                # Cheap
+        ("anthropic",  "claude-3-5-haiku-20241022"),    # Premium last
     ]
 
     # Check which provider keys are actually available
     available = {
+        "gemini":     bool(os.getenv("GEMINI_API_KEY")),
         "github":     bool(os.getenv("GITHUB_PAT_GPT4O")),
         "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
         "deepseek":   bool(os.getenv("DEEPSEEK_API_KEY")),

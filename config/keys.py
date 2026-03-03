@@ -28,6 +28,17 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 DEEPSEEK_API_KEY  = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
+# ── Google Gemini Direct API ─────────────────────────────────────────────
+# FREE: 1M tokens/day, 15 RPM. OpenAI-compatible endpoint.
+# Much higher limits than OpenRouter shared tier (no 429s).
+GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY", "")
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
+# ── HuggingFace Inference API ────────────────────────────────────────────
+# Free serverless inference. Good for open-source models.
+HUGGINGFACE_API_KEY  = os.getenv("HUGGINGFACE_API_KEY", "")
+HUGGINGFACE_BASE_URL = "https://api-inference.huggingface.co/models"
+
 # ── Perplexity Sonar (live web search) ───────────────────────────────────
 # OpenAI-compatible. sonar-pro = real-time Google search in LLM.
 PERPLEXITY_API_KEY  = os.getenv("PERPLEXITY_API_KEY", "")
@@ -39,45 +50,51 @@ GITHUB_BASE_URL = "https://models.inference.ai.azure.com"
 
 # ── Model assignments ───────────────────────────────────────────────────
 # Prefix convention:
-#   "nv::<model>"  →  NVIDIA NIM endpoint
-#   "or::<model>"  →  OpenRouter (200+ models, free + paid)
-#   "cl::<model>"  →  Anthropic Claude
+#   "gm::<model>"  →  Google Gemini DIRECT (FREE 1M TPD, 15 RPM, OpenAI-compat)
+#   "or::<model>"  →  OpenRouter (200+ models, Gemini free tier, GPT-4o, etc.)
+#   "gh::<model>"  →  GitHub Models (100% FREE Azure-hosted, GPT-4o, DeepSeek-V3)
+#   "nv::<model>"  →  NVIDIA NIM (reliable paid fallback)
+#   "ds::<model>"  →  DeepSeek Direct (best coder, needs paid balance)
+#   "px::<model>"  →  Perplexity Sonar (live web search, AEO)
+#   "cl::<model>"  →  Anthropic Claude (premium)
 #
-# BENCHMARK (Mar 2026, tested 12+ models for Director persona):
-#   Gemini 2.0 Flash  → 2.5s, FREE, BEST Hinglish quality, no hallucination ★
-#   GPT-4o-mini       → 3.7s, ~$3/month, excellent grounding
-#   GPT-4o            → 3.2s, ~$15/month, best quality
-#   Grok-3-mini       → 9-19s, TOO SLOW for WhatsApp
-#   Kimi K2           → 1s, fast but limited reasoning depth
-#   qwen3-next-80b-a3b → 1.5s, only 3B ACTIVE params — too weak
-#   LLaMA4-Maverick   → hallucinated numbers — dangerous
+# VERIFIED WORKING (2026-03-03, tested from VPS):
+#   or::google/gemini-2.0-flash-001  → 2.5s, FREE via OR, best Hinglish ★★★
+#   gh::gpt-4o                       → 3.2s, 100% FREE Azure, excellent quality ★★★
+#   gh::DeepSeek-V3                  → fast, FREE, best for coding ★★★
+#   nv::meta/llama-3.3-70b-instruct  → reliable, ~$0.27/1M, NVIDIA ★★
+#   gm::gemini-2.0-flash             → native FREE (resets daily, use as backup)
+#   ds::deepseek-coder               → NO BALANCE (top up needed)
+#   px::sonar-pro                    → no key configured (skip)
 #
 AI_MODELS = {
     # ── Commander / Director (WhatsApp voice) ───────────────────────────────
-    # Gemini 2.0 Flash: FREE via OpenRouter, best Hinglish, 2.5s, no hallucination
+    # Gemini 2.0 Flash via OpenRouter: verified fastest, best Hinglish, FREE.
+    # or:: uses OpenRouter's own Gemini access (separate from direct API quota).
     "commander":        "or::google/gemini-2.0-flash-001",
-    "commander_fast":   "nv::meta/llama-3.3-70b-instruct",  # intent routing only
+    "commander_fast":   "or::google/gemini-2.0-flash-001",
     "director":         "or::google/gemini-2.0-flash-001",
 
     # ── Strategist ──────────────────────────────────────────────────────────
-    # GPT-4o via OpenRouter: deep analysis, long strategy. ~$0.01/call.
-    "strategist":       "or::openai/gpt-4o",
+    # GPT-4o via GitHub Models: 100% FREE, deep reasoning, no cost.
+    "strategist":       "gh::gpt-4o",
 
     # ── Developer ───────────────────────────────────────────────────────────
-    # DeepSeek Coder: cheapest + best for coding ($0.14/1M). Direct API.
-    "developer":        "ds::deepseek-coder",
-    "developer_fast":   "gh::gpt-4o",          # FREE GitHub fallback
+    # DeepSeek-V3 via GitHub Models: 100% FREE, best for coding.
+    # (Direct DeepSeek API has no balance — using GitHub Free tier instead)
+    "developer":        "gh::DeepSeek-V3",
+    "developer_fast":   "gh::gpt-4o",             # FREE GitHub fallback
 
     # ── Content / Media ─────────────────────────────────────────────────────
-    # GPT-4o-mini via OpenRouter: fast writing, FSSAI-aware
+    # GPT-4o-mini via OpenRouter: fast writing, FSSAI-aware, cheap.
+    # Falls back to gm:: (native Gemini) when OR is rate-limited.
     "media":            "or::openai/gpt-4o-mini",
     "content":          "or::openai/gpt-4o-mini",
     "content_fallback": "nv::meta/llama-3.3-70b-instruct",
     "health_rewriter":  "or::openai/gpt-4o-mini",
 
     # ── AEO Agent ────────────────────────────────────────────────────────────
-    # Perplexity Sonar Pro: LIVE web search built-in. Real brand monitoring.
-    # Falls back to GPT-4o if Perplexity is down.
+    # Perplexity Sonar Pro: LIVE web search. Falls back to GPT-4o if no key.
     "aeo":              "px::sonar-pro",
     "aeo_fallback":     "or::openai/gpt-4o",
 
@@ -87,12 +104,12 @@ AI_MODELS = {
     "free_deepseek":    "gh::DeepSeek-V3",
     "free_jamba":       "gh::jamba-1.5-large",
 
-    # ── Fallback (always NVIDIA — reliable) ─────────────────────────────────
+    # ── Fallback (NVIDIA NIM — always reliable) ──────────────────────────────
     "fallback":         "nv::meta/llama-3.3-70b-instruct",
 }
 
 # Other existing keys (load from .env)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# Note: GEMINI_API_KEY is now defined above in the provider section.
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "") # Mapping from .env WHATSAPP_ACCESS_TOKEN
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID", "")
 CPANEL_USER = os.getenv("FALCONHERBS_CPANEL_USER", "")
