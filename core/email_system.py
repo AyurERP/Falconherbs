@@ -20,13 +20,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# SMTP Configuration (add to .env)
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
+# SMTP Configuration
+SMTP_HOST    = os.getenv("SMTP_HOST",     "smtp.gmail.com")
+SMTP_PORT    = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER    = os.getenv("SMTP_USER",     "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER)
-FROM_NAME = os.getenv("FROM_NAME", "Falcon Herbs")
+FROM_EMAIL   = os.getenv("FROM_EMAIL",    SMTP_USER)
+FROM_NAME    = os.getenv("FROM_NAME",     os.getenv("SMTP_FROM_NAME", "Falcon Agency"))
+
+# App Password check — Gmail rejects normal passwords since May 2022
+IS_GMAIL     = "gmail.com" in SMTP_HOST
+LOOKS_LIKE_APP_PASS = (
+    SMTP_PASSWORD and len(SMTP_PASSWORD.replace(" ", "")) == 16
+    and SMTP_PASSWORD.replace(" ", "").isalpha()
+)
+# Warning message (used in is_configured)
+_APP_PASS_WARNING = (
+    "Gmail SMTP needs an App Password (16 letters), not your regular password.\n"
+    "Generate at: myaccount.google.com/apppasswords\n"
+    "Format: xxxx xxxx xxxx xxxx"
+) if IS_GMAIL and SMTP_PASSWORD and not LOOKS_LIKE_APP_PASS else ""
 
 # Email logs
 EMAIL_LOG = Path(__file__).parent.parent / "data" / "email_log.json"
@@ -49,6 +62,27 @@ class EmailSystem:
     def is_configured(self) -> bool:
         """Check if SMTP credentials are set."""
         return bool(self.user and self.password)
+
+    def get_app_password_warning(self) -> str:
+        """Return warning if Gmail password looks wrong."""
+        return _APP_PASS_WARNING
+
+    def get_status(self) -> str:
+        """Get email system status for WhatsApp."""
+        configured = self.is_configured()
+        logs = self._load_log()
+        total_sent = len([l for l in logs if l.get("status") == "sent"])
+        warn = f"\n⚠️ {_APP_PASS_WARNING}" if _APP_PASS_WARNING else ""
+        return (
+            f"📧 *EMAIL SYSTEM*\n"
+            f"{'-' * 25}\n"
+            f"🔌 SMTP: {'✅ Configured' if configured else '❌ Not configured'}\n"
+            f"📤 Host: {self.host}:{self.port}\n"
+            f"👤 User: {self.user or 'Not set'}\n"
+            f"📊 Sent: {total_sent}\n"
+            f"{warn}\n"
+            f"{'✅ Ready' if configured and not _APP_PASS_WARNING else 'Add SMTP_USER + SMTP_PASSWORD (App Password) to .env'}"
+        )
     
     def send_email(self, to: str, subject: str, 
                    html_body: str, text_body: str = None) -> dict:
