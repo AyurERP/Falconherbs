@@ -83,6 +83,27 @@ class ExtendedSchedule:
                             "description": "Hourly WhatsApp status: revenue, pending rewrites, last action, errors",
                         }
                         modified = True
+                    if "ga4_weekly_report" not in tasks:
+                        tasks["ga4_weekly_report"] = {
+                            "time": "09:00", "day": "monday", "frequency": "weekly",
+                            "enabled": True, "last_run": None,
+                            "description": "Weekly GA4 traffic report (users, sessions, top pages) → WhatsApp",
+                        }
+                        modified = True
+                    if "gsc_weekly_report" not in tasks:
+                        tasks["gsc_weekly_report"] = {
+                            "time": "09:05", "day": "monday", "frequency": "weekly",
+                            "enabled": True, "last_run": None,
+                            "description": "Weekly GSC keywords report (clicks, impressions, top queries) → WhatsApp",
+                        }
+                        modified = True
+                    if "monthly_seo_health" not in tasks:
+                        tasks["monthly_seo_health"] = {
+                            "time": "08:00", "day": "1", "frequency": "monthly",
+                            "enabled": True, "last_run": None,
+                            "description": "Monthly full SEO health report (GA4 + GSC combined) → WhatsApp",
+                        }
+                        modified = True
                     if modified:
                         self._save_schedule(data)
                     return data
@@ -269,6 +290,30 @@ class ExtendedSchedule:
                     "enabled": True,
                     "last_run": None,
                     "description": "Weekly competitor price scan — Amazon India"
+                },
+                "ga4_weekly_report": {
+                    "time": "09:00",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Weekly GA4 traffic report → WhatsApp"
+                },
+                "gsc_weekly_report": {
+                    "time": "09:05",
+                    "day": "monday",
+                    "frequency": "weekly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Weekly GSC keywords + clicks report → WhatsApp"
+                },
+                "monthly_seo_health": {
+                    "time": "08:00",
+                    "day": "1",
+                    "frequency": "monthly",
+                    "enabled": True,
+                    "last_run": None,
+                    "description": "Monthly full SEO health report (GA4+GSC combined) → WhatsApp"
                 },
                 "daily_digest": {
                     "time": "07:00",
@@ -1764,6 +1809,137 @@ class ExtendedSchedule:
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+
+    def _task_ga4_weekly_report(self):
+        """
+        Weekly GA4 traffic report — every Monday 9:00 AM IST.
+        Sends users, sessions, pageviews, top pages to WhatsApp.
+        """
+        try:
+            from core.ga4_connector import GA4Connector
+            ga4 = GA4Connector()
+
+            if not ga4.is_configured():
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "📊 GA4 not configured. Add GOOGLE_SERVICE_ACCOUNT_PATH + GA4_PROPERTY_ID to .env",
+                }
+
+            report = ga4.format_whatsapp_report(days=7)
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": report,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "send_whatsapp": True,
+                "message": f"⚠️ GA4 report failed: {str(e)[:150]}",
+            }
+
+    def _task_gsc_weekly_report(self):
+        """
+        Weekly Search Console report — every Monday 9:05 AM IST.
+        Sends top keywords, clicks, impressions to WhatsApp.
+        """
+        try:
+            from core.gsc_connector import GSCConnector
+            gsc = GSCConnector()
+
+            if not gsc.is_configured():
+                return {
+                    "success": True,
+                    "send_whatsapp": False,
+                    "message": "🔍 GSC not configured. Add GOOGLE_SERVICE_ACCOUNT_PATH to .env",
+                }
+
+            report = gsc.format_whatsapp_report(days=7)
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": report,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "send_whatsapp": True,
+                "message": f"⚠️ GSC report failed: {str(e)[:150]}",
+            }
+
+    def _task_monthly_seo_health(self):
+        """
+        Monthly full SEO health report — 1st of each month, 8:00 AM IST.
+        Combines GA4 + GSC data into one comprehensive WhatsApp report.
+        """
+        try:
+            from core.ga4_connector import GA4Connector
+            from core.gsc_connector import GSCConnector
+
+            ga4 = GA4Connector()
+            gsc = GSCConnector()
+
+            sections = ["🌿 *MONTHLY SEO HEALTH REPORT*", "=" * 30]
+
+            # GA4 section — 30 days
+            if ga4.is_configured():
+                ga4_data = ga4.get_traffic_summary(days=30)
+                if ga4_data.get("success"):
+                    sections.append(
+                        f"\n📊 *GA4 — Last 30 Days*\n"
+                        f"👥 Users: {ga4_data['users']:,}\n"
+                        f"🔄 Sessions: {ga4_data['sessions']:,}\n"
+                        f"📄 Pageviews: {ga4_data['pageviews']:,}"
+                    )
+                    # Top 5 pages
+                    top = ga4.get_top_pages(days=30, limit=5)
+                    if top.get("pages"):
+                        sections.append("📈 *Top Pages (30d):*")
+                        for p in top["pages"][:5]:
+                            sections.append(f"  • {p['path'][:40]}: {p['sessions']:,}")
+                else:
+                    sections.append(f"📊 GA4: {ga4_data.get('error', 'Fetch failed')}")
+            else:
+                sections.append("📊 GA4: Not configured")
+
+            # GSC section — 28 days
+            if gsc.is_configured():
+                gsc_data = gsc.get_search_performance(days=28)
+                if gsc_data.get("success"):
+                    sections.append(
+                        f"\n🔍 *GSC — Last 28 Days*\n"
+                        f"👆 Clicks: {gsc_data['clicks']:,}\n"
+                        f"👁 Impressions: {gsc_data['impressions']:,}\n"
+                        f"📊 Avg CTR: {gsc_data['avg_ctr']}\n"
+                        f"📍 Avg Position: {gsc_data['avg_position']}"
+                    )
+                    # Top 10 keywords
+                    keywords = gsc.get_top_queries(days=28, limit=10)
+                    if keywords.get("queries"):
+                        sections.append("🔑 *Top Keywords (28d):*")
+                        for q in keywords["queries"][:10]:
+                            sections.append(
+                                f"  • {q['query'][:30]}: {q['clicks']} clicks @ {q['position']}"
+                            )
+                else:
+                    sections.append(f"🔍 GSC: {gsc_data.get('error', 'Fetch failed')}")
+            else:
+                sections.append("🔍 GSC: Not configured")
+
+            sections.append(f"\n📅 Report: {now_ist_str()}")
+            return {
+                "success": True,
+                "send_whatsapp": True,
+                "message": "\n".join(sections),
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "send_whatsapp": True,
+                "message": f"⚠️ Monthly SEO report failed: {str(e)[:150]}",
+            }
 
 
 # ==================== TEST ====================
