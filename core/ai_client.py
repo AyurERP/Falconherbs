@@ -7,62 +7,53 @@ Routes to the correct provider based on model prefix in AI_MODELS:
 
     "or::<model>"  →  OpenRouter  (100+ models, many free)
     "nv::<model>"  →  NVIDIA NIM  (fast hosted inference)
-    No prefix      →  NVIDIA NIM  (legacy compat)
+    "cl::<model>"  →  Anthropic Claude (long-context, high quality)
+    "ds::<model>"  →  DeepSeek Direct (cheapest coder, $0.14/1M)
+    "px::<model>"  →  Perplexity Sonar (live web search, AEO)
+    "gh::<model>"  →  GitHub Models (FREE Azure-hosted, 10 RPM)
+    No prefix      →  NVIDIA NIM (legacy compat)
+
+Fallback chain (when primary fails):
+    gh:: free → or:: → ds:: cheap → nv:: reliable → cl:: premium
 
 Usage:
     from core.ai_client import call_ai
 
-    # Simple call
     reply = call_ai("commander", [{"role": "user", "content": "hello"}])
-
-    # With system prompt override (director brain uses this)
-    reply = call_ai("director", messages, system_prompt="You are...")
+    reply = call_ai("developer", messages, system_prompt="You are...")
 """
 
 import os
+import time as _time
 import requests
-import json
-from pathlib import Path
 from config.keys import (
     NVIDIA_API_KEY,  NVIDIA_BASE_URL,
     OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
     ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL,
+    DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL,
+    PERPLEXITY_API_KEY, PERPLEXITY_BASE_URL,
+    GITHUB_BASE_URL,
     AI_MODELS,
 )
 from core.logger import log
 
-# ── SPEND TRACKING ──────────────────────────────────────────────────────
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-SPEND_FILE = DATA_DIR / "spend.json"
 
-def is_budget_safe() -> bool:
-    """Check if we are within the monthly limit set in spend.json"""
-    if not SPEND_FILE.exists():
-        return True
-    try:
-        with open(SPEND_FILE, "r") as f:
-            data = json.load(f)
-            # Default limit $50 if not set, for safety
-            limit = data.get("monthly_limit", 50.0)
-            total = data.get("monthly_total", 0.0)
-            if total >= limit:
-                return False
-            return True
-    except Exception:
-        return True # Fallback to allowed if file corrupted
+# ─── Provider helpers ──────────────────────────────────────────────────────────
 
+def _openai_compat_call(base_url: str, api_key: str, model: str,
+                         messages: list, timeout: int, max_tokens: int,
+                         extra_headers: dict = None) -> str:
+    """Generic OpenAI-compatible POST. Used by OpenRouter, DeepSeek, GitHub, Perplexity."""
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    if extra_headers:
+        headers.update(extra_headers)
 
-# ─── Provider dispatch ────────────────────────────────────────────────────────
-
-def _call_nvidia(model: str, messages: list, timeout: int,
-                  max_tokens: int = 4096) -> str:
-    """Call NVIDIA NIM inference endpoint."""
     resp = requests.post(
-        NVIDIA_BASE_URL,
-        headers={
-            "Authorization": f"Bearer {NVIDIA_API_KEY}",
-            "Content-Type": "application/json",
-        },
+        base_url,
+        headers=headers,
         json={
             "model": model,
             "messages": messages,
@@ -75,47 +66,36 @@ def _call_nvidia(model: str, messages: list, timeout: int,
     return resp.json()["choices"][0]["message"]["content"]
 
 
-def _call_openrouter(model: str, messages: list, timeout: int,
-                      max_tokens: int = 4096) -> str:
-    """Call OpenRouter (OpenAI-compatible API, 100+ models)."""
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY is not set in .env")
+# ─── Individual providers ──────────────────────────────────────────────────────
 
-    resp = requests.post(
-        OPENROUTER_BASE_URL,
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
+def _call_nvidia(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """NVIDIA NIM — reliable hosted inference."""
+    if not NVIDIA_API_KEY:
+        raise RuntimeError("NVIDIA_API_KEY not set")
+    return _openai_compat_call(NVIDIA_BASE_URL, NVIDIA_API_KEY, model, messages, timeout, max_tokens)
+
+
+def _call_openrouter(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """OpenRouter — 200+ models, many free tiers."""
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY not set")
+    return _openai_compat_call(
+        OPENROUTER_BASE_URL, OPENROUTER_API_KEY, model, messages, timeout, max_tokens,
+        extra_headers={
             "HTTP-Referer": "https://falconagency.duckdns.org",
             "X-Title": "Falcon Agency AI Director",
-        },
-        json={
-            "model": model,
-            "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": max_tokens,
-        },
-        timeout=timeout,
+        }
     )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
 
 
-def _call_anthropic(model: str, messages: list, timeout: int,
-                    max_tokens: int = 4096) -> str:
+def _call_anthropic(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
     """
-    Call Anthropic Claude API.
-
-    ⚠️  Anthropic API is NOT OpenAI-compatible:
-    - System prompt is a top-level param, not a message role
-    - Requires 'anthropic-version' header
-    - Response format: content[0].text (not choices[0].message.content)
-    - max_tokens is REQUIRED (no default)
+    Anthropic Claude — NOT OpenAI-compatible.
+    System prompt is a top-level param, response is content[0].text.
     """
     if not ANTHROPIC_API_KEY:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set in .env")
+        raise RuntimeError("ANTHROPIC_API_KEY not set")
 
-    # Extract system message if present (Anthropic needs it separately)
     system_text = ""
     user_messages = []
     for m in messages:
@@ -147,6 +127,63 @@ def _call_anthropic(model: str, messages: list, timeout: int,
     return resp.json()["content"][0]["text"]
 
 
+def _call_deepseek(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """
+    DeepSeek Direct API — cheapest coder ($0.14/1M tokens).
+    OpenAI-compatible. Best for coding tasks.
+    """
+    if not DEEPSEEK_API_KEY:
+        raise RuntimeError("DEEPSEEK_API_KEY not set")
+    return _openai_compat_call(
+        f"{DEEPSEEK_BASE_URL}/chat/completions",
+        DEEPSEEK_API_KEY, model, messages, timeout, max_tokens
+    )
+
+
+def _call_perplexity(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """
+    Perplexity Sonar — live web search built-in.
+    OpenAI-compatible. Best for AEO brand queries + competitor research.
+    """
+    if not PERPLEXITY_API_KEY:
+        raise RuntimeError("PERPLEXITY_API_KEY not set")
+    return _openai_compat_call(
+        f"{PERPLEXITY_BASE_URL}/chat/completions",
+        PERPLEXITY_API_KEY, model, messages, timeout, max_tokens
+    )
+
+
+def _call_github(model: str, messages: list, timeout: int, max_tokens: int = 4096) -> str:
+    """
+    GitHub Models (Azure AI) — 100% FREE, 10 RPM limit.
+    Models: gpt-4o, Phi-4, DeepSeek-V3, jamba-1.5-large, Phi-4-multimodal.
+    Use as first-try free fallback.
+    """
+    # GitHub requires separate PAT per model family
+    model_lower = model.lower()
+    if "gpt" in model_lower or "openai" in model_lower:
+        token = os.getenv("GITHUB_PAT_GPT4O", "")
+    elif "deepseek" in model_lower:
+        token = os.getenv("GITHUB_PAT_DEEPSEEK", "")
+    elif "phi-4-multimodal" in model_lower or "phi4mm" in model_lower:
+        token = os.getenv("GITHUB_PAT_PHI4MM", "")
+    elif "phi" in model_lower:
+        token = os.getenv("GITHUB_PAT_PHI4", "")
+    elif "jamba" in model_lower:
+        token = os.getenv("GITHUB_PAT_JAMBA", "")
+    else:
+        # Default: GPT-4o PAT
+        token = os.getenv("GITHUB_PAT_GPT4O", "")
+
+    if not token:
+        raise RuntimeError(f"No GITHUB_PAT set for model={model}")
+
+    return _openai_compat_call(
+        f"{GITHUB_BASE_URL}/chat/completions",
+        token, model, messages, timeout, max_tokens
+    )
+
+
 # ─── Public interface ─────────────────────────────────────────────────────────
 
 def call_ai(
@@ -163,118 +200,129 @@ def call_ai(
     ----------
     role : str
         Agent role key — maps to AI_MODELS dict.
-        e.g. "commander", "director", "media", "fallback"
+        e.g. "commander", "director", "developer", "aeo"
     messages : list
         OpenAI-format message list.
-        e.g. [{"role": "user", "content": "hello"}]
-        If you also pass system_prompt, it is prepended automatically.
     system_prompt : str | None
-        Optional system prompt. If provided, it is inserted as the first
-        message (role="system") before any existing messages.
+        Optional system prompt — prepended as role="system".
     timeout : int
         Request timeout in seconds. Default 120.
     max_tokens : int
-        Maximum tokens in reply. Default 4096.
+        Max tokens in reply. Default 4096.
 
     Returns
     -------
     str
-        The model's reply text, or "AI_ERROR: <details>" on failure.
-    """
-    if not is_budget_safe():
-        msg = "❌ AI_ERROR: Monthly budget limit hit! Check data/spend.json"
-        log.error(msg)
-        return msg
+        Model reply, or "AI_ERROR: <details>" on total failure.
 
+    Provider prefix map:
+        or:: → OpenRouter   (Gemini Flash FREE, GPT-4o, etc.)
+        nv:: → NVIDIA NIM   (reliable, fast)
+        cl:: → Anthropic    (Claude Sonnet/Haiku)
+        ds:: → DeepSeek     (cheapest coder)
+        px:: → Perplexity   (live web search)
+        gh:: → GitHub Models (100% FREE, 10 RPM)
+    """
     model_str = AI_MODELS.get(role, AI_MODELS["fallback"])
 
     # ── Parse provider prefix ──────────────────────────────────────────────
     if model_str.startswith("or::"):
-        provider = "openrouter"
-        model = model_str[4:]
+        provider, model = "openrouter", model_str[4:]
     elif model_str.startswith("nv::"):
-        provider = "nvidia"
-        model = model_str[4:]
+        provider, model = "nvidia", model_str[4:]
     elif model_str.startswith("cl::"):
-        provider = "anthropic"
-        model = model_str[4:]
+        provider, model = "anthropic", model_str[4:]
+    elif model_str.startswith("ds::"):
+        provider, model = "deepseek", model_str[4:]
+    elif model_str.startswith("px::"):
+        provider, model = "perplexity", model_str[4:]
+    elif model_str.startswith("gh::"):
+        provider, model = "github", model_str[4:]
     else:
-        # Legacy: no prefix → NVIDIA
-        provider = "nvidia"
-        model = model_str
+        provider, model = "nvidia", model_str  # legacy: no prefix → NVIDIA
 
-    # ── Inject system prompt ──────────────────────────────────────────
+    # ── Inject system prompt ────────────────────────────────────────────────
     if system_prompt:
-        # Prepend system message; remove any existing system messages to
-        # avoid prompt confusion.
         filtered = [m for m in messages if m.get("role") != "system"]
         messages = [{"role": "system", "content": system_prompt}] + filtered
 
-    # ── Dispatch with retry ──────────────────────────────────────────
-    import time as _time
+    # ── Dispatch map ────────────────────────────────────────────────────────
+    _dispatch = {
+        "openrouter": _call_openrouter,
+        "nvidia":     _call_nvidia,
+        "anthropic":  _call_anthropic,
+        "deepseek":   _call_deepseek,
+        "perplexity": _call_perplexity,
+        "github":     _call_github,
+    }
+    call_fn = _dispatch.get(provider, _call_nvidia)
 
+    # ── Primary call with 2 retries ─────────────────────────────────────────
     last_err = None
-    for attempt in range(1, 3):  # 2 attempts on same provider
+    for attempt in range(1, 3):
         try:
-            if provider == "openrouter":
-                result = _call_openrouter(model, messages, timeout, max_tokens)
-            elif provider == "anthropic":
-                result = _call_anthropic(model, messages, timeout, max_tokens)
-            else:
-                result = _call_nvidia(model, messages, timeout, max_tokens)
-
+            result = call_fn(model, messages, timeout, max_tokens)
             log.info(
-                "AI call OK  |  role=%s  provider=%s  model=%s  chars=%d  attempt=%d",
+                "AI OK | role=%s provider=%s model=%s chars=%d attempt=%d",
                 role, provider, model, len(result), attempt,
             )
             return result
-
         except Exception as exc:
             last_err = exc
             if attempt < 2:
-                log.info(
-                    "AI call attempt %d failed, retrying in 2s  |  role=%s  err=%s",
-                    attempt, role, str(exc)[:80],
-                )
+                log.info("AI attempt %d failed, retry 2s | role=%s err=%s",
+                         attempt, role, str(exc)[:80])
                 _time.sleep(2)
             else:
-                log.warning(
-                    "AI call FAILED after %d attempts  |  role=%s  provider=%s  model=%s  err=%s",
-                    attempt, role, provider, model, exc,
-                )
+                log.warning("AI FAILED %d attempts | role=%s provider=%s err=%s",
+                            attempt, role, provider, exc)
 
-    # ── Cross-provider fallback ────────────────────────────────────────────
-    # Claude down → fallback to NVIDIA
-    if provider == "anthropic" and NVIDIA_API_KEY:
-        try:
-            nvidia_fallback = "meta/llama-3.3-70b-instruct"
-            log.info("Claude failed, falling back to NVIDIA model=%s", nvidia_fallback)
-            result = _call_nvidia(nvidia_fallback, messages, timeout, max_tokens)
-            log.info("NVIDIA fallback OK after Claude failure  |  chars=%d", len(result))
-            return result
-        except Exception as exc2:
-            log.warning("NVIDIA fallback also failed: %s", exc2)
+    # ── Smart fallback chain ────────────────────────────────────────────────
+    # Strategy: free first, then cheap, then reliable
+    fallback_chain = _build_fallback_chain(provider)
 
-    # NVIDIA down → fallback to Claude Haiku (if key available)
-    elif provider == "nvidia" and ANTHROPIC_API_KEY:
+    for fb_provider, fb_model in fallback_chain:
+        fb_fn = _dispatch.get(fb_provider)
+        if not fb_fn:
+            continue
         try:
-            claude_fallback = "claude-3-5-haiku-20241022"
-            log.info("NVIDIA failed, falling back to Claude model=%s", claude_fallback)
-            result = _call_anthropic(claude_fallback, messages, timeout, max_tokens)
-            log.info("Claude fallback OK after NVIDIA failure  |  chars=%d", len(result))
+            log.info("AI fallback → %s/%s | role=%s original=%s",
+                     fb_provider, fb_model, role, provider)
+            result = fb_fn(fb_model, messages, timeout, max_tokens)
+            log.info("AI fallback OK | provider=%s chars=%d", fb_provider, len(result))
             return result
-        except Exception as exc2:
-            log.warning("Claude fallback also failed: %s", exc2)
-
-    # OpenRouter → NVIDIA fallback
-    elif provider == "openrouter" and NVIDIA_API_KEY:
-        try:
-            nvidia_fallback = "meta/llama-3.3-70b-instruct"
-            log.info("Cross-provider retry on NVIDIA NIM with model=%s", nvidia_fallback)
-            result = _call_nvidia(nvidia_fallback, messages, timeout, max_tokens)
-            log.info("NVIDIA cross-provider fallback OK  |  chars=%d", len(result))
-            return result
-        except Exception as exc2:
-            log.warning("NVIDIA cross-provider fallback also failed: %s", exc2)
+        except Exception as fb_err:
+            log.warning("AI fallback %s failed: %s", fb_provider, str(fb_err)[:80])
 
     return f"AI_ERROR: {str(last_err)}"
+
+
+def _build_fallback_chain(failed_provider: str) -> list:
+    """
+    Returns ordered list of (provider, model) fallbacks to try.
+    Strategy: gh:: FREE → or:: → ds:: cheap → nv:: → cl::
+    Skip the provider that already failed.
+    """
+    # Preferred fallback order
+    chain = [
+        ("github",     "gpt-4o"),                      # FREE
+        ("openrouter", "google/gemini-2.0-flash-001"), # FREE via OpenRouter
+        ("deepseek",   "deepseek-chat"),               # Cheap
+        ("nvidia",     "meta/llama-3.3-70b-instruct"), # Reliable
+        ("anthropic",  "claude-3-5-haiku-20241022"),   # Premium last
+    ]
+
+    # Check which provider keys are actually available
+    available = {
+        "github":     bool(os.getenv("GITHUB_PAT_GPT4O")),
+        "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
+        "deepseek":   bool(os.getenv("DEEPSEEK_API_KEY")),
+        "nvidia":     bool(os.getenv("NVIDIA_API_KEY")),
+        "anthropic":  bool(os.getenv("ANTHROPIC_API_KEY")),
+        "perplexity": bool(os.getenv("PERPLEXITY_API_KEY")),
+    }
+
+    return [
+        (p, m) for p, m in chain
+        if p != failed_provider and available.get(p, False)
+    ]

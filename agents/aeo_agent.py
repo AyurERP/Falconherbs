@@ -158,8 +158,9 @@ class AEOAgent:
         self, question: str, search_text: str
     ) -> Dict:
         """
-        Use NVIDIA API (project's call_ai) to analyze search results.
+        Use AI (px::sonar-pro Perplexity or fallback) to analyze search results.
         Returns brand_mentioned, competitors_mentioned, snippet.
+        Uses call_ai('aeo') → px::sonar-pro → or::gpt-4o fallback chain.
         """
         try:
             from core.ai_client import call_ai
@@ -177,7 +178,7 @@ class AEOAgent:
             ).format(question, search_text[:3000])
 
             raw = call_ai(
-                "commander_fast",
+                "aeo",                              # → px::sonar-pro (live search) or fallback
                 [{"role": "user", "content": prompt}],
                 max_tokens=512,
             )

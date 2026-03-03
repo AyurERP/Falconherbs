@@ -23,6 +23,20 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 
+# ── DeepSeek Direct API ──────────────────────────────────────────────────
+# Cheapest: $0.14/1M tokens input. Best coding model.
+DEEPSEEK_API_KEY  = os.getenv("DEEPSEEK_API_KEY", "")
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+
+# ── Perplexity Sonar (live web search) ───────────────────────────────────
+# OpenAI-compatible. sonar-pro = real-time Google search in LLM.
+PERPLEXITY_API_KEY  = os.getenv("PERPLEXITY_API_KEY", "")
+PERPLEXITY_BASE_URL = "https://api.perplexity.ai"
+
+# ── GitHub Models (Azure AI — 100% FREE, 10 RPM) ─────────────────────────
+# PATs are model-specific. Managed per-call in ai_client.py.
+GITHUB_BASE_URL = "https://models.inference.ai.azure.com"
+
 # ── Model assignments ───────────────────────────────────────────────────
 # Prefix convention:
 #   "nv::<model>"  →  NVIDIA NIM endpoint
@@ -39,37 +53,41 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/messages"
 #   LLaMA4-Maverick   → hallucinated numbers — dangerous
 #
 AI_MODELS = {
-    # Commander Brain (Director's WhatsApp voice) — Gemini 2.0 Flash
-    # FREE via OpenRouter. Fastest smart model. Best Hinglish.
-    # Doesn't hallucinate data when instructed. 2.5s avg.
+    # ── Commander / Director (WhatsApp voice) ───────────────────────────────
+    # Gemini 2.0 Flash: FREE via OpenRouter, best Hinglish, 2.5s, no hallucination
     "commander":        "or::google/gemini-2.0-flash-001",
-
-    # Commander Fast (intent classification only) — LLaMA 3.3 70B NVIDIA
-    # Sub-2s JSON output. Not for persona — just routing.
-    "commander_fast":   "nv::meta/llama-3.3-70b-instruct",
-
-    # Director (same as commander — Gemini Flash)
+    "commander_fast":   "nv::meta/llama-3.3-70b-instruct",  # intent routing only
     "director":         "or::google/gemini-2.0-flash-001",
 
-    # Strategist — GPT-4o via OpenRouter: deep analysis, competitor research
-    # Best reasoning for long-form strategy. ~$0.01/call.
+    # ── Strategist ──────────────────────────────────────────────────────────
+    # GPT-4o via OpenRouter: deep analysis, long strategy. ~$0.01/call.
     "strategist":       "or::openai/gpt-4o",
 
-    # Developer — LLaMA 3.3 70B: reliable code-level precision
-    "developer":        "nv::meta/llama-3.3-70b-instruct",
+    # ── Developer ───────────────────────────────────────────────────────────
+    # DeepSeek Coder: cheapest + best for coding ($0.14/1M). Direct API.
+    "developer":        "ds::deepseek-coder",
+    "developer_fast":   "gh::gpt-4o",          # FREE GitHub fallback
 
-    # Media/Content — GPT-4o-mini: fast, excellent writing quality
+    # ── Content / Media ─────────────────────────────────────────────────────
+    # GPT-4o-mini via OpenRouter: fast writing, FSSAI-aware
     "media":            "or::openai/gpt-4o-mini",
     "content":          "or::openai/gpt-4o-mini",
     "content_fallback": "nv::meta/llama-3.3-70b-instruct",
-
-    # Health rewriter — GPT-4o-mini: follows FSSAI rules precisely
     "health_rewriter":  "or::openai/gpt-4o-mini",
 
-    # AEO agent — GPT-4o: best for AI-engine optimized structured content
-    "aeo":              "or::openai/gpt-4o",
+    # ── AEO Agent ────────────────────────────────────────────────────────────
+    # Perplexity Sonar Pro: LIVE web search built-in. Real brand monitoring.
+    # Falls back to GPT-4o if Perplexity is down.
+    "aeo":              "px::sonar-pro",
+    "aeo_fallback":     "or::openai/gpt-4o",
 
-    # Fallback
+    # ── GitHub Models (FREE budget tier) ────────────────────────────────────
+    "free_gpt4o":       "gh::gpt-4o",
+    "free_phi4":        "gh::Phi-4",
+    "free_deepseek":    "gh::DeepSeek-V3",
+    "free_jamba":       "gh::jamba-1.5-large",
+
+    # ── Fallback (always NVIDIA — reliable) ─────────────────────────────────
     "fallback":         "nv::meta/llama-3.3-70b-instruct",
 }
 
