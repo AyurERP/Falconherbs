@@ -606,7 +606,7 @@ class IntegrationBridge:
                 "",
                 "⚡ *EFFICIENCY:* {} products — {} scanned, {} unchanged (skipped)".format(
                     total_products, scanned_count, skip_count),
-                "   {'Cache HIT — 0 extra API calls' if from_cache else '1 bulk API call'}",
+                f"   {'Cache HIT — 0 extra API calls' if from_cache else '1 bulk API call'}",
                 "",
                 "📊 *TOTAL VIOLATIONS:* {} (HIGH: {} | MED: {} | LOW: {})".format(
                     total_violations, total_high, total_medium, total_low),
