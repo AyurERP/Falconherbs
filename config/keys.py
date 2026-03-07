@@ -65,7 +65,8 @@ GITHUB_BASE_URL = "https://models.inference.ai.azure.com"
 #   nv::meta/llama-3.3-70b-instruct  → reliable, ~$0.27/1M, NVIDIA ★★
 #   gm::gemini-2.0-flash             → native FREE (resets daily, use as backup)
 #   ds::deepseek-coder               → NO BALANCE (top up needed)
-#   px::sonar-pro                    → no key configured (skip)
+#   or::perplexity/sonar             → via OpenRouter (no separate Perplexity key needed) ★
+#   nv::qwen/qwen3-next-80b-a3b-instruct → FREE, NVIDIA NIM ★★★
 #
 AI_MODELS = {
     # ── Commander / Director (WhatsApp voice) ───────────────────────────────
@@ -80,9 +81,10 @@ AI_MODELS = {
     "strategist":       "gh::gpt-4o",
 
     # ── Developer ───────────────────────────────────────────────────────────
-    # DeepSeek-V3 via GitHub Models: 100% FREE, best for coding.
-    # (Direct DeepSeek API has no balance — using GitHub Free tier instead)
-    "developer":        "gh::DeepSeek-V3",
+    # gh::DeepSeek-V3 was giving 400 Bad Request errors (confirmed in VPS logs 2026-03-07).
+    # Switched to Qwen Coder via NVIDIA NIM (FREE, confirmed working) as primary.
+    # gh::gpt-4o as fast fallback (FREE Azure).
+    "developer":        "nv::qwen/qwen3-next-80b-a3b-instruct",  # FREE NVIDIA NIM, solid coder
     "developer_fast":   "gh::gpt-4o",             # FREE GitHub fallback
 
     # ── Content / Media ─────────────────────────────────────────────────────
@@ -94,8 +96,9 @@ AI_MODELS = {
     "health_rewriter":  "or::openai/gpt-4o-mini",
 
     # ── AEO Agent ────────────────────────────────────────────────────────────
-    # Perplexity Sonar Pro: LIVE web search. Falls back to GPT-4o if no key.
-    "aeo":              "px::sonar-pro",
+    # Perplexity via OpenRouter: LIVE web search. No separate Perplexity key needed.
+    # or:: uses OpenRouter's Perplexity access (OpenRouter key already configured).
+    "aeo":              "or::perplexity/sonar",
     "aeo_fallback":     "or::openai/gpt-4o",
 
     # ── GitHub Models (FREE budget tier) ────────────────────────────────────
@@ -103,6 +106,14 @@ AI_MODELS = {
     "free_phi4":        "gh::Phi-4",
     "free_deepseek":    "gh::DeepSeek-V3",
     "free_jamba":       "gh::jamba-1.5-large",
+
+    # ── Qwen (NVIDIA NIM + OpenRouter — FREE, no new keys needed) ───────────
+    # BUG FIX: pr_outreach.py + social_sentry.py call call_ai("qwen", ...)
+    # but "qwen" key was missing → silently fell back to Llama. Now fixed.
+    "qwen":             "nv::qwen/qwen3-next-80b-a3b-instruct",  # Creative/strategic (80B MoE, NVIDIA FREE)
+    "qwen_reason":      "or::qwen/qwq-32b:free",                 # Reasoning (QwQ-32B, OpenRouter FREE 50 req/day)
+    "qwen_coder":       "nv::qwen2.5-coder-32b-instruct",        # Coding (32B, NVIDIA FREE)
+    "qwen_fast":        "or::qwen/qwen-2.5-72b-instruct:free",   # General fast (72B, 128K ctx, OpenRouter FREE)
 
     # ── Fallback (NVIDIA NIM — always reliable) ──────────────────────────────
     "fallback":         "nv::meta/llama-3.3-70b-instruct",

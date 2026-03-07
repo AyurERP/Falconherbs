@@ -220,6 +220,54 @@ class WhatsAppNotifier:
                 )
                 return msg_id
 
+            # ── 401 = Access Token Expired — CRITICAL alert ─────────────────
+            if resp.status_code == 401:
+                log.error(
+                    "🚨 WHATSAPP TOKEN EXPIRED (401)! "
+                    "Meta access token needs refresh. "
+                    "Go to: developers.facebook.com → System Users → Generate Token. "
+                    "Response: %s",
+                    resp.text[:300],
+                )
+                log.log_action(
+                    action="whatsapp_token_expired",
+                    agent="whatsapp",
+                    status="CRITICAL",
+                    details={"status_code": 401, "response": resp.text[:200]},
+                )
+                # Write flag file so monitoring scripts can detect this
+                try:
+                    import json as _json
+                    from pathlib import Path
+                    _flag = Path(__file__).resolve().parent.parent / "tmp" / "token_expired.flag"
+                    _flag.parent.mkdir(exist_ok=True)
+                    _flag.write_text(_json.dumps({
+                        "error": "WHATSAPP_TOKEN_EXPIRED",
+                        "time": _utcnow_iso(),
+                        "fix": "developers.facebook.com → System Users → Generate Permanent Token",
+                        "env_var": "WHATSAPP_ACCESS_TOKEN",
+                    }, indent=2))
+                    log.warning("Token expiry flag written to tmp/token_expired.flag")
+                except Exception as _fe:
+                    log.warning("Could not write token_expired.flag: %s", _fe)
+                # Try email alert as fallback notification
+                try:
+                    from core.email_system import EmailSystem
+                    _em = EmailSystem()
+                    _em.send_email(
+                        to=os.environ.get("SMTP_USER", ""),
+                        subject="🚨 FALCON AGENCY: WhatsApp Token Expired!",
+                        body=(
+                            "WhatsApp Access Token (WHATSAPP_ACCESS_TOKEN) has expired.\n\n"
+                            "Fix: Go to developers.facebook.com → System Users → Generate Permanent Token\n"
+                            "Then update WHATSAPP_ACCESS_TOKEN in .env and restart the service.\n\n"
+                            f"Time: {_utcnow_iso()}"
+                        ),
+                    )
+                except Exception as _ee:
+                    log.warning("Email fallback alert also failed: %s", _ee)
+                return None
+
             log.warning(
                 "WhatsApp API returned %d: %s",
                 resp.status_code,

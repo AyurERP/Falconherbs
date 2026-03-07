@@ -6,16 +6,16 @@ Single entry-point for all AI calls across every agent.
 Routes to the correct provider based on model prefix in AI_MODELS:
 
     "gm::<model>"  →  Google Gemini Direct (FREE 1M TPD, 15 RPM, no 429s)
-    "or::<model>"  →  OpenRouter  (100+ models, many free)
-    "nv::<model>"  →  NVIDIA NIM  (fast hosted inference)
+    "or::<model>"  →  OpenRouter  (100+ models, many free incl. Qwen/Perplexity)
+    "nv::<model>"  →  NVIDIA NIM  (fast hosted inference, Qwen FREE)
     "cl::<model>"  →  Anthropic Claude (long-context, high quality)
     "ds::<model>"  →  DeepSeek Direct (cheapest coder, $0.14/1M)
-    "px::<model>"  →  Perplexity Sonar (live web search, AEO)
+    "px::<model>"  →  Perplexity Sonar (live web search, AEO) [legacy — use or::perplexity/sonar]
     "gh::<model>"  →  GitHub Models (FREE Azure-hosted, 10 RPM)
     No prefix      →  NVIDIA NIM (legacy compat)
 
 Fallback chain (when primary fails):
-    gm:: native FREE → gh:: free → or:: → nv:: reliable → ds:: cheap
+    gm:: native FREE → gh:: free → nv::qwen FREE → or:: → nv::llama reliable → ds:: cheap
 
 Usage:
     from core.ai_client import call_ai
@@ -247,6 +247,8 @@ def call_ai(
         provider, model = "openrouter", model_str[4:]
     elif model_str.startswith("nv::"):
         provider, model = "nvidia", model_str[4:]
+    elif model_str.startswith("qw::"):
+        provider, model = "qwen", model_str[4:]   # explicit qwen:: prefix (future use)
     elif model_str.startswith("cl::"):
         provider, model = "anthropic", model_str[4:]
     elif model_str.startswith("ds::"):
@@ -264,10 +266,12 @@ def call_ai(
         messages = [{"role": "system", "content": system_prompt}] + filtered
 
     # ── Dispatch map ────────────────────────────────────────────────────────
+    # "qwen" provider → uses NVIDIA NIM (same key, same endpoint, different model)
     _dispatch = {
         "gemini":     _call_gemini,
         "openrouter": _call_openrouter,
         "nvidia":     _call_nvidia,
+        "qwen":       _call_nvidia,   # Qwen via NVIDIA NIM (same API, different model)
         "anthropic":  _call_anthropic,
         "deepseek":   _call_deepseek,
         "perplexity": _call_perplexity,
@@ -288,9 +292,11 @@ def call_ai(
         except Exception as exc:
             last_err = exc
             if attempt < 2:
-                log.info("AI attempt %d failed, retry 2s | role=%s err=%s",
-                         attempt, role, str(exc)[:80])
-                _time.sleep(2)
+                # 429 Rate Limit → wait longer before retry; other errors → 2s
+                wait_secs = 30 if "429" in str(exc) else 2
+                log.info("AI attempt %d failed, retry %ds | role=%s err=%s",
+                         attempt, wait_secs, role, str(exc)[:80])
+                _time.sleep(wait_secs)
             else:
                 log.warning("AI FAILED %d attempts | role=%s provider=%s err=%s",
                             attempt, role, provider, exc)
@@ -312,6 +318,18 @@ def call_ai(
         except Exception as fb_err:
             log.warning("AI fallback %s failed: %s", fb_provider, str(fb_err)[:80])
 
+    # ── Alert owner via WhatsApp when entire chain fails ────────────────────
+    log.error("AI_TOTAL_FAILURE | role=%s | all providers exhausted | %s", role, last_err)
+    try:
+        from core.whatsapp import WhatsAppNotifier
+        _wa = WhatsAppNotifier()
+        _wa.send_message(
+            f"⚠️ *AI Chain Down*\nRole: `{role}`\nProvider tried: `{provider}`\n"
+            f"Error: {str(last_err)[:120]}\n\n_Sabhi fallbacks fail ho gaye. Check karo._"
+        )
+    except Exception as _wa_err:
+        log.warning("AI failure WA alert failed too: %s", _wa_err)
+
     return f"AI_ERROR: {str(last_err)}"
 
 
@@ -321,14 +339,16 @@ def _build_fallback_chain(failed_provider: str) -> list:
     Strategy: gm:: native FREE → gh:: free → or:: → nv:: → ds:: cheap
     Skip the provider that already failed.
     """
-    # Preferred fallback order — optimized for VPS (GEMINI + NVIDIA always available)
+    # Preferred fallback order — free-first, then reliable paid
+    # Qwen added via NVIDIA NIM (same key, no extra cost, high quality)
     chain = [
-        ("gemini",     "gemini-2.0-flash"),             # Native FREE, 1M TPD
-        ("github",     "gpt-4o"),                       # FREE Azure-hosted
-        ("openrouter", "google/gemini-2.0-flash-001"),  # OR free tier
-        ("nvidia",     "meta/llama-3.3-70b-instruct"),  # Reliable paid
-        ("deepseek",   "deepseek-chat"),                # Cheap
-        ("anthropic",  "claude-3-5-haiku-20241022"),    # Premium last
+        ("gemini",     "gemini-2.0-flash"),                  # Native FREE, 1M TPD
+        ("github",     "gpt-4o"),                            # FREE Azure-hosted
+        ("qwen",       "qwen/qwen3-next-80b-a3b-instruct"),  # FREE NVIDIA NIM Qwen 80B
+        ("openrouter", "google/gemini-2.0-flash-001"),       # OR free tier
+        ("nvidia",     "meta/llama-3.3-70b-instruct"),       # Reliable paid
+        ("deepseek",   "deepseek-chat"),                     # Cheap
+        ("anthropic",  "claude-3-5-haiku-20241022"),         # Premium last
     ]
 
     # Check which provider keys are actually available
@@ -338,6 +358,7 @@ def _build_fallback_chain(failed_provider: str) -> list:
         "openrouter": bool(os.getenv("OPENROUTER_API_KEY")),
         "deepseek":   bool(os.getenv("DEEPSEEK_API_KEY")),
         "nvidia":     bool(os.getenv("NVIDIA_API_KEY")),
+        "qwen":       bool(os.getenv("NVIDIA_API_KEY")),     # Qwen uses same NVIDIA key
         "anthropic":  bool(os.getenv("ANTHROPIC_API_KEY")),
         "perplexity": bool(os.getenv("PERPLEXITY_API_KEY")),
     }

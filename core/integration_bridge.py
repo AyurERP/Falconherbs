@@ -394,13 +394,33 @@ class IntegrationBridge:
 
             new_modified_map = {}
 
+            # ── Progress ping setup (WhatsApp update every 10 products) ───────
+            try:
+                from core.whatsapp import WhatsAppNotifier as _WA
+                _wa_ping = _WA()
+            except Exception:
+                _wa_ping = None
+            total_products = len(products)
+
             clean_count = 0
             skip_count = 0
-            for p in products:
+            for _pi, p in enumerate(products, start=1):
                 pid  = p["id"]
                 name = p["name"]
                 url  = p.get("permalink", "")
                 date_mod = p.get("date_modified", "")
+
+                # Progress ping every 10 products → WhatsApp update
+                if _wa_ping and _pi % 10 == 0:
+                    try:
+                        _wa_ping.send_message(
+                            f"🔍 Health scan chal raha hai...\n"
+                            f"✅ {_pi}/{total_products} products checked\n"
+                            f"⚠️ Issues found so far: "
+                            f"HIGH={total_high} MED={total_medium} LOW={total_low}"
+                        )
+                    except Exception:
+                        pass
 
                 # Change detection: skip if unchanged since last scan
                 new_modified_map[str(pid)] = date_mod
@@ -1343,7 +1363,27 @@ class IntegrationBridge:
 
             retried = 0
             drafts_dir = Path("data/content/drafts")
-            for draft_file in drafts_dir.glob("*.json"):
+            all_draft_files = list(drafts_dir.glob("*.json"))
+            total_drafts = len(all_draft_files)
+
+            # Progress ping setup
+            try:
+                from core.whatsapp import WhatsAppNotifier as _WA2
+                _wa_ping2 = _WA2()
+            except Exception:
+                _wa_ping2 = None
+
+            for _di, draft_file in enumerate(all_draft_files, start=1):
+                # Progress ping every 5 drafts
+                if _wa_ping2 and _di % 5 == 0:
+                    try:
+                        _wa_ping2.send_message(
+                            f"✍️ Content generation chal raha hai...\n"
+                            f"✅ {_di}/{total_drafts} drafts processed | {retried} generated"
+                        )
+                    except Exception:
+                        pass
+
                 if draft_file.name == "__init__.py":
                     continue
                 try:
