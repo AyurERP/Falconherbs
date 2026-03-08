@@ -104,16 +104,16 @@ AI_MODELS = {
     # ── GitHub Models (FREE budget tier) ────────────────────────────────────
     "free_gpt4o":       "gh::gpt-4o",
     "free_phi4":        "gh::Phi-4",
-    "free_deepseek":    "gh::DeepSeek-V3",
+    "free_deepseek":    "gh::DeepSeek-R1",         # was DeepSeek-V3 (400 dead). R1 confirmed working.
     "free_jamba":       "gh::jamba-1.5-large",
 
     # ── Qwen (NVIDIA NIM + OpenRouter — FREE, no new keys needed) ───────────
     # BUG FIX: pr_outreach.py + social_sentry.py call call_ai("qwen", ...)
     # but "qwen" key was missing → silently fell back to Llama. Now fixed.
     "qwen":             "nv::qwen/qwen3-next-80b-a3b-instruct",  # Creative/strategic (80B MoE, NVIDIA FREE)
-    "qwen_reason":      "or::qwen/qwq-32b:free",                 # Reasoning (QwQ-32B, OpenRouter FREE 50 req/day)
-    "qwen_coder":       "nv::qwen2.5-coder-32b-instruct",        # Coding (32B, NVIDIA FREE)
-    "qwen_fast":        "or::qwen/qwen-2.5-72b-instruct:free",   # General fast (72B, 128K ctx, OpenRouter FREE)
+    "qwen_reason":      "gh::DeepSeek-R1",                        # was qwq-32b:free (404 dead). R1 = free reasoning.
+    "qwen_coder":       "nv::qwen/qwen2.5-coder-32b-instruct",   # FIX: added qwen/ prefix (was 404 without it)
+    "qwen_fast":        "nv::meta/llama-3.3-70b-instruct",       # was qwen-2.5-72b:free (404 dead). Llama = fast reliable.
 
     # ── Fallback (NVIDIA NIM — always reliable) ──────────────────────────────
     "fallback":         "nv::meta/llama-3.3-70b-instruct",

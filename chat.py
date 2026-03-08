@@ -73,7 +73,7 @@ def main():
 
         msg_counter += 1
         msg_id = f"chat_{msg_counter}_{uuid.uuid4().hex[:8]}"
-        commander.handle_message(text, msg_id, user_id="owner")
+        commander.handle_message(text, msg_id, sender="owner")
 
 
 if __name__ == "__main__":
