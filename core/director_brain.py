@@ -149,7 +149,7 @@ class DirectorBrain:
                 future = executor.submit(_do_generate)
                 reply = future.result(timeout=15)
 
-            if reply.startswith("AI_ERROR:"):
+            if not reply or reply.startswith("AI_ERROR:"):
                 log.warning("DirectorBrain primary failed: %s", reply)
                 return self._smart_fallback(owner_message, context)
 
@@ -244,7 +244,7 @@ class DirectorBrain:
                 future = executor.submit(_do_call)
                 raw = future.result(timeout=10)
 
-            if raw.startswith("AI_ERROR:"):
+            if not raw or raw.startswith("AI_ERROR:"):
                 return None
 
             # Strip <think>...</think> blocks before parsing JSON

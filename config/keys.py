@@ -58,15 +58,19 @@ GITHUB_BASE_URL = "https://models.inference.ai.azure.com"
 #   "px::<model>"  →  Perplexity Sonar (live web search, AEO)
 #   "cl::<model>"  →  Anthropic Claude (premium)
 #
-# VERIFIED WORKING (2026-03-03, tested from VPS):
-#   or::google/gemini-2.0-flash-001  → 2.5s, FREE via OR, best Hinglish ★★★
-#   gh::gpt-4o                       → 3.2s, 100% FREE Azure, excellent quality ★★★
-#   gh::DeepSeek-V3                  → fast, FREE, best for coding ★★★
-#   nv::meta/llama-3.3-70b-instruct  → reliable, ~$0.27/1M, NVIDIA ★★
-#   gm::gemini-2.0-flash             → native FREE (resets daily, use as backup)
-#   ds::deepseek-coder               → NO BALANCE (top up needed)
-#   or::perplexity/sonar             → via OpenRouter (no separate Perplexity key needed) ★
-#   nv::qwen/qwen3-next-80b-a3b-instruct → FREE, NVIDIA NIM ★★★
+# STRESS TESTED (2026-03-08, 3 real prompts each):
+#   or::qwen/qwen3.5-397b-a17b      → 3/3, 21s, PAID, top quality ★★★★
+#   nv::qwen/qwq-32b                → 3/3, 15s, FREE reasoning ★★★
+#   nv::qwen/qwen2.5-coder-32b      → 3/3, 2.7s, FREE coder ★★★
+#   gh::Qwen3-32B                   → 3/3, 10s, FREE fast Qwen ★★★
+#   or::google/gemini-2.0-flash-001 → reliable, FREE via OR ★★★
+#   gh::gpt-4o                      → 3.2s, FREE Azure ★★★
+#   gm::gemini-2.0-flash            → native FREE (1M TPD backup) ★★
+#   or::perplexity/sonar            → web search via OR ★★
+# DEAD/RETIRED:
+#   nv::qwen/qwen3-next-80b         → TIMEOUT/RETIRED from NVIDIA
+#   nv::qwen/qwen3-235b-a22b        → 410 GONE from NVIDIA
+#   nv::qwen/qwen3.5-397b           → 1/3 pass, UNRELIABLE on NVIDIA free tier
 #
 AI_MODELS = {
     # ── Commander / Director (WhatsApp voice) ───────────────────────────────
@@ -81,10 +85,8 @@ AI_MODELS = {
     "strategist":       "gh::gpt-4o",
 
     # ── Developer ───────────────────────────────────────────────────────────
-    # gh::DeepSeek-V3 was giving 400 Bad Request errors (confirmed in VPS logs 2026-03-07).
-    # Switched to Qwen Coder via NVIDIA NIM (FREE, confirmed working) as primary.
-    # gh::gpt-4o as fast fallback (FREE Azure).
-    "developer":        "nv::qwen/qwen3-next-80b-a3b-instruct",  # FREE NVIDIA NIM, solid coder
+    # qwen3-next-80b RETIRED from NVIDIA (timeout/gone). Qwen2.5-Coder = 3/3 reliable, 2.7s.
+    "developer":        "nv::qwen/qwen2.5-coder-32b-instruct",  # FREE NVIDIA, 3/3 stress test
     "developer_fast":   "gh::gpt-4o",             # FREE GitHub fallback
 
     # ── Content / Media ─────────────────────────────────────────────────────
@@ -107,13 +109,14 @@ AI_MODELS = {
     "free_deepseek":    "gh::DeepSeek-R1",         # was DeepSeek-V3 (400 dead). R1 confirmed working.
     "free_jamba":       "gh::jamba-1.5-large",
 
-    # ── Qwen (NVIDIA NIM + OpenRouter — FREE, no new keys needed) ───────────
-    # BUG FIX: pr_outreach.py + social_sentry.py call call_ai("qwen", ...)
-    # but "qwen" key was missing → silently fell back to Llama. Now fixed.
-    "qwen":             "nv::qwen/qwen3-next-80b-a3b-instruct",  # Creative/strategic (80B MoE, NVIDIA FREE)
-    "qwen_reason":      "gh::DeepSeek-R1",                        # was qwq-32b:free (404 dead). R1 = free reasoning.
-    "qwen_coder":       "nv::qwen/qwen2.5-coder-32b-instruct",   # FIX: added qwen/ prefix (was 404 without it)
-    "qwen_fast":        "nv::meta/llama-3.3-70b-instruct",       # was qwen-2.5-72b:free (404 dead). Llama = fast reliable.
+    # ── Qwen Family ────────────────────────────────────────────────────────────
+    # STRESS TESTED (3 real prompts each). NVIDIA Qwen3.5 = unreliable (1/3 pass).
+    # OpenRouter Qwen3.5 = reliable (3/3 pass, 21s). Quality > Free.
+    # If OR credits run out, system fallback chain auto-switches to free models.
+    "qwen":             "or::qwen/qwen3.5-397b-a17b",            # 3/3 reliable, 21s, BEST quality (PAID ~$0.002/req)
+    "qwen_fast":        "gh::Qwen3-32B",                          # 3/3 reliable, 10s (GitHub FREE)
+    "qwen_reason":      "nv::qwen/qwq-32b",                      # 3/3 reliable, 15s (NVIDIA FREE)
+    "qwen_coder":       "nv::qwen/qwen2.5-coder-32b-instruct",   # 3/3 reliable, 2.7s (NVIDIA FREE)
 
     # ── Fallback (NVIDIA NIM — always reliable) ──────────────────────────────
     "fallback":         "nv::meta/llama-3.3-70b-instruct",

@@ -4,7 +4,7 @@
   "sites": {
     "falconherbs": {
       "name": "Falcon Herbs",
-      "url": "https://falconherbs.com",
+      "url": "https://www.falconherbs.com",
       "niche": "authentic ayurvedic herbs",
       "country": "India",
       "currency": "INR",
@@ -12,7 +12,7 @@
       "gst_rate": 0.18,
       "wc_key_env": "FALCONHERBS_WC_API_KEY",
       "wc_secret_env": "FALCONHERBS_WC_API_SECRET",
-      "wp_url": "https://falconherbs.com",
+      "wp_url": "https://www.falconherbs.com",
       "wp_user_env": "FALCONHERBS_WP_USER",
       "wp_pass_env": "FALCONHERBS_WP_APP_PASSWORD",
       "cpanel_url_env": "FALCONHERBS_CPANEL_URL",

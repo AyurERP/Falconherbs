@@ -65,7 +65,17 @@ def _openai_compat_call(base_url: str, api_key: str, model: str,
         timeout=timeout,
     )
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    msg = resp.json()["choices"][0]["message"]
+    content = msg.get("content")
+    # Reasoning models (Qwen3.5-397B, DeepSeek-R1) may return content=None
+    # when all tokens were used for thinking. Don't return reasoning_content
+    # (that's internal thinking, not the answer). Raise so fallback triggers.
+    if not content:
+        reasoning = msg.get("reasoning_content") or msg.get("reasoning")
+        if reasoning:
+            raise RuntimeError("Model returned reasoning only, no final answer (increase max_tokens)")
+        raise RuntimeError("Model returned empty content")
+    return content
 
 
 # ─── Individual providers ──────────────────────────────────────────────────────
@@ -339,16 +349,17 @@ def _build_fallback_chain(failed_provider: str) -> list:
     Strategy: gm:: native FREE → gh:: free → or:: → nv:: → ds:: cheap
     Skip the provider that already failed.
     """
-    # Preferred fallback order — free-first, then reliable paid
-    # Qwen added via NVIDIA NIM (same key, no extra cost, high quality)
+    # Preferred fallback order — Qwen first, then free, then paid.
+    # Strategy: reply MUST come, quality > speed > cost.
     chain = [
-        ("gemini",     "gemini-2.0-flash"),                  # Native FREE, 1M TPD
-        ("github",     "gpt-4o"),                            # FREE Azure-hosted
-        ("qwen",       "qwen/qwen3-next-80b-a3b-instruct"),  # FREE NVIDIA NIM Qwen 80B
-        ("openrouter", "google/gemini-2.0-flash-001"),       # OR free tier
-        ("nvidia",     "meta/llama-3.3-70b-instruct"),       # Reliable paid
-        ("deepseek",   "deepseek-chat"),                     # Cheap
-        ("anthropic",  "claude-3-5-haiku-20241022"),         # Premium last
+        ("github",     "Qwen3-32B"),                          # FREE Qwen3 (3/3, 10s)
+        ("qwen",       "qwen/qwq-32b"),                       # FREE Qwen QwQ (3/3, 15s)
+        ("gemini",     "gemini-2.0-flash"),                    # Native FREE, 1M TPD
+        ("github",     "gpt-4o"),                              # FREE Azure-hosted
+        ("openrouter", "google/gemini-2.0-flash-001"),         # OR free tier
+        ("nvidia",     "meta/llama-3.3-70b-instruct"),         # Reliable
+        ("deepseek",   "deepseek-chat"),                       # Cheap
+        ("anthropic",  "claude-3-5-haiku-20241022"),           # Premium last
     ]
 
     # Check which provider keys are actually available

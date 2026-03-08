@@ -7,7 +7,7 @@ Setup (.env):
   GOOGLE_SERVICE_ACCOUNT_PATH=config/google_service_account.json
   (same service account as GA4)
 
-GSC property: sc-domain:falconherbs.com
+GSC property: https://www.falconherbs.com/
 """
 
 import json
@@ -25,7 +25,7 @@ SERVICE_ACCOUNT_PATH = (
     os.getenv("GOOGLE_SERVICE_ACCOUNT_PATH", "")
     or os.getenv("GSC_SERVICE_ACCOUNT_JSON", "")
 )
-SITE_URL = os.getenv("WP_SITE_URL", "https://falconherbs.com").rstrip("/")
+SITE_URL = os.getenv("WP_SITE_URL", "https://www.falconherbs.com").rstrip("/")
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "seo"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -39,9 +39,8 @@ class GSCConnector:
     def __init__(self):
         self.json_path = SERVICE_ACCOUNT_PATH
         self.site_url  = SITE_URL
-        # GSC domain property uses sc-domain: prefix
-        domain = SITE_URL.replace("https://", "").replace("http://", "").rstrip("/")
-        self._sc_site  = f"sc-domain:{domain}"
+        # Use full URL property (service account has siteFullUser on www.falconherbs.com)
+        self._sc_site  = self.site_url + "/"
         self._service  = None
 
     # ── Auth ───────────────────────────────────────────────────────────────
